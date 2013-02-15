@@ -1,0 +1,2 @@
+- merge all config in console.php into config/local/console.php.
+- set authentication params
