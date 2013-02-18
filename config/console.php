@@ -82,6 +82,21 @@ return array(
 		'test6' => array(
 			'class' => 'application.modules.MEHCommands.commands.Test6Command',
 		),
+		'lettercontactrules' => array(
+			'class' => 'application.modules.MEHCommands.commands.LetterContactRulesCommand',
+		),
+		'letterwarningrules' => array(
+			'class' => 'application.modules.MEHCommands.commands.LetterWarningRulesCommand',
+		),
+		'migratebooking' => array(
+			'class' => 'application.modules.MEHCommands.commands.MigrateBookingCommand',
+		),
+		'operationnamerules' => array(
+			'class' => 'application.modules.MEHCommands.commands.OperationNameRulesCommand',
+		),
+		'waitinglistcontactrules' => array(
+			'class' => 'application.modules.MEHCommands.commands.WaitingListContactRulesCommand',
+		),
 	),
 	'params' => array(
 		'import_contacts_username' => '',
