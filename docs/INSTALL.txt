@@ -1,2 +1,8 @@
-- merge all config in console.php into config/local/console.php.
-- set authentication params
+- set the following in params in the core config:
+
+    'import_contacts_username' => '',
+    'import_contacts_password' => '',
+    'epatient_hostname' => '',
+    'epatient_username' => '',
+    'epatient_password' => '',
+    'epatient_database' => '',
