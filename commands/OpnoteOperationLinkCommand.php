@@ -111,7 +111,7 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 			return;
 		}
 
-		$op = EventType::model()->find('class_name=?',array('OphTrOperation'));
+		$op = EventType::model()->find('class_name=?',array('OphTrOperationbooking'));
 		$opnote = EventType::model()->find('class_name=?',array('OphTrOperationnote'));
 
 		$priorOperations = array();

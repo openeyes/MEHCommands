@@ -19,21 +19,21 @@
 
 class OperationNameRulesCommand extends CConsoleCommand {
 	public function run($args) {
-		Yii::import('application.modules.OphTrOperation.models.*');
+		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
-		Yii::app()->db->createCommand("delete from ophtroperation_operation_name_rule")->query();
+		Yii::app()->db->createCommand("delete from ophtroperationbooking_operation_name_rule")->query();
 
-		$rule = new OphTrOperation_Operation_Name_Rule;
+		$rule = new OphTrOperationbooking_Operation_Name_Rule;
 		$rule->theatre_id = 21;
 		$rule->name = 'Ozurdex injection';
 		$rule->save();
 
-		$rule = new OphTrOperation_Operation_Name_Rule;
+		$rule = new OphTrOperationbooking_Operation_Name_Rule;
 		$rule->theatre_id = 22;
 		$rule->name = 'Ozurdex injection';
 		$rule->save();
 
-		$rule = new OphTrOperation_Operation_Name_Rule;
+		$rule = new OphTrOperationbooking_Operation_Name_Rule;
 		$rule->theatre_id = null;
 		$rule->name = 'eye operation';
 		$rule->save();

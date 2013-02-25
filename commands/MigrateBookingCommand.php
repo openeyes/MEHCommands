@@ -19,14 +19,14 @@
 
 class MigrateBookingCommand extends CConsoleCommand {
 	public function run($args) {
-		Yii::import('application.modules.OphTrOperation.models.*');
+		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
 		echo "Migrating element_diagnosis ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from element_diagnosis")->queryAll() as $ed) {
 			unset($ed['id']);
 
-			$diagnosis = new Element_OphTrOperation_Diagnosis;
+			$diagnosis = new Element_OphTrOperationbooking_Diagnosis;
 
 			foreach ($ed as $key => $value) {
 				$diagnosis->{$key} = $value;
@@ -44,7 +44,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating cancellation_reason ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from cancellation_reason order by id asc")->queryAll() as $cr) {
-			$reason = new OphTrOperation_Operation_Cancellation_Reason;
+			$reason = new OphTrOperationbooking_Operation_Cancellation_Reason;
 
 			foreach ($cr as $key => $value) {
 				$reason->{$key} = $value;
@@ -62,7 +62,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating element_operation ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from element_operation order by id asc")->queryAll() as $eo) {
-			$operation = new Element_OphTrOperation_Operation;
+			$operation = new Element_OphTrOperationbooking_Operation;
 
 			$eo['status_id'] = $eo['status']+1;
 
@@ -91,10 +91,10 @@ class MigrateBookingCommand extends CConsoleCommand {
 				exit;
 			}
 
-			$element = Yii::app()->db->createCommand("select * from et_ophtroperation_operation order by id desc limit 1")->queryRow();
+			$element = Yii::app()->db->createCommand("select * from et_ophtroperationbooking_operation order by id desc limit 1")->queryRow();
 
 			foreach (Yii::app()->db->createCommand("select * from operation_procedure_assignment where operation_id = {$eo['id']}")->queryAll() as $opa) {
-				$nopa = new OphTrOperation_Operation_Procedures;
+				$nopa = new OphTrOperationbooking_Operation_Procedures;
 				$nopa->element_id = $element['id'];
 
 				foreach (array('proc_id','display_order','last_modified_user_id','last_modified_date','created_user_id','created_date') as $field) {
@@ -108,7 +108,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 				}
 			}
 
-			$schedule = new Element_OphTrOperation_ScheduleOperation;
+			$schedule = new Element_OphTrOperationbooking_ScheduleOperation;
 			$schedule->event_id = $operation->event_id;
 			$schedule->schedule_options_id = 1;
 			foreach (array('created_date','created_user_id','last_modified_date','last_modified_user_id') as $field) {
@@ -125,7 +125,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating date_letter_sent ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from date_letter_sent order by id asc")->queryAll() as $dls) {
-			$letter = new OphTrOperation_Operation_Date_Letter_Sent;
+			$letter = new OphTrOperationbooking_Operation_Date_Letter_Sent;
 
 			$dls['element_id'] = $dls['element_operation_id'];
 			unset($dls['element_operation_id']);
@@ -145,7 +145,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating theatre ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from theatre order by id asc")->queryAll() as $t) {
-			$theatre = new OphTrOperation_Operation_Theatre;
+			$theatre = new OphTrOperationbooking_Operation_Theatre;
 			$theatre->name = $t['name'];
 			$theatre->site_id = $t['site_id'];
 			$theatre->code = $t['code'];
@@ -161,7 +161,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating ward ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from ward order by id asc")->queryAll() as $w) {
-			$ward = new OphTrOperation_Operation_Ward;
+			$ward = new OphTrOperationbooking_Operation_Ward;
 			$ward->site_id = $w['site_id'];
 			$ward->name = $w['name'];
 			$ward->restriction = $w['restriction'];
@@ -196,7 +196,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating sequence ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from sequence order by id asc")->queryAll() as $seq) {
-			$sequence = new OphTrOperation_Operation_Sequence;
+			$sequence = new OphTrOperationbooking_Operation_Sequence;
 
 			if ($seq['id'] == 160) {
 				$seq['start_date'] = '2011-11-29';
@@ -226,7 +226,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating session ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from session order by id asc")->queryAll() as $ses) {
-			$session = new OphTrOperation_Operation_Session;
+			$session = new OphTrOperationbooking_Operation_Session;
 
 			foreach ($ses as $key => $value) {
 				if ($key == 'status') {
@@ -252,7 +252,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating element_operation_erod ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from element_operation_erod order by id asc")->queryAll() as $er) {
-			$erod = new OphTrOperation_Operation_EROD;
+			$erod = new OphTrOperationbooking_Operation_EROD;
 
 			$er['element_id'] = $er['element_operation_id'];
 			unset($er['element_operation_id']);
@@ -273,7 +273,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating erod_rule ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from erod_rule order by id asc")->queryAll() as $er) {
-			$erod = new OphTrOperation_Operation_EROD_Rule;
+			$erod = new OphTrOperationbooking_Operation_EROD_Rule;
 
 			foreach ($er as $key => $value) {
 				$erod->{$key} = $value;
@@ -291,7 +291,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		echo "Migrating erod_rule_item ... ";
 
 		foreach (Yii::app()->db->createCommand("select * from erod_rule_item order by id asc")->queryAll() as $er) {
-			$erod = new OphTrOperation_Operation_EROD_Rule_Item;
+			$erod = new OphTrOperationbooking_Operation_EROD_Rule_Item;
 
 			foreach ($er as $key => $value) {
 				$erod->{$key} = $value;
@@ -313,7 +313,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 		$operation_ids = array();
 
 		foreach (Yii::app()->db->createCommand("select * from booking order by id asc")->queryAll() as $b) {
-			$booking = new OphTrOperation_Operation_Booking;
+			$booking = new OphTrOperationbooking_Operation_Booking;
 
 			$b['element_id'] = $b['element_operation_id'];
 			unset($b['element_operation_id']);
@@ -347,7 +347,7 @@ class MigrateBookingCommand extends CConsoleCommand {
 
 		foreach (Yii::app()->db->createCommand("select * from cancelled_booking order by id asc")->queryAll() as $cb) {
 			if (Yii::app()->db->createCommand("select * from element_operation where id = {$cb['element_operation_id']}")->queryRow()) {
-				$cancelled = new OphTrOperation_Operation_Booking;
+				$cancelled = new OphTrOperationbooking_Operation_Booking;
 
 				$cancelled->element_id = $cb['element_operation_id'];
 

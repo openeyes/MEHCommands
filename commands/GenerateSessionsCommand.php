@@ -35,7 +35,7 @@ class GenerateSessionsCommand extends CConsoleCommand {
 		// Get sequences
 		$today = date('Y-m-d');
 		$initialEndDate = empty($args) ? strtotime('+13 months') : strtotime($args[0]);
-		$sequences = OphTrOperation_Operation_Sequence::model()->findAll(
+		$sequences = OphTrOperationbooking_Operation_Sequence::model()->findAll(
 			'start_date <= :end_date AND (end_date IS NULL or end_date >= :today)',
 			array(':end_date'=>date('Y-m-d', $initialEndDate), ':today'=>$today)
 		);
@@ -45,7 +45,7 @@ class GenerateSessionsCommand extends CConsoleCommand {
 			// Find most recent session for sequence
 			$session = Yii::app()->db->createCommand()
 			->select('date')
-			->from('ophtroperation_operation_session')
+			->from('ophtroperationbooking_operation_session')
 			->where('sequence_id=:id', array(':id' => $sequence->id))
 			->order('date DESC')
 			->queryRow();
@@ -124,7 +124,7 @@ class GenerateSessionsCommand extends CConsoleCommand {
 				// Process dateList into sessions
 				foreach($dateList as $date) {
 					// TODO: Check for collisions, maybe in Session validation code
-					$new_session = new OphTrOperation_Operation_Session;
+					$new_session = new OphTrOperationbooking_Operation_Session;
 					foreach(array('start_time','end_time','consultant','anaesthetist','paediatric','general_anaesthetic','theatre_id') as $attribute) {
 						$new_session->$attribute = $sequence->$attribute;
 					}
