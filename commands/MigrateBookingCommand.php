@@ -435,6 +435,11 @@ class MigrateBookingCommand extends CConsoleCommand {
 		}
 
 		echo "ok\n";
+
+		$operation_old = EventType::model()->find('class_name=?',array('OphTrOperation'));
+		$operation_new = EventType::model()->find('class_name=?',array('OphTrOperationbooking'));
+
+		Yii::app()->db->createCommand("update event set event_type_id = $operation_new->id where event_type_id = $operation_old->id")->query();
 	}
 
 	public function findSessionForCancelledBooking($cb) {
