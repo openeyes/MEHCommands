@@ -61,9 +61,16 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		2169111 => 2143289,
 	);
 	public $completed;
+	public $op;
+	public $opnote;
 
 	public function run($args) {
-		$this->completed = OphTrOperation_Operation_Status::model()->find('name=?',array('Completed'));
+		$this->completed = OphTrOperationbooking_Operation_Status::model()->find('name=?',array('Completed'));
+		$this->op = EventType::model()->find('class_name=?',array('OphTrOperationbooking'));
+		$this->opnote = EventType::model()->find('class_name=?',array('OphTrOperationnote'));
+
+		$ok = 0;
+		$bad = 0;
 
 		foreach (Yii::app()->db->createCommand()
 			->select("e.*")
@@ -75,12 +82,16 @@ class LinkOpnotesCommand extends CConsoleCommand {
 
 			if ($this->inferOperation($row['id'])) {
 				echo ".";
+				$ok++;
 			} else {
 				echo "x";
+				$bad++;
 			}
 		}
 
 		echo "\n";
+
+		echo "Successfully matched $ok/".($ok+$bad)." opnotes.\n";
 	}
 
 	public function createLink($opnote_event_id, $operation_event_id) {
@@ -88,20 +99,20 @@ class LinkOpnotesCommand extends CConsoleCommand {
 			echo "Error: opnote event $opnote_event_id has no procedurelist!\n";
 			return false;
 		}
-		if (!$eo = Element_OphTrOperation_Operation::model()->findByPk($operation_event_id)) {
+		if (!$eo = Element_OphTrOperationbooking_Operation::model()->find('event_id=?',array($operation_event_id))) {
 			echo "Error: operation event $operation_event_id has no operation element!\n";
 			return false;
 		}
 
 		Yii::app()->db->createCommand("update et_ophtroperationnote_procedurelist set booking_event_id = $operation_event_id where id = $proclist->id")->query();
 
-		$update = "status_id = $this->completed";
+		$update = "status_id = {$this->completed->id}";
 
 		if (strtotime($eo->last_modified_date) < strtotime($proclist->created_date)) {
 			$update .= ", last_modified_date = '$proclist->created_date', last_modified_user_id = $proclist->created_user_id";
 		}
 	 
-		Yii::app()->db->createCommand("update et_ophtroperation_operation set $update where id = $eo->id")->query();
+		Yii::app()->db->createCommand("update et_ophtroperationbooking_operation set $update where id = $eo->id")->query();
 	}
 
 	public function inferOperation($event_id) {
@@ -112,6 +123,8 @@ class LinkOpnotesCommand extends CConsoleCommand {
 
 		$event = Event::model()->findByPk($event_id);
 
+		$priorOperations = array();
+
 		foreach (Yii::app()->db->createCommand()
 			->select("event.*")
 			->from("event")
@@ -120,14 +133,14 @@ class LinkOpnotesCommand extends CConsoleCommand {
 			->order("datetime desc")
 			->queryAll() as $event2) {
 
-			if ($event2['event_type_id'] == $op->id) {
-				$operation = Element_OphTrOperation_Operation::model()->find('event_id=?',array($event2['id']));
+			if ($event2['event_type_id'] == $this->op->id) {
+				$operation = Element_OphTrOperationbooking_Operation::model()->find('event_id=?',array($event2['id']));
 				if (in_array($operation->status->name,array('Scheduled','Rescheduled'))) {
 					$priorOperations[] = $event2;
 				}
 			}
 
-			if ($event2['event_type_id'] == $opnote->id) {
+			if ($event2['event_type_id'] == $this->opnote->id) {
 				break;
 			}
 		}
@@ -145,11 +158,11 @@ class LinkOpnotesCommand extends CConsoleCommand {
 				->select("event.*")
 				->from("event")
 				->join("episode","event.episode_id = episode.id")
-				->where("datetime < '$event->datetime' and event.deleted = 0 and episode.deleted = 0 and episode.patient_id = $patient_id and event.event_type_id = $op->id")
+				->where("datetime < '$event->datetime' and event.deleted = 0 and episode.deleted = 0 and episode.patient_id = $patient_id and event.event_type_id = {$this->op->id}")
 				->order("datetime desc")
 				->queryAll() as $event2) {
 
-				$operation = Element_OphTrOperation_Operation::model()->find('event_id=?',array($event2['id']));
+				$operation = Element_OphTrOperationbooking_Operation::model()->find('event_id=?',array($event2['id']));
 				if (in_array($operation->status->name,array('Scheduled','Rescheduled'))) {
 					$priorOperations[] = $event2;
 				}
@@ -184,7 +197,7 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		}
 
 		if (count($matches) == 1) {
-			$this->createLink($event_id, $matches[0]);
+			$this->createLink($event_id, $matches[0]['id']);
 			return true;
 		}
 
@@ -195,7 +208,7 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		if (!$proclist = ElementProcedureList::model()->find('event_id=?',array($opnote_event->id))) {
 			return false;
 		}
-		if (!$operation = Element_OphTrOperation_Operation::model()->find('event_id=?',array($operation_event['id']))) {
+		if (!$operation = Element_OphTrOperationbooking_Operation::model()->find('event_id=?',array($operation_event['id']))) {
 			return false;
 		}
 
