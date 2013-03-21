@@ -236,6 +236,69 @@ No further follow up is required, and I have discharged [obj] from the clinic.';
 				echo "OK\n";
 			}
 		}
+
+		$findings = array(
+			array(
+				'name' => 'History',
+				'body' => '[pro] gave a history of [hpc]',
+				'display_order' => 5,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_History',
+			),
+			array(
+				'name' => 'Visual acuity',
+				'body' => 'The best corrected visual acuity was [vbb]',
+				'display_order' => 10,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_VisualAcuity',
+			),
+			array(
+				'name' => 'Adnexal comorbidity',
+				'body' => 'Adnexal Comorbidity was [add] on the right and [adl] on the left',
+				'display_order' => 15,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_AdnexalComorbidity',
+			),
+			array(
+				'name' => 'Anterior segment',
+				'body' => 'Anterior segment examination showed [asr] on the right and [asl] on the left',
+				'display_order' => 20,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_AnteriorSegment',
+			),
+			array(
+				'name' => 'Intraocular pressure',
+				'body' => 'The intraocular pressure is [ipb]',
+				'display_order' => 30,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_IntraocularPressure',
+			),
+			array(
+				'name' => 'Posterior segment',
+				'body' => 'Posterior segment examination showed [psr] on the right and [psl] on the left',
+				'display_order' => 40,
+				'event_type' => 'OphCiExamination',
+				'element_type' => 'Element_OphCiExamination_PosteriorSegment',
+			),
+		);
+
+		$group = LetterStringGroup::model()->find('name=?',array('Findings'));
+
+		foreach ($findings as $finding) {
+			if (!$ls = LetterString::model()->find('letter_string_group_id=? and name=?',array($group->id,$finding['name']))) {
+				$ls = new LetterString;
+				$ls->letter_string_group_id = $group->id;
+				$ls->name = $finding['name'];
+			}
+			$ls->body = $finding['body'];
+			$ls->display_order = $finding['display_order'];
+			$ls->event_type = $finding['event_type'];
+			$ls->element_type = $finding['element_type'];
+
+			if (!$ls->save()) {
+				throw new Exception("Unable to save letter string: ".print_r($ls->getErrors(),true));
+			}
+		}
 	}
 }
 ?>
