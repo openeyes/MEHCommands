@@ -285,18 +285,21 @@ No further follow up is required, and I have discharged [obj] from the clinic.';
 		$group = LetterStringGroup::model()->find('name=?',array('Findings'));
 
 		foreach ($findings as $finding) {
-			if (!$ls = LetterString::model()->find('letter_string_group_id=? and name=?',array($group->id,$finding['name']))) {
-				$ls = new LetterString;
-				$ls->letter_string_group_id = $group->id;
-				$ls->name = $finding['name'];
-			}
-			$ls->body = $finding['body'];
-			$ls->display_order = $finding['display_order'];
-			$ls->event_type = $finding['event_type'];
-			$ls->element_type = $finding['element_type'];
+			foreach (Site::model()->findAll('institution_id=?',array(1)) as $site) {
+				if (!$ls = LetterString::model()->find('letter_string_group_id=? and name=? and site_id=?',array($group->id,$finding['name'],$site->id))) {
+					$ls = new LetterString;
+					$ls->letter_string_group_id = $group->id;
+					$ls->name = $finding['name'];
+					$ls->site_id = $site->id;
+				}
+				$ls->body = $finding['body'];
+				$ls->display_order = $finding['display_order'];
+				$ls->event_type = $finding['event_type'];
+				$ls->element_type = $finding['element_type'];
 
-			if (!$ls->save()) {
-				throw new Exception("Unable to save letter string: ".print_r($ls->getErrors(),true));
+				if (!$ls->save()) {
+					throw new Exception("Unable to save letter string: ".print_r($ls->getErrors(),true));
+				}
 			}
 		}
 	}
