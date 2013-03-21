@@ -53,7 +53,7 @@ class HousekeepingCommand extends CConsoleCommand {
 			->join("patient","episode.patient_id = patient.id")
 			->leftJoin("booking","booking.element_operation_id = element_operation.id")
 			->leftJoin("session","booking.session_id = session.id")
-			->where("element_operation.status != :cancelled and patient.date_of_death is not null and patient.date_of_death < NOW()",array(':cancelled'=>ElementOperation::STATUS_CANCELLED))
+			->where("(session.date > NOW() or session.date is null) and element_operation.status != :cancelled and patient.date_of_death is not null and patient.date_of_death < NOW()",array(':cancelled'=>ElementOperation::STATUS_CANCELLED))
 			->queryAll() as $operation) {
 			$operation = ElementOperation::model()->findByPk($operation['id']);
 			$operation->cancel($cancellation_reason->id, 'Booking cancelled automatically');
