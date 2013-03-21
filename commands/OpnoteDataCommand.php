@@ -60,18 +60,18 @@ class OpnoteDataCommand extends CConsoleCommand {
 			//$subspecialty = Subspecialty::model()->find('name=?',array($subspecialty_name));
 			foreach (Subspecialty::model()->findAll() as $subspecialty) {
 				foreach ($s_drugs as $drug) {
-					if (!$d = Drug::model()->find('name=?',array($drug))) {
+					if (!$d = PostopDrug::model()->find('name=?',array($drug))) {
 						echo "Adding drug: $drug\n";
 
-						$d = new Drug;
+						$d = new PostopDrug;
 						$d->name = $drug;
 						$d->save();
 					}
 
 					foreach (Site::model()->findAll() as $site) {
-						if (!$ssd = SiteSubspecialtyDrug::model()->find('site_id = ? and subspecialty_id = ? and drug_id = ?',array($site->id,$subspecialty->id,$d->id))) {
+						if (!$ssd = PostopSiteSubspecialtyDrug::model()->find('site_id = ? and subspecialty_id = ? and drug_id = ?',array($site->id,$subspecialty->id,$d->id))) {
 							echo "Creating association: [$site->id][$subspecialty->id][$d->id]\n";
-							$ssd = new SiteSubspecialtyDrug;
+							$ssd = new PostopSiteSubspecialtyDrug;
 							$ssd->site_id = $site->id;
 							$ssd->subspecialty_id = $subspecialty->id;
 							$ssd->drug_id = $d->id;
