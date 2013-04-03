@@ -20,7 +20,6 @@
 
 class ImportMacrosCommand extends CConsoleCommand {
 	public function run($args) {
-		Yii::import('application.vendors.*');
 		require_once 'Zend/Loader.php';
 		Zend_Loader::loadClass('Zend_Gdata');
 		Zend_Loader::loadClass('Zend_Gdata_AuthSub');
