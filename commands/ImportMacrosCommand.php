@@ -55,11 +55,15 @@ class ImportMacrosCommand extends CConsoleCommand {
 			}
 		}
 		
-		// Import worksheets
+		/**
+		 * Import worksheets
+		 * - $table_mappings[]['table']: OpenEyes table name
+		 * - $table_mappings[]['match_fields']: Which field(s) to use for matching existing records
+		 */
 		$table_mappings = array(
 				'firm_letter_macro' => array(
 						'table' => 'et_ophcocorrespondence_firm_letter_macro',
-						'pk' => 'name',
+						'match_fields' => array('name', 'firm_id'),
 				),
 		);
 		$column_mappings = array(
@@ -78,9 +82,13 @@ class ImportMacrosCommand extends CConsoleCommand {
 		);
 		foreach($data as $worksheet_name => $rows) {
 			$table = $table_mappings[$worksheet_name]['table'];
-			$pk = $table_mappings[$worksheet_name]['pk'];
+			$match_condition = array();
+			foreach($table_mappings[$worksheet_name]['match_fields'] as $match_field) {
+				$match_condition[] = $match_field.' = :'.$match_field;
+			}
+			$match_condition = implode(' AND ', $match_condition);
 			$columns = array_shift($rows);
-			echo $worksheet_name."\n";
+			echo 'Importing '.$worksheet_name." ";
 			foreach($rows as $row_index => $row) {
 				$row_import = array();
 				foreach($column_mappings[$worksheet_name] as $gcolumn_name => $oecolumn_name) {
@@ -96,14 +104,18 @@ class ImportMacrosCommand extends CConsoleCommand {
 						$row_import[$oecolumn_name] = $value;
 					}
 				}
+				$match_params = array();
+				foreach($table_mappings[$worksheet_name]['match_fields'] as $match_field) {
+					$match_params[':'.$match_field] = $row_import[$match_field];
+				}
 				$existing_id = Yii::app()->db->createCommand()
 					->select('id')
 					->from($table)
-					->where($pk.' = :pk')
-					->queryScalar(array(':pk' => $row_import[$pk]));
+					->where($match_condition)
+					->queryScalar($match_params);
 				if($existing_id) {
 					$result = Yii::app()->db->createCommand()
-						->update($table, $row_import, 'id = :pk', array(':pk' => $row_import[$pk]));
+						->update($table, $row_import, $match_condition, $match_params);
 					echo "!";
 				} else {
 					$result = Yii::app()->db->createCommand()
@@ -111,7 +123,7 @@ class ImportMacrosCommand extends CConsoleCommand {
 					echo "+";
 				}
 			}
-			echo "\n";
+			echo " done.\n";
 		}
 		
 	}
