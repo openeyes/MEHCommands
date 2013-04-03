@@ -43,6 +43,9 @@ return array(
 		'importcontacts' => array(
 			'class' => 'application.modules.MEHCommands.commands.ImportContactsCommand',
 		),
+		'importmacros' => array(
+			'class' => 'application.modules.MEHCommands.commands.ImportMacrosCommand',
+		),
 		'importdata' => array(
 			'class' => 'application.modules.MEHCommands.commands.ImportDataCommand',
 		),
