@@ -126,14 +126,21 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				->from($table)
 				->where($match_condition)
 				->queryScalar($match_params);
-				if($existing_id) {
-					$result = Yii::app()->db->createCommand()
-					->update($table, $row_import, $match_condition, $match_params);
-					echo "!";
-				} else {
-					$result = Yii::app()->db->createCommand()
-					->insert($table, $row_import);
-					echo "+";
+				try {
+					if($existing_id) {
+						$result = Yii::app()->db->createCommand()
+						->update($table, $row_import, $match_condition, $match_params);
+						echo "!";
+					} else {
+						$result = Yii::app()->db->createCommand()
+						->insert($table, $row_import);
+						echo "+";
+					}
+				} catch(CDbException $e) {
+					echo "\nError importing row into $table\n";
+					var_dump($row);
+					var_dump($row_import);
+					throw $e;
 				}
 			}
 			echo " done.\n";
