@@ -18,7 +18,6 @@
  */
 
 $config = array(
-	'commandMap' => array(),
 	'params' => array(
 		'import_contacts_username' => '',
 		'import_contacts_password' => '',
