@@ -17,24 +17,29 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportMacrosCommand extends ImportGdataCommand {
+class ImportAttributesCommand extends ImportGdataCommand {
 	public function run($args) {
-		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro'));
+		$data = $this->loadData('Attributes', array('Attribute', 'Option'));
 		$this->importData($data, array(
-				'firm_letter_macro' => array(
-						'table' => 'et_ophcocorrespondence_firm_letter_macro',
-						'match_fields' => array('name', 'firm_id'),
+				'Attribute' => array(
+						'table' => 'ophciexamination_attribute',
+						'match_fields' => array('id'),
 						'column_mappings' => array(
 								'name',
-								'firm_id',
-								'display_order',
-								'episode_status_id',
-								'body',
-								'recipient_patient',
-								'recipient_doctor',
-								'cc_patient',
-								'cc_doctor',
-								'use_nickname',
+								'label',
+								'element_type_name' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'name')),
+								'id',
+						),
+				),
+				'Option' => array(
+						'table' => 'ophciexamination_attribute_option',
+						'match_fields' => array('id'),
+						'column_mappings' => array(
+								'attribute_id',
+								'subspecialty_name' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
+								'value',
+								'delimiter',
+								'id',
 						),
 				),
 		));

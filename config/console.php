@@ -18,6 +18,9 @@
  */
 
 $config = array(
+	'import' => array(
+		'application.modules.MEHCommands.components.*',
+	),
 	'params' => array(
 		'import_contacts_username' => '',
 		'import_contacts_password' => '',
