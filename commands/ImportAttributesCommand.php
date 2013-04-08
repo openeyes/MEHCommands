@@ -31,11 +31,20 @@ class ImportAttributesCommand extends ImportGdataCommand {
 								'id',
 						),
 				),
+				'Element' => array(
+						'table' => 'ophciexamination_attribute_element',
+						'match_fields' => array('id'),
+						'column_mappings' => array(
+								'attribute_id',
+								'element_type_name' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'name')),
+								'id',
+						),
+				),
 				'Option' => array(
 						'table' => 'ophciexamination_attribute_option',
 						'match_fields' => array('id'),
 						'column_mappings' => array(
-								'attribute_id',
+								'attribute_element_id',
 								'subspecialty_name' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
 								'value',
 								'delimiter',
