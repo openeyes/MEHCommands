@@ -19,7 +19,7 @@
 
 class ImportAttributesCommand extends ImportGdataCommand {
 	public function run($args) {
-		$data = $this->loadData('Attributes', array('Attribute', 'Option'));
+		$data = $this->loadData('Attributes', array('Attribute', 'Element', 'Option'));
 		$this->importData($data, array(
 				'Attribute' => array(
 						'table' => 'ophciexamination_attribute',
