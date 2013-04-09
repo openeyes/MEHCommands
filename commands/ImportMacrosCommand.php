@@ -57,8 +57,6 @@ class ImportMacrosCommand extends ImportGdataCommand {
 				';
 		$criteria->condition = 's.name = :subspecialty_name AND t.name = :firm_name';
 		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
-		echo "($firm_name)\n";
-		echo "($subspecialty_name)\n";
 		if($firm = Firm::model()->find($criteria)) {
 			return $firm->id;
 		} else {
