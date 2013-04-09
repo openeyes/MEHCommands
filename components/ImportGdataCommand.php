@@ -102,7 +102,7 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 					} else if(is_array($oecolumn_name)) {
 						// Method mapping
 						$method = $oecolumn_name['method'];
-						$args = $oecolumn_name['args'];
+						$args = @$oecolumn_name['args'];
 						$oecolumn_name = $oecolumn_name['field'];
 					}
 					$index = array_search($gcolumn_name, $columns);
