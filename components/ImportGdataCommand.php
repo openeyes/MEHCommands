@@ -44,9 +44,16 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				$query = new Zend_Gdata_Spreadsheets_DocumentQuery();
 				$query->setSpreadsheetKey($spreadsheet_key);
 				$worksheet_feed = $ss->getWorksheetFeed($query);
-				foreach($worksheet_feed->entries as $worksheet) {
-					if(!in_array($worksheet->title, $worksheet_titles)) {
-						continue;
+				foreach($worksheet_titles as $worksheet_title) {
+					$found = false;
+					foreach($worksheet_feed->entries as $worksheet) {
+						if($worksheet->title == $worksheet_title) {
+							$found = true;
+							break;
+						}
+					}
+					if(!$found) {
+						throw new CException('Worksheet not found: '.$worksheet_title);
 					}
 					$worksheet_key = basename($worksheet->id);
 					$query = new Zend_Gdata_Spreadsheets_CellQuery();
@@ -91,6 +98,11 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 			}
 			$match_condition = implode(' AND ', $match_condition);
 			$columns = array_shift($rows);
+			if(@$mappings[$worksheet_name]['truncate']) {
+				echo 'Truncating '.$worksheet_name." ... ";
+				Yii::app()->db->createCommand()->truncateTable($table);
+				echo "done\n";
+			}
 			echo 'Importing '.$worksheet_name." ";
 			foreach($rows as $row_index => $row) {
 				$row_import = array();
