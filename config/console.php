@@ -1,5 +1,8 @@
 <?php
 return array(
+	'import' => array(
+		'application.modules.MEHCommands.components.*',
+	),
 	'commandMap' => array(
 		'checkfirms' => array(
 			'class' => 'application.modules.MEHCommands.commands.CheckFirmsCommand',
