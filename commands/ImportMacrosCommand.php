@@ -17,113 +17,51 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-
-class ImportMacrosCommand extends CConsoleCommand {
+class ImportMacrosCommand extends ImportGdataCommand {
 	public function run($args) {
-		require_once 'Zend/Loader.php';
-		Zend_Loader::loadClass('Zend_Gdata');
-		Zend_Loader::loadClass('Zend_Gdata_AuthSub');
-		Zend_Loader::loadClass('Zend_Gdata_ClientLogin');
-		Zend_Loader::loadClass('Zend_Gdata_Spreadsheets');
-		$service = Zend_Gdata_Spreadsheets::AUTH_SERVICE_NAME;
-		$client = Zend_Gdata_ClientLogin::getHttpClient(Yii::app()->params['gdata_username'], Yii::app()->params['gdata_password'], $service);
-		$ss = new Zend_Gdata_Spreadsheets($client);
-		$spreadsheet_feed = $ss->getSpreadsheetFeed();
-		
-		// Load worksheets into array
-		$data = array();
-		foreach ($spreadsheet_feed->entries as $workbook) {
-			if ($workbook->title == 'Correspondence Macros') {
-				$spreadsheet_key = basename($workbook->id);
-				$query = new Zend_Gdata_Spreadsheets_DocumentQuery();
-				$query->setSpreadsheetKey($spreadsheet_key);
-				$worksheet_feed = $ss->getWorksheetFeed($query);
-				foreach($worksheet_feed->entries as $worksheet) {
-					if(!in_array($worksheet->title, array('firm_letter_macro'))) {
-						continue;
-					}
-					$worksheet_key = basename($worksheet->id);
-					$query = new Zend_Gdata_Spreadsheets_CellQuery();
-					$query->setSpreadsheetKey($spreadsheet_key);
-					$query->setWorksheetId($worksheet_key);
-					$cell_feed = $ss->getCellFeed($query);
-					foreach ($cell_feed as $cell) {
-						$data[(string)$worksheet->getTitle()][$cell->cell->getRow()][$cell->cell->getColumn()] = $cell->cell->getText();
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Import worksheets
-		 * - $table_mappings[]['table']: OpenEyes table name
-		 * - $table_mappings[]['match_fields']: Which field(s) to use for matching existing records
-		 */
-		$table_mappings = array(
+		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro'));
+		$this->importData($data, array(
 				'firm_letter_macro' => array(
 						'table' => 'et_ophcocorrespondence_firm_letter_macro',
 						'match_fields' => array('name', 'firm_id'),
+						'column_mappings' => array(
+								'name',
+								'firm_label' => array('field' => 'firm_id', 'method' => 'FindFirm'),
+								'display_order',
+								'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
+								'body',
+								'recipient_patient',
+								'recipient_doctor',
+								'cc_patient',
+								'cc_doctor',
+								'use_nickname',
+						),
 				),
-		);
-		$column_mappings = array(
-				'firm_letter_macro' => array(
-						'name',
-						'firm_id',
-						'display_order',
-						'episode_status_id',
-						'body',
-						'recipient_patient',
-						'recipient_doctor',
-						'cc_patient',
-						'cc_doctor',
-						'use_nickname',
-				),
-		);
-		foreach($data as $worksheet_name => $rows) {
-			$table = $table_mappings[$worksheet_name]['table'];
-			$match_condition = array();
-			foreach($table_mappings[$worksheet_name]['match_fields'] as $match_field) {
-				$match_condition[] = $match_field.' = :'.$match_field;
-			}
-			$match_condition = implode(' AND ', $match_condition);
-			$columns = array_shift($rows);
-			echo 'Importing '.$worksheet_name." ";
-			foreach($rows as $row_index => $row) {
-				$row_import = array();
-				foreach($column_mappings[$worksheet_name] as $gcolumn_name => $oecolumn_name) {
-					if(is_int($gcolumn_name)) {
-						$gcolumn_name = $oecolumn_name;
-					}
-					$index = array_search($gcolumn_name, $columns);
-					if($index) {
-						$value = isset($row[$index]) ? $row[$index] : null;
-						if($value == '#N/A' || $value == 'NULL') {
-							$value = null;
-						}
-						$row_import[$oecolumn_name] = $value;
-					}
-				}
-				$match_params = array();
-				foreach($table_mappings[$worksheet_name]['match_fields'] as $match_field) {
-					$match_params[':'.$match_field] = $row_import[$match_field];
-				}
-				$existing_id = Yii::app()->db->createCommand()
-					->select('id')
-					->from($table)
-					->where($match_condition)
-					->queryScalar($match_params);
-				if($existing_id) {
-					$result = Yii::app()->db->createCommand()
-						->update($table, $row_import, $match_condition, $match_params);
-					echo "!";
-				} else {
-					$result = Yii::app()->db->createCommand()
-						->insert($table, $row_import);
-					echo "+";
-				}
-			}
-			echo " done.\n";
-		}
-		
+		));
 	}
+	
+	/**
+	 * Lookup attribute in model and return it's id
+	 * @param mixed $value
+	 * @param array $args
+	 * @return integer
+	 */
+	protected function mapFindFirm($value) {
+		$tokens = explode('|', $value);
+		$firm_name = trim($tokens[0]);
+		$subspecialty_name = trim($tokens[1]);
+		$criteria = new CDbCriteria;
+		$criteria->join = '
+				JOIN service_subspecialty_assignment ssa ON ssa.id = t.service_subspecialty_assignment_id
+				JOIN subspecialty s ON s.id = ssa.subspecialty_id
+				';
+		$criteria->condition = 's.name = :subspecialty_name AND t.name = :firm_name';
+		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
+		if($firm = Firm::model()->find($criteria)) {
+			return $firm->id;
+		} else {
+			return null;
+		}
+	}
+
 }
