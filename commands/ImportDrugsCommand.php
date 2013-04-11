@@ -133,7 +133,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 						'column_mappings' => array(
 								'name',
 								'id',
-								'subspecialty_id',
+								'subspecialty_name' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
 						),
 				),
 				'drug_set_item' => array(
@@ -161,7 +161,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 						'truncate' => true,
 						'column_mappings' => array(
 								'site_id',
-								'subspecialty_id',
+								'subspecialty_name' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
 								'drug_id',
 						),
 				),
