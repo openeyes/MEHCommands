@@ -20,7 +20,7 @@
 class CheckFirmsCommand extends CConsoleCommand {
 	public function run($args) {
 		foreach (Firm::model()->findAll() as $firm) {
-			if (!$firm->getConsultant()) {
+			if (!$firm->consultant) {
 				echo $firm->name."\n";
 			}
 		}
