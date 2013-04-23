@@ -34,7 +34,7 @@ class PopulateDiagnosesCommand extends CConsoleCommand {
 				$episode_diagnoses[$row['patient_id']] = $this->getEpisodeDiagnoses($row['patient_id']);
 			}
 
-			if (!isset($secondary_diagnoses[$row['patient_id'])) {
+			if (!isset($secondary_diagnoses[$row['patient_id']])) {
 				$secondary_diagnoses[$row['patient_id']] = $this->getSecondaryDiagnoses($row['patient_id']);
 			}
 
