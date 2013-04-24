@@ -17,38 +17,21 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportAttributesCommand extends ImportGdataCommand {
+class ImportTheatresCommand extends ImportGdataCommand {
+
 	public function run($args) {
-		$data = $this->loadData('Attributes', array('Attribute', 'Element', 'Option'));
+		$data = $this->loadData('Theatres', array('theatre'));
+
 		$this->importData($data, array(
-				'Attribute' => array(
-						'table' => 'ophciexamination_attribute',
+				'theatre' => array(
+						'table' => 'ophtroperationbooking_operation_theatre',
 						'match_fields' => array('id'),
 						'column_mappings' => array(
 								'name',
-								'label',
-								'element_type_name' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'name')),
 								'id',
-						),
-				),
-				'Element' => array(
-						'table' => 'ophciexamination_attribute_element',
-						'match_fields' => array('id'),
-						'column_mappings' => array(
-								'attribute_id',
-								'element_type_name' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'name')),
-								'id',
-						),
-				),
-				'Option' => array(
-						'table' => 'ophciexamination_attribute_option',
-						'match_fields' => array('id'),
-						'column_mappings' => array(
-								'attribute_element_id',
-								'subspecialty_name' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
-								'value',
-								'delimiter',
-								'id',
+								'code',
+								'display_order',
+								'site_short_name' =>  array('field' => 'site_id', 'method' => 'Find', 'args' => array('class' => 'Site', 'field' => 'short_name')),
 						),
 				),
 		));

@@ -44,9 +44,16 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				$query = new Zend_Gdata_Spreadsheets_DocumentQuery();
 				$query->setSpreadsheetKey($spreadsheet_key);
 				$worksheet_feed = $ss->getWorksheetFeed($query);
-				foreach($worksheet_feed->entries as $worksheet) {
-					if(!in_array($worksheet->title, $worksheet_titles)) {
-						continue;
+				foreach($worksheet_titles as $worksheet_title) {
+					$found = false;
+					foreach($worksheet_feed->entries as $worksheet) {
+						if($worksheet->title == $worksheet_title) {
+							$found = true;
+							break;
+						}
+					}
+					if(!$found) {
+						throw new CException('Worksheet not found: '.$worksheet_title);
 					}
 					$worksheet_key = basename($worksheet->id);
 					$query = new Zend_Gdata_Spreadsheets_CellQuery();
@@ -72,8 +79,11 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 	protected function mapFind($value, $args) {
 		$class = $args['class'];
 		$field = $args['field'];
-		if($record = BaseActiveRecord::model($class)->findByAttributes(array($field => $value))) {
-			return $record->id;
+		$records = BaseActiveRecord::model($class)->findAllByAttributes(array($field => $value));
+		if(count($records) > 1) {
+			throw new CException("More than one matching record in $class for $field = $value");
+		} else if(count($records) == 1) {
+			return $records[0]->id;
 		}
 	}
 
@@ -91,6 +101,11 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 			}
 			$match_condition = implode(' AND ', $match_condition);
 			$columns = array_shift($rows);
+			if(@$mappings[$worksheet_name]['truncate']) {
+				echo 'Truncating '.$worksheet_name." ... ";
+				Yii::app()->db->createCommand()->truncateTable($table);
+				echo "done\n";
+			}
 			echo 'Importing '.$worksheet_name." ";
 			foreach($rows as $row_index => $row) {
 				$row_import = array();
@@ -102,7 +117,7 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 					} else if(is_array($oecolumn_name)) {
 						// Method mapping
 						$method = $oecolumn_name['method'];
-						$args = $oecolumn_name['args'];
+						$args = @$oecolumn_name['args'];
 						$oecolumn_name = $oecolumn_name['field'];
 					}
 					$index = array_search($gcolumn_name, $columns);
@@ -121,13 +136,16 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				foreach($mappings[$worksheet_name]['match_fields'] as $match_field) {
 					$match_params[':'.$match_field] = $row_import[$match_field];
 				}
-				$existing_id = Yii::app()->db->createCommand()
+				$existing_ids = Yii::app()->db->createCommand()
 				->select('id')
 				->from($table)
 				->where($match_condition)
-				->queryScalar($match_params);
+				->queryColumn($match_params);
+				if(count($existing_ids) > 1) {
+					throw new CException("More than one existing record found");
+				}
 				try {
-					if($existing_id) {
+					if($existing_ids) {
 						$result = Yii::app()->db->createCommand()
 						->update($table, $row_import, $match_condition, $match_params);
 						echo "!";

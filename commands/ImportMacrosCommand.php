@@ -26,9 +26,9 @@ class ImportMacrosCommand extends ImportGdataCommand {
 						'match_fields' => array('name', 'firm_id'),
 						'column_mappings' => array(
 								'name',
-								'firm_id',
+								'firm_label' => array('field' => 'firm_id', 'method' => 'FindFirm'),
 								'display_order',
-								'episode_status_id',
+								'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
 								'body',
 								'recipient_patient',
 								'recipient_doctor',
@@ -39,4 +39,29 @@ class ImportMacrosCommand extends ImportGdataCommand {
 				),
 		));
 	}
+	
+	/**
+	 * Lookup attribute in model and return it's id
+	 * @param mixed $value
+	 * @param array $args
+	 * @return integer
+	 */
+	protected function mapFindFirm($value) {
+		$tokens = explode('|', $value);
+		$firm_name = trim($tokens[0]);
+		$subspecialty_name = trim($tokens[1]);
+		$criteria = new CDbCriteria;
+		$criteria->join = '
+				JOIN service_subspecialty_assignment ssa ON ssa.id = t.service_subspecialty_assignment_id
+				JOIN subspecialty s ON s.id = ssa.subspecialty_id
+				';
+		$criteria->condition = 's.name = :subspecialty_name AND t.name = :firm_name';
+		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
+		if($firm = Firm::model()->find($criteria)) {
+			return $firm->id;
+		} else {
+			return null;
+		}
+	}
+
 }
