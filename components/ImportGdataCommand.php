@@ -79,8 +79,11 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 	protected function mapFind($value, $args) {
 		$class = $args['class'];
 		$field = $args['field'];
-		if($record = BaseActiveRecord::model($class)->findByAttributes(array($field => $value))) {
-			return $record->id;
+		$records = BaseActiveRecord::model($class)->findAllByAttributes(array($field => $value));
+		if(count($records) > 1) {
+			throw new CException("More than one matching record in $class for $field = $value");
+		} else if(count($records) == 1) {
+			return $records[0]->id;
 		}
 	}
 
@@ -133,13 +136,16 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				foreach($mappings[$worksheet_name]['match_fields'] as $match_field) {
 					$match_params[':'.$match_field] = $row_import[$match_field];
 				}
-				$existing_id = Yii::app()->db->createCommand()
+				$existing_ids = Yii::app()->db->createCommand()
 				->select('id')
 				->from($table)
 				->where($match_condition)
-				->queryScalar($match_params);
+				->queryColumn($match_params);
+				if(count($existing_ids) > 1) {
+					throw new CException("More than one existing record found");
+				}
 				try {
-					if($existing_id) {
+					if($existing_ids) {
 						$result = Yii::app()->db->createCommand()
 						->update($table, $row_import, $match_condition, $match_params);
 						echo "!";
