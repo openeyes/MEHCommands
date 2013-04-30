@@ -18,6 +18,8 @@
  */
 
 class CFHImportCommand extends CConsoleCommand {
+	public $source;
+
 	public function run($args) {
 		$c = curl_init();
 		curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
@@ -28,6 +30,10 @@ class CFHImportCommand extends CConsoleCommand {
 		$esc = escapeshellarg($tmpfile);
 		`unzip -o $esc 1>/dev/null 2>/dev/null`;
 		@unlink($tmpfile);
+
+		if (!$this->source = ImportSource::model()->find('name=?',array('Connecting for Health'))) {
+			throw new Exception("Source not found: Connecting for Health");
+		}
 
 		$fp = fopen('etrust.csv','r');
 
@@ -68,7 +74,7 @@ class CFHImportCommand extends CConsoleCommand {
 	}
 
 	public function processInstitution($data) {
-		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address')))->find('lower(name)=?',array(strtolower($data[1])))) {
+		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address'),'import'))->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
 				throw new Exception("Unable to save contact: ".print_r($contact->getErrors(),true));
@@ -77,9 +83,16 @@ class CFHImportCommand extends CConsoleCommand {
 			$institution = new Institution;
 			$institution->contact_id = $contact->id;
 			$institution->name = $data[1];
-			$institution->code = $data[0];
 			if (!$institution->save()) {
 				throw new Exception("Unable to save institution: ".print_r($institution->getErrors(),true));
+			}
+
+			$import_institution = new ImportInstitution;
+			$import_institution->source_id = $this->source->id;
+			$import_institution->remote_id = $data[0];
+			$import_institution->institution_id = $institution->id;
+			if (!$import_institution->save()) {
+				throw new Exception("Unable to save import institution: ".print_r($import_institution->getErrors(),true));
 			}
 		} else {
 			$contact = $institution->contact;
@@ -108,6 +121,9 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->county = $data[8];
 			$address->postcode = $data[9];
 
+			echo "I [$institution->name] [$address->address1 $address->address2 $address->city $address->postcode]\n";
+			echo "I [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
+
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
 			}
@@ -116,51 +132,36 @@ class CFHImportCommand extends CConsoleCommand {
 		}
 	}
 
-	public function findSite($institution_id, $data) {
-		if ($site = Site::model()->find('institution_id=? and code=?',array($institution_id,substr($data[0],3,2)))) {
-			return $site;
-		}
-
-		$sites = array();
-
-		foreach (Site::model()->with(array('contact'=>array('with'=>'address')))->findAll('institution_id=? and lower(name)=? and postcode=?',array($institution_id,$data[1],$data[9])) as $i => $site) {
-			$sites[] = $site;
-		}
-
-		if (count($sites) >1) {
-			echo "Multiple sites found:\n";
-			echo "Institution: $institution_id\n";
-			print_r($data);
-			exit;
-		} else if (count($sites) == 1) {
-			return $sites[0];
-		}
-
-		return false;
-	}
-
 	public function processSite($data) {
 		$institution_code = substr($data[0],0,3);
 
-		if (!$institution = Institution::model()->find('code=?',array($institution_code))) {
+		if (!$institution = Institution::model()->with('import')->find('source_id=? and remote_id=?',array($this->source->id,$institution_code))) {
 			echo "Institution not found: $institution_code\n";
 			exit;
 		}
 
-		if (!$site = $this->findSite($institution->id,$data)) {
+		if (!$site = Site::model()->with(array('contact'=>array('with'=>'address'),'import'))->find('institution_id=? and source_id=? and remote_id=?',array($institution->id,$this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
 				throw new Exception("Unable to save contact: ".print_r($contact->getErrors(),true));
 			}
 
 			$site = new Site;
-			$site->code = substr($data[0],3,2);
 			$site->institution_id = $institution->id;
 			$site->name = $data[1];
 			$site->contact_id = $contact->id;
 
 			if (!$site->save()) {
 				throw new Exception("Unable to save site: ".print_r($site->getErrors(),true));
+			}
+
+			$import_site = new ImportSite;
+			$import_site->source_id = $this->source->id;
+			$import_site->remote_id = $data[0];
+			$import_site->site_id = $site->id;
+
+			if (!$import_site->save()) {
+				throw new Exception("Unable to save import_site: ".print_r($import_site->getErrors(),true));
 			}
 		}
 
@@ -186,6 +187,9 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->city = $data[7];
 			$address->county = $data[8];
 			$address->postcode = $data[9];
+
+			echo "S [$site->name] [$address->address1 $address->address2 $address->city $address->postcode]\n";
+			echo "S [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
 
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
