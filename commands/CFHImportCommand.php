@@ -19,35 +19,77 @@
 
 class CFHImportCommand extends CConsoleCommand {
 	public $source;
+	public $lookup = array();
+	public $consultants = array();
 
 	public function run($args) {
+		if (!$this->source = ImportSource::model()->find('name=?',array('Connecting for Health'))) {
+			throw new Exception("Source not found: Connecting for Health");
+		}
+
+		$this->refreshSites();
+		$this->refreshConsultants();
+	}
+
+	public function getCFH($name) {
 		$c = curl_init();
 		curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
-		curl_setopt($c,CURLOPT_URL,"http://nww.connectingforhealth.nhs.uk/ods/downloads/zfiles/etrust.zip");
-		$tmpfile = tempnam("/tmp","TEMP").'.zip';
+		curl_setopt($c,CURLOPT_URL,"http://nww.connectingforhealth.nhs.uk/ods/downloads/zfiles/$name.zip");
+		$tmpfile = tempnam("/tmp","TEMP");
+		@unlink($tmpfile);
+		$tmpfile .= '.zip';
 		file_put_contents($tmpfile,curl_exec($c));
 		chdir("/tmp");
 		$esc = escapeshellarg($tmpfile);
 		`unzip -o $esc 1>/dev/null 2>/dev/null`;
 		@unlink($tmpfile);
-
-		if (!$this->source = ImportSource::model()->find('name=?',array('Connecting for Health'))) {
-			throw new Exception("Source not found: Connecting for Health");
+		$data = array();
+		foreach (explode(chr(10),trim(file_get_contents($name.'.csv'))) as $item) {
+			if ($name == 'etrust') {
+				$data[] = $this->sanitiseEtrust(str_getcsv($item));
+			} else {
+				$data[] = str_getcsv($item);
+			}
 		}
+		@unlink($name.'.csv');
 
-		$fp = fopen('etrust.csv','r');
+		return $data;
+	}
 
-		while ($data = fgetcsv($fp)) {
-			$this->process($this->sanitise($data));
+	public function refreshSites() {
+		foreach ($this->getCFH('etrust') as $site) {
+			$this->processSiteOrInstitution($site);
+			$this->lookup[] = $site[0];
 		}
-
-		fclose($fp);
-		@unlink('etrust.csv');
 
 		echo "\n";
 	}
 
-	public function sanitise($data) {
+	public function refreshConsultants() {
+		// this serves as a lookup table which massively speeds up the import as we can skip already imported records without having to query the database
+		foreach (Yii::app()->db->createCommand()
+			->select("p.remote_id, s.remote_id as site_code, i.remote_id as institution_code")
+			->from("person p")
+			->join("contact c","p.contact_id = c.id")
+			->leftJoin("contact_location cl","cl.contact_id = c.id")
+			->leftJoin("site s","cl.site_id = s.id")
+			->leftJoin("institution i","cl.institution_id = i.id")
+			->where("p.source_id = ?",array($this->source->id))
+			->queryAll() as $row) {
+
+			$code = $row['site_code'] ? $row['site_code'] : $row['institution_code'];
+
+			$this->consultants[$code][] = $row['remote_id'];
+		}
+
+		foreach ($this->getCFH('econcur') as $consultant) {
+			$this->processConsultant($consultant);
+		}
+
+		echo "\n";
+	}
+
+	public function sanitiseEtrust($data) {
 		$data[1] = ucwords(strtolower($data[1]));
 		$data[1] = preg_replace('/ nhs/i',' NHS',$data[1]);
 		$data[1] = preg_replace('/ and/i',' and',$data[1]);
@@ -63,7 +105,7 @@ class CFHImportCommand extends CConsoleCommand {
 		return $data;
 	}
 
-	public function process($data) {
+	public function processSiteOrInstitution($data) {
 		if (strlen($data[0]) == 3) {
 			$this->processInstitution($data);
 		} else if (strlen($data[0]) == 5) {
@@ -74,7 +116,7 @@ class CFHImportCommand extends CConsoleCommand {
 	}
 
 	public function processInstitution($data) {
-		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address'),'import'))->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
+		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address')))->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
 				throw new Exception("Unable to save contact: ".print_r($contact->getErrors(),true));
@@ -82,17 +124,11 @@ class CFHImportCommand extends CConsoleCommand {
 
 			$institution = new Institution;
 			$institution->contact_id = $contact->id;
+			$institution->source_id = $this->source->id;
+			$institution->remote_id = $data[0];
 			$institution->name = $data[1];
 			if (!$institution->save()) {
 				throw new Exception("Unable to save institution: ".print_r($institution->getErrors(),true));
-			}
-
-			$import_institution = new ImportInstitution;
-			$import_institution->source_id = $this->source->id;
-			$import_institution->remote_id = $data[0];
-			$import_institution->institution_id = $institution->id;
-			if (!$import_institution->save()) {
-				throw new Exception("Unable to save import institution: ".print_r($import_institution->getErrors(),true));
 			}
 		} else {
 			$contact = $institution->contact;
@@ -115,14 +151,14 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->county != $data[8] ||
 			$address->postcode != $data[9]) {
 
+			echo "I [$institution->name] [$address->address1 $address->address2 $address->city $address->county $address->postcode]\n";
+			echo "I [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
+
 			$address->address1 = $data[4];
 			$address->address2 = $data[5];
 			$address->city = $data[7];
 			$address->county = $data[8];
 			$address->postcode = $data[9];
-
-			echo "I [$institution->name] [$address->address1 $address->address2 $address->city $address->postcode]\n";
-			echo "I [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
 
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
@@ -130,17 +166,19 @@ class CFHImportCommand extends CConsoleCommand {
 
 			echo ".";
 		}
+
+		$this->lookup[$data[0]] = $institution->id;
 	}
 
 	public function processSite($data) {
 		$institution_code = substr($data[0],0,3);
 
-		if (!$institution = Institution::model()->with('import')->find('source_id=? and remote_id=?',array($this->source->id,$institution_code))) {
+		if (!$institution = Institution::model()->find('source_id=? and remote_id=?',array($this->source->id,$institution_code))) {
 			echo "Institution not found: $institution_code\n";
 			exit;
 		}
 
-		if (!$site = Site::model()->with(array('contact'=>array('with'=>'address'),'import'))->find('institution_id=? and source_id=? and remote_id=?',array($institution->id,$this->source->id,$data[0]))) {
+		if (!$site = Site::model()->with(array('contact'=>array('with'=>'address')))->find('institution_id=? and source_id=? and remote_id=?',array($institution->id,$this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
 				throw new Exception("Unable to save contact: ".print_r($contact->getErrors(),true));
@@ -148,20 +186,13 @@ class CFHImportCommand extends CConsoleCommand {
 
 			$site = new Site;
 			$site->institution_id = $institution->id;
+			$site->source_id = $this->source->id;
+			$site->remote_id = $data[0];
 			$site->name = $data[1];
 			$site->contact_id = $contact->id;
 
 			if (!$site->save()) {
 				throw new Exception("Unable to save site: ".print_r($site->getErrors(),true));
-			}
-
-			$import_site = new ImportSite;
-			$import_site->source_id = $this->source->id;
-			$import_site->remote_id = $data[0];
-			$import_site->site_id = $site->id;
-
-			if (!$import_site->save()) {
-				throw new Exception("Unable to save import_site: ".print_r($import_site->getErrors(),true));
 			}
 		}
 
@@ -182,14 +213,14 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->county != $data[8] ||
 			$address->postcode != $data[9]) {
 
+			echo "S [$site->name] [$address->address1 $address->address2 $address->city $address->county $address->postcode]\n";
+			echo "S [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
+
 			$address->address1 = $data[4];
 			$address->address2 = $data[5];
 			$address->city = $data[7];
 			$address->county = $data[8];
 			$address->postcode = $data[9];
-
-			echo "S [$site->name] [$address->address1 $address->address2 $address->city $address->postcode]\n";
-			echo "S [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
 
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
@@ -197,5 +228,97 @@ class CFHImportCommand extends CConsoleCommand {
 
 			echo ".";
 		}
+
+		$this->lookup[$data[0]] = $site->id;
+	}
+
+	public function processConsultant($data) {
+		if (isset($this->consultants[$data[7]]) && in_array($data[0],$this->consultants[$data[7]])) {
+			return;
+		}
+
+		if (!$specialty = Specialty::model()->find('code=?',array($data[5]))) {
+			throw new Exception("Unknown specialty function code: {$data[5]}");
+		}
+
+		if (!$person = Person::model()->with('contact')->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
+			$contact = new Contact;
+
+			if ($specialty->default_is_surgeon) {
+				$contact->title = $data[4] == 'M' ? 'Mr' : 'Miss';
+			} else {
+				$contact->title = 'Dr';
+			}
+
+			$contact->first_name = $data[3];
+			$contact->last_name = $data[2];
+			if ($specialty->default_title) {
+				$contact->contact_label_id = $this->getContactLabel($specialty->default_title)->id;
+			}
+
+			if (!$contact->save()) {
+				throw new Exception("Unable to save contact: ".print_r($contact->getErrors(),true));
+			}
+
+			$person = new Person;
+			$person->source_id = $this->source->id;
+			$person->remote_id = $data[0];
+			$person->contact_id = $contact->id;
+
+			if (!$person->save()) {
+				throw new Exception("Unable to save person: ".print_r($person->getErrors(),true));
+			}
+
+			$person->setMetadata('gmc_number',$data[0]);
+			$person->setMetadata('practitioner_code',$data[1]);
+			$person->setMetadata('gender',$data[4]);
+		}
+
+		$contact = $person->contact;
+
+		if (strlen($data[7]) == 3) {
+			if ($institution = Institution::model()->find('remote_id=?',array($data[7]))) {
+				if (!$cl = ContactLocation::model()->find('contact_id=? and institution_id=?',array($contact->id,$institution->id))) {
+					$cl = new ContactLocation;
+					$cl->contact_id = $contact->id;
+					$cl->institution_id = $institution->id;
+
+					if (!$cl->save()) {
+						throw new Exception("Unable to save contact location: ".print_r($cl->getErrors(),true));
+					}
+				}
+			} else {
+				echo "Unknown institution: {$data[7]}\n";
+			}
+		} else {
+			if ($site = Site::model()->find('remote_id=?',array($data[7]))) {
+				if (!$cl = ContactLocation::model()->find('contact_id=? and site_id=?',array($contact->id,$site->id))) {
+					$cl = new ContactLocation;
+					$cl->contact_id = $contact->id;
+					$cl->site_id = $site->id;
+
+					if (!$cl->save()) {
+						throw new Exception("Unable to save contact location: ".print_r($cl->getErrors(),true));
+					}
+				}
+			} else {
+				echo "Unknown site: {$data[7]}\n";
+			}
+		}
+
+		echo ".";
+	}
+
+	public function getContactLabel($name) {
+		if ($cl = ContactLabel::model()->find('name=?',array($name))) {
+			return $cl;
+		}
+		$cl = new ContactLabel;
+		$cl->name = $name;
+		if (!$cl->save()) {
+			throw new Exception("Unable to save contact label: ".print_r($cl->getErrors(),true));
+		}
+
+		return $cl;
 	}
 }
