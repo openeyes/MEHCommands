@@ -21,13 +21,19 @@ class CFHImportCommand extends CConsoleCommand {
 	public $source;
 	public $lookup = array();
 	public $consultants = array();
+	public $sites = array();
 
 	public function run($args) {
 		if (!$this->source = ImportSource::model()->find('name=?',array('Connecting for Health'))) {
 			throw new Exception("Source not found: Connecting for Health");
 		}
 
+		echo "Updating sites/institutions ";
+
 		$this->refreshSites();
+
+		echo "Updating consultants ";
+
 		$this->refreshConsultants();
 	}
 
@@ -57,9 +63,13 @@ class CFHImportCommand extends CConsoleCommand {
 	}
 
 	public function refreshSites() {
-		foreach ($this->getCFH('etrust') as $site) {
+		foreach ($this->getCFH('etrust') as $i => $site) {
 			$this->processSiteOrInstitution($site);
 			$this->lookup[] = $site[0];
+
+			if ($i %100 == 0) {
+				echo ".";
+			}
 		}
 
 		echo "\n";
@@ -82,8 +92,20 @@ class CFHImportCommand extends CConsoleCommand {
 			$this->consultants[$code][] = $row['remote_id'];
 		}
 
-		foreach ($this->getCFH('econcur') as $consultant) {
+		foreach (Yii::app()->db->createCommand()->select("*")->from("institution")->queryAll() as $row) {
+			$this->sites[$row['remote_id']] = $row;
+		}
+
+		foreach (Yii::app()->db->createCommand()->select("*")->from("site")->queryAll() as $row) {
+			$this->sites[$row['remote_id']] = $row;
+		}
+
+		foreach ($this->getCFH('econcur') as $i => $consultant) {
 			$this->processConsultant($consultant);
+
+			if ($i %100 == 0) {
+				echo ".";
+			}
 		}
 
 		echo "\n";
@@ -151,9 +173,6 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->county != $data[8] ||
 			$address->postcode != $data[9]) {
 
-			echo "I [$institution->name] [$address->address1 $address->address2 $address->city $address->county $address->postcode]\n";
-			echo "I [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
-
 			$address->address1 = $data[4];
 			$address->address2 = $data[5];
 			$address->city = $data[7];
@@ -164,7 +183,7 @@ class CFHImportCommand extends CConsoleCommand {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
 			}
 
-			echo ".";
+			echo "+";
 		}
 
 		$this->lookup[$data[0]] = $institution->id;
@@ -213,9 +232,6 @@ class CFHImportCommand extends CConsoleCommand {
 			$address->county != $data[8] ||
 			$address->postcode != $data[9]) {
 
-			echo "S [$site->name] [$address->address1 $address->address2 $address->city $address->county $address->postcode]\n";
-			echo "S [{$data[1]}] [{$data[4]} {$data[5]} {$data[7]} {$data[8]} {$data[9]}]\n";
-
 			$address->address1 = $data[4];
 			$address->address2 = $data[5];
 			$address->city = $data[7];
@@ -226,7 +242,7 @@ class CFHImportCommand extends CConsoleCommand {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
 			}
 
-			echo ".";
+			echo "+";
 		}
 
 		$this->lookup[$data[0]] = $site->id;
@@ -277,7 +293,9 @@ class CFHImportCommand extends CConsoleCommand {
 		$contact = $person->contact;
 
 		if (strlen($data[7]) == 3) {
-			if ($institution = Institution::model()->find('remote_id=?',array($data[7]))) {
+			if (isset($this->sites[$data[7]])) {
+				$institution = $this->sites[$data[7]];
+
 				if (!$cl = ContactLocation::model()->find('contact_id=? and institution_id=?',array($contact->id,$institution->id))) {
 					$cl = new ContactLocation;
 					$cl->contact_id = $contact->id;
@@ -291,7 +309,9 @@ class CFHImportCommand extends CConsoleCommand {
 				echo "Unknown institution: {$data[7]}\n";
 			}
 		} else {
-			if ($site = Site::model()->find('remote_id=?',array($data[7]))) {
+			if (isset($this->sites[$data[7]])) {
+				$site = $this->sites[$data[7]];
+
 				if (!$cl = ContactLocation::model()->find('contact_id=? and site_id=?',array($contact->id,$site->id))) {
 					$cl = new ContactLocation;
 					$cl->contact_id = $contact->id;
@@ -306,7 +326,7 @@ class CFHImportCommand extends CConsoleCommand {
 			}
 		}
 
-		echo ".";
+		echo "+";
 	}
 
 	public function getContactLabel($name) {
