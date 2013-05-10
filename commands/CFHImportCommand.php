@@ -296,10 +296,10 @@ class CFHImportCommand extends CConsoleCommand {
 			if (isset($this->sites[$data[7]])) {
 				$institution = $this->sites[$data[7]];
 
-				if (!$cl = ContactLocation::model()->find('contact_id=? and institution_id=?',array($contact->id,$institution->id))) {
+				if (!$cl = ContactLocation::model()->find('contact_id=? and institution_id=?',array($contact->id,$institution['id']))) {
 					$cl = new ContactLocation;
 					$cl->contact_id = $contact->id;
-					$cl->institution_id = $institution->id;
+					$cl->institution_id = $institution['id'];
 
 					if (!$cl->save()) {
 						throw new Exception("Unable to save contact location: ".print_r($cl->getErrors(),true));
@@ -312,10 +312,10 @@ class CFHImportCommand extends CConsoleCommand {
 			if (isset($this->sites[$data[7]])) {
 				$site = $this->sites[$data[7]];
 
-				if (!$cl = ContactLocation::model()->find('contact_id=? and site_id=?',array($contact->id,$site->id))) {
+				if (!$cl = ContactLocation::model()->find('contact_id=? and site_id=?',array($contact->id,$site['id']))) {
 					$cl = new ContactLocation;
 					$cl->contact_id = $contact->id;
-					$cl->site_id = $site->id;
+					$cl->site_id = $site['id'];
 
 					if (!$cl->save()) {
 						throw new Exception("Unable to save contact location: ".print_r($cl->getErrors(),true));
