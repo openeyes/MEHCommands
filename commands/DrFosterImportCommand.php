@@ -75,7 +75,7 @@ class DrFosterImportCommand extends CConsoleCommand {
 		$postcode = $m[5];
 		$telephone = $m[6];
 
-		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address'),'import'))->find('source_id=? and remote_id=?',array($this->source->id,$remote_id))) {
+		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address')))->find('source_id=? and remote_id=?',array($this->source->id,$remote_id))) {
 			$contact = new Contact;
 			$contact->primary_phone = $telephone;
 			if (!$contact->save()) {
@@ -83,6 +83,8 @@ class DrFosterImportCommand extends CConsoleCommand {
 			}
 
 			$institution = new Institution;
+			$institution->source_id = $this->source->id;
+			$institution->remote_id = $remote_id;
 			$institution->name = $name;
 			$institution->contact_id = $contact->id;
 
@@ -90,14 +92,7 @@ class DrFosterImportCommand extends CConsoleCommand {
 				throw new Exception("Unable to save institution: ".print_r($institution->getErrors(),true));
 			}
 
-			$import_institution = new ImportInstitution;
-			$import_institution->source_id = $this->source->id;
-			$import_institution->institution_id = $institution->id;
-			$import_institution->remote_id = $remote_id;
-
-			if (!$import_institution->save()) {
-				throw new Exception("Unable to save import institution: ".print_r($import_institution->getErrors(),true));
-			}
+			echo "+";
 		}
 
 		$contact = $institution->contact;
@@ -125,7 +120,7 @@ class DrFosterImportCommand extends CConsoleCommand {
 			$address->postcode = $postcode;
 			$address->country_id = 1;
 
-			echo ".";
+			echo "u";
 
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address,true));
