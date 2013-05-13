@@ -136,29 +136,50 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				foreach($mappings[$worksheet_name]['match_fields'] as $match_field) {
 					$match_params[':'.$match_field] = $row_import[$match_field];
 				}
-				$existing_ids = Yii::app()->db->createCommand()
-				->select('id')
+				$existing = Yii::app()->db->createCommand()
+				->select('*')
 				->from($table)
 				->where($match_condition)
-				->queryColumn($match_params);
-				if(count($existing_ids) > 1) {
+				->queryAll(true, $match_params);
+				if(count($existing) > 1) {
 					throw new CException("More than one existing record found");
 				}
-				try {
-					if($existing_ids) {
-						$result = Yii::app()->db->createCommand()
-						->update($table, $row_import, $match_condition, $match_params);
-						echo "!";
+				if($existing) {
+					
+					// See if it needs updating
+					$update = false;
+					foreach($row_import as $field => $value) {
+						if($existing[0][$field] != $value) {
+							$update = true;
+							break;
+						}
+					}
+					
+					if($update) {
+						try {
+							$result = Yii::app()->db->createCommand()
+							->update($table, $row_import, $match_condition, $match_params);
+							echo "!";
+						} catch(CDbException $e) {
+							echo "\nError updating row in $table\n";
+							var_dump($row);
+							var_dump($row_import);
+							throw $e;
+						}
 					} else {
+						echo ".";
+					}
+				} else {
+					try {
 						$result = Yii::app()->db->createCommand()
 						->insert($table, $row_import);
 						echo "+";
+					} catch(CDbException $e) {
+						echo "\nError adding row to $table\n";
+						var_dump($row);
+						var_dump($row_import);
+						throw $e;
 					}
-				} catch(CDbException $e) {
-					echo "\nError importing row into $table\n";
-					var_dump($row);
-					var_dump($row_import);
-					throw $e;
 				}
 			}
 			echo " done.\n";
