@@ -46,6 +46,9 @@ return array(
 		'importcontacts' => array(
 			'class' => 'application.modules.MEHCommands.commands.ImportContactsCommand',
 		),
+		'importdrugs' => array(
+			'class' => 'application.modules.MEHCommands.commands.ImportDrugsCommand',
+		),
 		'importmacros' => array(
 			'class' => 'application.modules.MEHCommands.commands.ImportMacrosCommand',
 		),
