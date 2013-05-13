@@ -77,7 +77,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 						'column_mappings' => array(
 								'name',
 								'id',
-								'display_order',
+								//'display_order',
 						),
 				),
 				'drug_route_option' => array(
@@ -96,7 +96,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 								'name',
 								'id',
 								'long_name',
-								'display_order',
+								//'display_order',
 						),
 				),
 				'drug_duration' => array(
