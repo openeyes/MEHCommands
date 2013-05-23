@@ -120,7 +120,7 @@ class DrFosterImportCommand extends CConsoleCommand {
 			$address->postcode = $postcode;
 			$address->country_id = 1;
 
-			echo "u";
+			if ($address->id) echo "u";
 
 			if (!$address->save()) {
 				throw new Exception("Unable to save address: ".print_r($address,true));
