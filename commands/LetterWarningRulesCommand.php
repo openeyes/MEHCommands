@@ -79,7 +79,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule2->rule_type_id = $type2->id;
 		$rule2->show_warning = true;
-		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you have the correct money or ask the relative/friend/carer who is collecting you to make sure they bring some money to cover the prescription.";
+		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money to cover the prescription cost.";
 		$rule2->emphasis = true;
 		$rule2->strong = false;
 		$rule2->save();
