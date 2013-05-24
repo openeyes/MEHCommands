@@ -53,7 +53,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type1->id;
 		$rule->parent_rule_id = $rule1->id;
-		$rule->theatre_id = 22;
+		$rule->theatre_id = 25;
 		$rule->show_warning = false;
 		$rule->save();
 
