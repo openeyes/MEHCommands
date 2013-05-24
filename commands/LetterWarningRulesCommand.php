@@ -111,17 +111,18 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 
 		$rule3 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule3->rule_type_id = $type3->id;
-		$rule3->show_warning = false;
+		$rule3->show_warning = true;
+		$rule3->is_child = true;
+		$rule3->warning_text = "Please contact the Children's Ward as soon as possible on 0207 566 2595 to discuss pre-operative instructions";
+		$rule3->emphasis = false;
+		$rule3->strong = true;
 		$rule3->save();
 
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type3->id;
 		$rule->parent_rule_id = $rule3->id;
-		$rule->is_child = true;
 		$rule->site_id = 5;
-		$rule->warning_text = "Please contact the Children's Ward as soon as possible on 0207 566 2595 to discuss pre-operative instructions";
-		$rule->emphasis = false;
-		$rule->strong = true;
+		$rule->show_warning = false;
 		$rule->save();
 
 		$type4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
