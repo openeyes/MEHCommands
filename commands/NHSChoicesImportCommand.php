@@ -51,7 +51,7 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 		return $cl;
 	}
 
-	function refreshOptometrists($page=52) {
+	function refreshOptometrists($page=1) {
 		$html = $this->curl->get('http://www.nhs.uk/Search/Pages/Results.aspx?q=optometrist&collection=all_results&page='.$page);
 
 		preg_match_all('/<h2><a href="(http:\/\/www\.nhs\.uk\/[a-z]+\/[a-z]+\/[a-z]+\/([a-z]+\/)?([a-z]+\/)?defaultview\.aspx\?id=[0-9]+).*?'.'>(.*?)<\/a>/',$html,$m);
