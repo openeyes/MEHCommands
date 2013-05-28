@@ -167,5 +167,13 @@ class LetterContactRulesCommand extends CConsoleCommand {
 		$contact8->site_id = 9;
 		$contact8->refuse_telephone = '020 8211 8323';
 		$contact8->save();
+
+		$contact9 = new OphTrOperationbooking_Letter_Contact_Rule;
+		$contact9->rule_order = 1;
+		$contact9->parent_rule_id = null;
+		$contact9->firm_id = 19;
+		$contact9->theatre_id = 25;
+		$contact9->refuse_telephone = '020 7566 2205';
+		$contact9->save();
 	}
 }
