@@ -51,15 +51,21 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 		return $cl;
 	}
 
-	function refreshOptometrists($page=1) {
+	function refreshOptometrists($page=52) {
 		$html = $this->curl->get('http://www.nhs.uk/Search/Pages/Results.aspx?q=optometrist&collection=all_results&page='.$page);
 
-		preg_match_all('/<h2><a href="(http:\/\/www\.nhs\.uk\/services\/opticians\/[a-z]+\/defaultview\.aspx\?id=[0-9]+)".*?'.'>[A-Z][a-z]+ - (.*?) \(?<strong>Optometrist<\/strong>/',$html,$m);
+		preg_match_all('/<h2><a href="(http:\/\/www\.nhs\.uk\/[a-z]+\/[a-z]+\/[a-z]+\/([a-z]+\/)?([a-z]+\/)?defaultview\.aspx\?id=[0-9]+).*?'.'>(.*?)<\/a>/',$html,$m);
 
 		foreach ($m[1] as $i => $url) {
-			$name = $m[2][$i];
+			$name = trim($m[4][$i]);
 
-			$this->processOptometrist($url,$name);
+			if (preg_match('/optometrist/i',$name)) {
+				$name = preg_replace('/^.*? - /','',$name);
+				$name = preg_replace('/ <.*$/','',$name);
+				$name = preg_replace('/ \(.*$/','',$name);
+
+				$this->processOptometrist($url,$name);
+			}
 		}
 
 		if (preg_match('/">Next<\/a>/',$html)) {
