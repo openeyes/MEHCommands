@@ -73,14 +73,14 @@ class LetterContactRulesCommand extends CConsoleCommand {
 		$contact->parent_rule_id = $contact2->id;
 		$contact->theatre_id = 21;
 		$contact->refuse_telephone = '020 7566 2311';
-		$contact->refuse_title = 'Admission Coordinator';
+		$contact->refuse_title = 'the Admission Coordinator';
 		$contact->save();
 
 		$contact = new OphTrOperationbooking_Letter_Contact_Rule;
 		$contact->parent_rule_id = $contact1->id;
 		$contact->subspecialty_id = 11;
 		$contact->refuse_telephone = '020 7566 2258';
-		$contact->refuse_title = 'Paediatrics and Strabismus Admission Coordinator';
+		$contact->refuse_title = 'the Paediatrics and Strabismus Admission Coordinator';
 		$contact->health_telephone = '0207 566 2595 and ask to speak to a nurse';
 		$contact->save();
 
@@ -95,7 +95,7 @@ class LetterContactRulesCommand extends CConsoleCommand {
 		$contact->parent_rule_id = $contact1->id;
 		$contact->subspecialty_id = 14;
 		$contact->refuse_telephone = '020 7566 2258';
-		$contact->refuse_title = 'Paediatrics and Strabismus Admission Coordinator';
+		$contact->refuse_title = 'the Paediatrics and Strabismus Admission Coordinator';
 		$contact->health_telephone = '0207 566 2595 and ask to speak to a nurse';
 		$contact->save();
 
@@ -116,7 +116,7 @@ class LetterContactRulesCommand extends CConsoleCommand {
 		$contact->parent_rule_id = $contact2->id;
 		$contact->theatre_id = 22;
 		$contact->refuse_telephone = '020 8967 5648';
-		$contact->refuse_title = 'Admission Coordinator';
+		$contact->refuse_title = 'the Admission Coordinator';
 		$contact->save();
 
 		$contact3 = new OphTrOperationbooking_Letter_Contact_Rule;
