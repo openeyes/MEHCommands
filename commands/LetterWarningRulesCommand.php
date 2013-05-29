@@ -53,7 +53,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type1->id;
 		$rule->parent_rule_id = $rule1->id;
-		$rule->theatre_id = 22;
+		$rule->theatre_id = 25;
 		$rule->show_warning = false;
 		$rule->save();
 
@@ -79,7 +79,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule2->rule_type_id = $type2->id;
 		$rule2->show_warning = true;
-		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you have the correct money or ask the relative/friend/carer who is collecting you to make sure they bring some money to cover the prescription.";
+		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money to cover the prescription cost.";
 		$rule2->emphasis = true;
 		$rule2->strong = false;
 		$rule2->save();
@@ -111,17 +111,18 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 
 		$rule3 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule3->rule_type_id = $type3->id;
-		$rule3->show_warning = false;
+		$rule3->show_warning = true;
+		$rule3->is_child = true;
+		$rule3->warning_text = "Please contact the Children's Ward as soon as possible on 0207 566 2595 to discuss pre-operative instructions";
+		$rule3->emphasis = false;
+		$rule3->strong = true;
 		$rule3->save();
 
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type3->id;
 		$rule->parent_rule_id = $rule3->id;
-		$rule->is_child = true;
 		$rule->site_id = 5;
-		$rule->warning_text = "Please contact the Children's Ward as soon as possible on 0207 566 2595 to discuss pre-operative instructions";
-		$rule->emphasis = false;
-		$rule->strong = true;
+		$rule->show_warning = false;
 		$rule->save();
 
 		$type4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
@@ -147,6 +148,39 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule->rule_type_id = $type4->id;
 		$rule->parent_rule_id = $rule4->id;
 		$rule->theatre_id = 22;
+		$rule->show_warning = false;
+		$rule->save();
+
+		$type5 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
+		$type5->name = 'Prescription charges';
+		$type5->save();
+
+		$rule5 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule5->rule_type_id = $type5->id;
+		$rule5->show_warning = true;
+		$rule5->warning_text = "Check whether you have to pay or are exempt from prescription charges.	If you are exempt you will need to provide proof that you are exempt every time you collect a prescription.  The prescription charge is £7.40 per item.";
+		$rule5->emphasis = true;
+		$rule5->strong = false;
+		$rule5->is_child = 0;
+		$rule5->save();
+
+		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule->rule_type_id = $type5->id;
+		$rule->firm_id = 19;
+		$rule->theatre_id = 9;
+		$rule->show_warning = false;
+		$rule->save();
+
+		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule->rule_type_id = $type5->id;
+		$rule->firm_id = 19;
+		$rule->theatre_id = 25;
+		$rule->show_warning = false;
+		$rule->save();
+
+		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule->rule_type_id = $type5->id;
+		$rule->subspecialty_id = 13;
 		$rule->show_warning = false;
 		$rule->save();
 	}
