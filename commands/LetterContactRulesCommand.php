@@ -87,7 +87,8 @@ class LetterContactRulesCommand extends CConsoleCommand {
 		$contact = new OphTrOperationbooking_Letter_Contact_Rule;
 		$contact->parent_rule_id = $contact1->id;
 		$contact->subspecialty_id = 13;
-		$contact->refuse_telephone = '020 7566 2205 and ask for Joyce Carmichael';
+		$contact->refuse_title = 'Joyce Carmichael';
+		$contact->refuse_telephone = '020 7566 2205';
 		$contact->health_telephone = '020 7253 3411 X4336 and ask for a Laser Nurse';
 		$contact->save();
 
