@@ -29,17 +29,45 @@ class ImportDataCommand extends CConsoleCommand {
 		return "Import data from csv into the database.\n";
 	}
 
+	public function usage($options) {
+		echo "\nPlease specify one of:\n\n";
+		foreach ($options as $option) {
+			echo $option."\n";
+		}
+		echo "\n";
+	}
+
 	/**
 	 * Parse csv files from Google Docs, process them into the right format for MySQL import, and import them
 	 */
 	public function run($args) {
+		$options = array('core');
+		foreach (Yii::app()->modules as $module => $stuff) {
+			if (EventType::model()->find('class_name=?',array($module))) {
+				$options[] = $module;
+			}
+		}
+
+		if (empty($args) || !in_array($args[0],$options)) {
+			$this->usage($options);
+			return;
+		}
 
 		// Initialise db
 		$connection = Yii::app()->db;
 		$command = $connection->createCommand("SET foreign_key_checks = 0;");
 		$row_count = $command->execute();
 
-		$path = Yii::app()->basePath . '/' . self::DATA_FOLDER . '/';
+		if ($args[0] == 'core') {
+			$path = Yii::app()->basePath.'/'.self::DATA_FOLDER.'/';
+		} else {
+			$path = Yii::app()->basePath.'/modules/'.$args[0].'/'.self::DATA_FOLDER . '/';
+			if (!file_exists($path)) {
+				echo "Path not found: $path\n";
+				exit;
+			}
+		}
+
 		foreach(glob($path."*.map") as $map_path) {
 			$table = substr(basename($map_path), 0, -4);
 			echo "Importing $table data...";
@@ -111,5 +139,4 @@ class ImportDataCommand extends CConsoleCommand {
 		//echo "$query\n";
 		$db->createCommand($query)->execute();
 	}
-
 }
