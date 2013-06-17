@@ -21,6 +21,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 	public function run($args) {
 		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
+		Yii::app()->db->createCommand("set foreign_key_checks = 0")->query();
 		Yii::app()->db->createCommand("delete from ophtroperationbooking_admission_letter_warning_rule")->query();
 		Yii::app()->db->createCommand("delete from ophtroperationbooking_admission_letter_warning_rule_type")->query();
 
@@ -129,27 +130,36 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$type4->name = 'Seating';
 		$type4->save();
 
+		$refractive = Subspecialty::model()->find('name=?',array('Refractive'));
+
 		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule4->rule_type_id = $type4->id;
+		$rule4->subspecialty_id = $refractive->id;
 		$rule4->show_warning = true;
 		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
 		$rule4->emphasis = false;
 		$rule4->strong = false;
 		$rule4->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type4->id;
-		$rule->parent_rule_id = $rule4->id;
-		$rule->theatre_id = 21;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule4->rule_type_id = $type4->id;
+		$rule4->firm_id = 19;
+		$rule4->theatre_id = 9;
+		$rule4->show_warning = true;
+		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
+		$rule4->emphasis = false;
+		$rule4->strong = false;
+		$rule4->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type4->id;
-		$rule->parent_rule_id = $rule4->id;
-		$rule->theatre_id = 22;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule4->rule_type_id = $type4->id;
+		$rule4->firm_id = 19;
+		$rule4->theatre_id = 25;
+		$rule4->show_warning = true;
+		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
+		$rule4->emphasis = false;
+		$rule4->strong = false;
+		$rule4->save();
 
 		$type5 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
 		$type5->name = 'Prescription charges';
