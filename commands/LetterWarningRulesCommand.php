@@ -85,12 +85,31 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2->strong = false;
 		$rule2->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->site_id = 1;
-		$rule->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.  Please ensure you, or the person collecting you, have the correct money/card payment to cover the prescription cost.";
-		$rule->save();
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 10;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->firm_id = 19;
+		$rule2_2->theatre_id = 9;
+		$rule2_2->show_warning = false;
+		$rule2_2->save();
+
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 10;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->firm_id = 19;
+		$rule2_2->theatre_id = 25;
+		$rule2_2->show_warning = false;
+		$rule2_2->save();
+
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 20;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->site_id = 1;
+		$rule2_2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money/card payment to cover the prescription cost.";
+		$rule2_2->save();
 
 		$type3 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
 		$type3->name = 'Admission Instruction';
