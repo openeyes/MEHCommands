@@ -80,7 +80,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule2->rule_type_id = $type2->id;
 		$rule2->show_warning = true;
-		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money to cover the prescription cost.";
+		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure that you or your friend/relative/carer who is collecting you has a credit card/debit card available to cover the prescription charges.";
 		$rule2->emphasis = true;
 		$rule2->strong = false;
 		$rule2->save();
@@ -88,22 +88,8 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type2->id;
 		$rule->parent_rule_id = $rule2->id;
-		$rule->subspecialty_id = 13;
-		$rule->show_warning = false;
-		$rule->save();
-
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->theatre_id = 21;
-		$rule->show_warning = false;
-		$rule->save();
-
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->theatre_id = 22;
-		$rule->show_warning = false;
+		$rule->site_id = 1;
+		$rule->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.  Please ensure you, or the person collecting you, have the correct money/card payment to cover the prescription cost.";
 		$rule->save();
 
 		$type3 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
