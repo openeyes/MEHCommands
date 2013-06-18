@@ -19,7 +19,7 @@
 
 class ImportMacrosCommand extends ImportGdataCommand {
 	public function run($args) {
-		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro'));
+		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
 				'firm_letter_macro' => array(
 						'table' => 'et_ophcocorrespondence_firm_letter_macro',
@@ -27,6 +27,22 @@ class ImportMacrosCommand extends ImportGdataCommand {
 						'column_mappings' => array(
 								'name',
 								'firm_label' => array('field' => 'firm_id', 'method' => 'FindFirm'),
+								'display_order',
+								'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
+								'body',
+								'recipient_patient',
+								'recipient_doctor',
+								'cc_patient',
+								'cc_doctor',
+								'use_nickname',
+						),
+				),
+				'subspecialty_letter_macro' => array(
+						'table' => 'et_ophcocorrespondence_subspecialty_letter_macro',
+						'match_fields' => array('name', 'subspecialty_id'),
+						'column_mappings' => array(
+								'name',
+								'subspecialty' => array('field' => 'subspecialty_id', 'method' => 'Find', 'args' => array('class' => 'Subspecialty', 'field' => 'name')),
 								'display_order',
 								'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
 								'body',

@@ -21,6 +21,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 	public function run($args) {
 		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
+		Yii::app()->db->createCommand("set foreign_key_checks = 0")->query();
 		Yii::app()->db->createCommand("delete from ophtroperationbooking_admission_letter_warning_rule")->query();
 		Yii::app()->db->createCommand("delete from ophtroperationbooking_admission_letter_warning_rule_type")->query();
 
@@ -79,31 +80,44 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule2->rule_type_id = $type2->id;
 		$rule2->show_warning = true;
-		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money to cover the prescription cost.";
+		$rule2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure that you or your friend/relative/carer who is collecting you has a credit card/debit card available to cover the prescription charges.";
 		$rule2->emphasis = true;
 		$rule2->strong = false;
 		$rule2->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->subspecialty_id = 13;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 10;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->firm_id = 19;
+		$rule2_2->theatre_id = 9;
+		$rule2_2->show_warning = false;
+		$rule2_2->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->theatre_id = 21;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 10;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->firm_id = 19;
+		$rule2_2->theatre_id = 25;
+		$rule2_2->show_warning = false;
+		$rule2_2->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type2->id;
-		$rule->parent_rule_id = $rule2->id;
-		$rule->theatre_id = 22;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 10;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->subspecialty_id = 13;
+		$rule2_2->show_warning = false;
+		$rule2_2->save();
+
+		$rule2_2 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule2_2->rule_order = 20;
+		$rule2_2->rule_type_id = $type2->id;
+		$rule2_2->parent_rule_id = $rule2->id;
+		$rule2_2->site_id = 1;
+		$rule2_2->warning_text = "You may be given a prescription after your treatment. This can be collected from our pharmacy on the ward, however unless you have an exemption certificate the standard prescription charge will apply.	Please ensure you, or the person collecting you, have the correct money/card payment to cover the prescription cost.";
+		$rule2_2->save();
 
 		$type3 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
 		$type3->name = 'Admission Instruction';
@@ -129,27 +143,36 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$type4->name = 'Seating';
 		$type4->save();
 
+		$refractive = Subspecialty::model()->find('name=?',array('Refractive'));
+
 		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule4->rule_type_id = $type4->id;
+		$rule4->subspecialty_id = $refractive->id;
 		$rule4->show_warning = true;
 		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
 		$rule4->emphasis = false;
 		$rule4->strong = false;
 		$rule4->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type4->id;
-		$rule->parent_rule_id = $rule4->id;
-		$rule->theatre_id = 21;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule4->rule_type_id = $type4->id;
+		$rule4->firm_id = 19;
+		$rule4->theatre_id = 9;
+		$rule4->show_warning = true;
+		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
+		$rule4->emphasis = false;
+		$rule4->strong = false;
+		$rule4->save();
 
-		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
-		$rule->rule_type_id = $type4->id;
-		$rule->parent_rule_id = $rule4->id;
-		$rule->theatre_id = 22;
-		$rule->show_warning = false;
-		$rule->save();
+		$rule4 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule4->rule_type_id = $type4->id;
+		$rule4->firm_id = 19;
+		$rule4->theatre_id = 25;
+		$rule4->show_warning = true;
+		$rule4->warning_text = "We would like to request that only 1 person should accompany you in order to ensure that adequate seating is available for patients";
+		$rule4->emphasis = false;
+		$rule4->strong = false;
+		$rule4->save();
 
 		$type5 = new OphTrOperationbooking_Admission_Letter_Warning_Rule_Type;
 		$type5->name = 'Prescription charges';
@@ -158,13 +181,14 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule5 = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule5->rule_type_id = $type5->id;
 		$rule5->show_warning = true;
-		$rule5->warning_text = "Check whether you have to pay or are exempt from prescription charges.	If you are exempt you will need to provide proof that you are exempt every time you collect a prescription.  The prescription charge is £7.40 per item.";
+		$rule5->warning_text = "Check whether you have to pay or are exempt from prescription charges.	If you are exempt you will need to provide proof that you are exempt every time you collect a prescription.";
 		$rule5->emphasis = true;
 		$rule5->strong = false;
 		$rule5->is_child = 0;
 		$rule5->save();
 
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule->parent_rule_id = $rule5->id;
 		$rule->rule_type_id = $type5->id;
 		$rule->firm_id = 19;
 		$rule->theatre_id = 9;
@@ -172,6 +196,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule->save();
 
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
+		$rule->parent_rule_id = $rule5->id;
 		$rule->rule_type_id = $type5->id;
 		$rule->firm_id = 19;
 		$rule->theatre_id = 25;
@@ -180,6 +205,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 
 		$rule = new OphTrOperationbooking_Admission_Letter_Warning_Rule;
 		$rule->rule_type_id = $type5->id;
+		$rule->parent_rule_id = $rule5->id;
 		$rule->subspecialty_id = 13;
 		$rule->show_warning = false;
 		$rule->save();
