@@ -107,7 +107,7 @@ class LetterWarningRulesCommand extends CConsoleCommand {
 		$rule2_2->rule_order = 10;
 		$rule2_2->rule_type_id = $type2->id;
 		$rule2_2->parent_rule_id = $rule2->id;
-		$rule2_2->subspecialty_id = 6;
+		$rule2_2->subspecialty_id = 13;
 		$rule2_2->show_warning = false;
 		$rule2_2->save();
 
