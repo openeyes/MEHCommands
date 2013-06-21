@@ -18,12 +18,12 @@
  */
 
 class ImportDrugsCommand extends ImportGdataCommand {
-	
+
 	public function run($args) {
 		$data = $this->loadData('Drugs', array('drug_type', 'drug_form', 'drug_route',
 				'drug_route_option', 'drug_frequency', 'drug_duration', 'drug', 'drug_set',
-				'drug_set_item', 'allergy', 'site_subspecialty_drug'));
-		
+				'drug_set_item', 'drug_set_item_taper', 'allergy', 'site_subspecialty_drug'));
+
 		// Munge site_subspecialty_drug data
 		$sites = Site::model()->findAll('institution_id = ?', array(1));
 		$rows = $data['site_subspecialty_drug'];
@@ -37,7 +37,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 			}
 		}
 		$data['site_subspecialty_drug'] = $site_rows;
-		
+
 		// Generate drug_allergy_assignment
 		$rows = $data['drug'];
 		$columns = array_shift($rows);
@@ -53,7 +53,7 @@ class ImportDrugsCommand extends ImportGdataCommand {
 			}
 		}
 		$data['drug_allergy_assignment'] = $daa_rows;
-		
+
 		$this->importData($data, array(
 				'drug_type' => array(
 						'table' => 'drug_type',
@@ -140,11 +140,23 @@ class ImportDrugsCommand extends ImportGdataCommand {
 						'table' => 'drug_set_item',
 						'match_fields' => array('id'),
 						'column_mappings' => array(
-								'drug_id',
 								'id',
+								'drug_id',
 								'drug_set_id',
-								'default_frequency_id',
-								'default_duration_id',
+								'dose',
+								'default_frequency_id' => 'frequency_id',
+								'default_duration_id' => 'duration_id',
+						),
+				),
+				'drug_set_item_taper' => array(
+						'table' => 'drug_set_item_taper',
+						'match_fields' => array('id'),
+						'column_mappings' => array(
+								'id',
+								'item_id',
+								'dose',
+								'frequency_id',
+								'duration_id',
 						),
 				),
 				'allergy' => array(
