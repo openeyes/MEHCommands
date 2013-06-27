@@ -34,6 +34,14 @@ class WaitingListContactRulesCommand extends CConsoleCommand {
 		$rule0 = new OphTrOperationbooking_Waiting_List_Contact_Rule;
 		$rule0->rule_order = 2;
 		$rule0->parent_rule_id = null;
+		$rule0->site_id = 9;
+		$rule0->name = 'Veronica Brade';
+		$rule0->telephone = '020 8211 8323';
+		$rule0->save();
+
+		$rule0 = new OphTrOperationbooking_Waiting_List_Contact_Rule;
+		$rule0->rule_order = 3;
+		$rule0->parent_rule_id = null;
 		$rule0->service_id = 2;
 		$rule0->name = 'the Admission Coordinator';
 		$rule0->telephone = '020 7566 2206/2292';
