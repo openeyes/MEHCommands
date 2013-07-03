@@ -19,8 +19,24 @@
 
 class ImportMacrosCommand extends ImportGdataCommand {
 	public function run($args) {
-		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro', 'subspecialty_letter_macro'));
+		$data = $this->loadData('Correspondence Macros', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
+				'letter_macro' => array(
+						'table' => 'et_ophcocorrespondence_letter_macro',
+						'match_fields' => array('name', 'site_id'),
+						'column_mappings' => array(
+								'name',
+								'site_name' => array('field' => 'site_id', 'method' => 'FindSite'),
+								'display_order',
+								'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
+								'body',
+								'recipient_patient',
+								'recipient_doctor',
+								'cc_patient',
+								'cc_doctor',
+								'use_nickname',
+						),
+				),
 				'firm_letter_macro' => array(
 						'table' => 'et_ophcocorrespondence_firm_letter_macro',
 						'match_fields' => array('name', 'firm_id'),
@@ -75,6 +91,18 @@ class ImportMacrosCommand extends ImportGdataCommand {
 		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
 		if($firm = Firm::model()->find($criteria)) {
 			return $firm->id;
+		} else {
+			return null;
+		}
+	}
+
+	protected function mapFindSite($value) {
+		$site_name = $value;
+		$criteria = new CDbCriteria;
+		$criteria->condition = 't.name = :site_name AND t.institution_id = 1';
+		$criteria->params = array(':site_name' => $site_name);
+		if($site = Site::model()->find($criteria)) {
+			return $site->id;
 		} else {
 			return null;
 		}
