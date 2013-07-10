@@ -41,12 +41,12 @@ class FetchUsersCommand extends CConsoleCommand
 		$link = mssql_connect($dbMuuParams['host'], $dbMuuParams['UID'], $dbMuuParams['PWD']);
 
 		if (!$link) {
-			mail(Yii::app()->params['alerts_email'],"[$hostname] FetchUsersCommand failed","Something went wrong while connecting to MSSQL");
+			mail(Config::get('alerts_email'),"[$hostname] FetchUsersCommand failed","Something went wrong while connecting to MSSQL");
 			exit;
 		}
 
 		if (!$selected = mssql_select_db($dbMuuParams['Database'], $link)) {
-			mail(Yii::app()->params['alerts_email'],"[$hostname] FetchUsersCommand failed","Couldn’t open database: $myDB");
+			mail(Config::get('alerts_email'),"[$hostname] FetchUsersCommand failed","Couldn’t open database: $myDB");
 			exit;
 		}
 
@@ -155,7 +155,7 @@ class FetchUsersCommand extends CConsoleCommand
 		}
 
 		if ($errors) {
-			mail(Yii::app()->params['alerts_email'],"[$hostname] FetchUsersCommand failed",$errors);
+			mail(Config::get('alerts_email'),"[$hostname] FetchUsersCommand failed",$errors);
 		}
 
 		echo "\n";

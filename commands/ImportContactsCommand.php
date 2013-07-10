@@ -27,7 +27,7 @@ class ImportContactsCommand extends CConsoleCommand {
 		Zend_Loader::loadClass('Zend_Gdata_Spreadsheets');
 
 		$service = Zend_Gdata_Spreadsheets::AUTH_SERVICE_NAME;
-		$client = Zend_Gdata_ClientLogin::getHttpClient(Yii::app()->params['gdata_username'], Yii::app()->params['gdata_password'], $service);
+		$client = Zend_Gdata_ClientLogin::getHttpClient(Config::get('gdata_username'), Config::get('gdata_password'), $service);
 
 		$ss = new Zend_Gdata_Spreadsheets($client);
 
