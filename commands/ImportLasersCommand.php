@@ -14,8 +14,8 @@ class ImportLasersCommand extends CConsoleCommand
 	private static $site_map = array(
 		'St Annes'   => "St Ann's",
 		'St Ann`s'   => "St Ann's",
-		'St Georges' => "St George's Hospital",
-		'St George`s' => "St George's Hospital",
+		'St Georges' => "St George's",
+		'St George`s' => "St George's",
 		'City_Road'  => "City Road",
 		'City_Road Clinic 3' => "City Road",
 	);
