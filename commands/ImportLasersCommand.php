@@ -15,6 +15,7 @@ class ImportLasersCommand extends CConsoleCommand
 		'St Annes'   => "St Ann's",
 		'St Ann`s'   => "St Ann's",
 		'St Georges' => "St George's Hospital",
+		'St George`s' => "St George's Hospital",
 		'City_Road'  => "City Road",
 		'City_Road Clinic 3' => "City Road",
 	);
