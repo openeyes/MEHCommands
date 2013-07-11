@@ -202,9 +202,11 @@ class ConsentFormsCommand extends CConsoleCommand {
 		$cfs->subspecialty_id = 16;
 		$cfs->save();
 
-		$cfs = new OphTrConsent_Leaflet_Subspecialty;
+		$firm = Firm::model()->find('name=?',array('Optometry'));
+
+		$cfs = new OphTrConsent_Leaflet_Firm;
 		$cfs->leaflet_id = $cf->id;
-		$cfs->subspecialty_id = 17;
+		$cfs->firm_id = $firm->id;
 		$cfs->save();
 
 		$cf = new OphTrConsent_Leaflet;
