@@ -197,6 +197,8 @@ class CFHImportCommand extends CConsoleCommand {
 			exit;
 		}
 
+		if ($institution_code == 'RP6') return;
+
 		if (!$site = Site::model()->with(array('contact'=>array('with'=>'address')))->find('institution_id=? and source_id=? and remote_id=?',array($institution->id,$this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
