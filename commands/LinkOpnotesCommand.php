@@ -17,7 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class LinkOpnotesCommand extends CConsoleCommand {
+class LinkOpnotesCommand extends CConsoleCommand
+{
 	public $event_map = array(
 		30945 => 30155,
 		25698 => 23667,
@@ -64,7 +65,8 @@ class LinkOpnotesCommand extends CConsoleCommand {
 	public $op;
 	public $opnote;
 
-	public function run($args) {
+	public function run($args)
+	{
 		$this->completed = OphTrOperationbooking_Operation_Status::model()->find('name=?',array('Completed'));
 		$this->op = EventType::model()->find('class_name=?',array('OphTrOperationbooking'));
 		$this->opnote = EventType::model()->find('class_name=?',array('OphTrOperationnote'));
@@ -94,7 +96,8 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		echo "Successfully matched $ok/".($ok+$bad)." opnotes.\n";
 	}
 
-	public function createLink($opnote_event_id, $operation_event_id) {
+	public function createLink($opnote_event_id, $operation_event_id)
+	{
 		if (!$proclist = ElementProcedureList::model()->find('event_id=?',array($opnote_event_id))) {
 			echo "Error: opnote event $opnote_event_id has no procedurelist!\n";
 			return false;
@@ -111,11 +114,12 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		if (strtotime($eo->last_modified_date) < strtotime($proclist->created_date)) {
 			$update .= ", last_modified_date = '$proclist->created_date', last_modified_user_id = $proclist->created_user_id";
 		}
-	 
+
 		Yii::app()->db->createCommand("update et_ophtroperationbooking_operation set $update where id = $eo->id")->query();
 	}
 
-	public function inferOperation($event_id) {
+	public function inferOperation($event_id)
+	{
 		if (isset($this->event_map[$event_id])) {
 			$this->createLink($event_id, $this->event_map[$event_id]);
 			return true;
@@ -204,7 +208,8 @@ class LinkOpnotesCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function operation_matches($operation_event, $opnote_event) {
+	public function operation_matches($operation_event, $opnote_event)
+	{
 		if (!$proclist = ElementProcedureList::model()->find('event_id=?',array($opnote_event->id))) {
 			return false;
 		}

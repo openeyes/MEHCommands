@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class Test5Command extends CConsoleCommand {
-	public function run($args) {
+class Test5Command extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::import('application.modules.OphCiExamination.models.*');
 
 		Yii::app()->session['user'] = User::model()->findByPk(1);

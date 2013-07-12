@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class FixBooking2Command extends CConsoleCommand {
-	public function run($args) {
+class FixBooking2Command extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
 		$bookings = unserialize(file_get_contents("/home/mark/bookings.dat"));

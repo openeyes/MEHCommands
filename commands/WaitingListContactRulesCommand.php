@@ -19,8 +19,10 @@
 
 Yii::import('application.modules.OphTrOperationbooking.models.*');
 
-class WaitingListContactRulesCommand extends CConsoleCommand {
-	public function run($args) {
+class WaitingListContactRulesCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::app()->db->createCommand("set foreign_key_checks = 0; delete from ophtroperationbooking_waiting_list_contact_rule; set foreign_key_checks = 1;")->query();
 
 		$rule0 = new OphTrOperationbooking_Waiting_List_Contact_Rule;
@@ -174,7 +176,7 @@ class WaitingListContactRulesCommand extends CConsoleCommand {
 		$rule->name = 'Sue Harney';
 		$rule->telephone = '020 7566 2339';
 		$rule->save();
-	
+
 		$rule = new OphTrOperationbooking_Waiting_List_Contact_Rule;
 		$rule->parent_rule_id = $rule6->id;
 		$rule->site_id = 9;

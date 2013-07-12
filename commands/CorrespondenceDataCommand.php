@@ -17,17 +17,20 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class CorrespondenceDataCommand extends CConsoleCommand {
-	
-	public function getName() {
+class CorrespondenceDataCommand extends CConsoleCommand
+{
+	public function getName()
+	{
 		return '';
 	}
-	
-	public function getHelp() {
+
+	public function getHelp()
+	{
 		return "";
 	}
 
-	public function run($args) {
+	public function run($args)
+	{
 		Yii::import('application.modules.OphCoCorrespondence.models.*');
 
 		foreach (LetterMacro::model()->findAll() as $lm) {

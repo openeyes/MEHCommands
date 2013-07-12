@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class DrugFrequencyOrderCommand extends CConsoleCommand {
-	public function run($args) {
+class DrugFrequencyOrderCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		foreach (array('od','bd','tid','qid','5/day','Every 15 mins','1/2 hourly','hourly','2 hourly','4-6 hourly prn','6 hourly','1/week','2/week','3/week','bedtime','morning','nocte','alt days','prn','other') as $i => $frequency) {
 			if ($df = DrugFrequency::model()->find('name=?',array($frequency))) {
 				$df->display_order = $i+1;

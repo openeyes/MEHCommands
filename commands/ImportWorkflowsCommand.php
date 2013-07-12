@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportWorkflowsCommand extends ImportGdataCommand {
-	public function run($args) {
+class ImportWorkflowsCommand extends ImportGdataCommand
+{
+	public function run($args)
+	{
 		$data = $this->loadData('Workflows', array('Workflow', 'Set', 'Item'));
 		$this->importData($data, array(
 				'Workflow' => array(

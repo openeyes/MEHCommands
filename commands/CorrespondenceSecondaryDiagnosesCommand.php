@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class CorrespondenceSecondaryDiagnosesCommand extends CConsoleCommand {
-	public function run($args) {
+class CorrespondenceSecondaryDiagnosesCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::import('application.modules.OphCoCorrespondence.models.*');
 
 		$lsg = LetterStringGroup::model()->find('name=?',array('Diagnosis'));

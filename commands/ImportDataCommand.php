@@ -17,19 +17,22 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportDataCommand extends CConsoleCommand {
-
+class ImportDataCommand extends CConsoleCommand
+{
 	const DATA_FOLDER = 'data/import';
 
-	public function getName() {
+	public function getName()
+	{
 		return 'Import Data Command.';
 	}
 
-	public function getHelp() {
+	public function getHelp()
+	{
 		return "Import data from csv into the database.\n";
 	}
 
-	public function usage($options) {
+	public function usage($options)
+	{
 		echo "\nPlease specify one of:\n\n";
 		foreach ($options as $option) {
 			echo $option."\n";
@@ -40,7 +43,8 @@ class ImportDataCommand extends CConsoleCommand {
 	/**
 	 * Parse csv files from Google Docs, process them into the right format for MySQL import, and import them
 	 */
-	public function run($args) {
+	public function run($args)
+	{
 		$options = array('core');
 		foreach (Yii::app()->modules as $module => $stuff) {
 			if (EventType::model()->find('class_name=?',array($module))) {
@@ -68,10 +72,10 @@ class ImportDataCommand extends CConsoleCommand {
 			}
 		}
 
-		foreach(glob($path."*.map") as $map_path) {
+		foreach (glob($path."*.map") as $map_path) {
 			$table = substr(basename($map_path), 0, -4);
 			echo "Importing $table data...";
-				
+
 			// Truncate existing data
 			$row_count = $connection->createCommand("TRUNCATE $table")->execute();
 
@@ -79,35 +83,35 @@ class ImportDataCommand extends CConsoleCommand {
 			$map = file($map_path);
 			$import_file_path = $path . trim($map[0]);
 			$export_columns = explode(',',trim($map[1]));
-				
+
 			$file = file($import_file_path);
 			$row_count = 0;
 			$block_size = 1000;
 			$values = array();
-			foreach($file as $index => $line) {
+			foreach ($file as $index => $line) {
 				if (!strlen(trim($line))) {
 					continue;
 				}
-				
-				if(!$index) {
+
+				if (!$index) {
 					$columns = str_getcsv($line, ',', '"');
 				} else {
 					$row_count++;
 					$output = array();
 					$record = str_getcsv($line, ',', '"');
-					foreach($export_columns as $column) {
+					foreach ($export_columns as $column) {
 						$column_index = array_search($column, $columns);
 						$output[] = $record[$column_index];
 					}
 					$values[] = $output;
-					if(!($row_count % $block_size)) {
+					if (!($row_count % $block_size)) {
 						// Insert values in blocks to better handle very large tables
 						$this->insertBlock($table, $export_columns, $values);
 						$values = array();
 					}
 				}
 			}
-			if(!empty($values)) {
+			if (!empty($values)) {
 				// Insert remaining values
 				$this->insertBlock($table, $export_columns, $values);
 			}
@@ -121,15 +125,16 @@ class ImportDataCommand extends CConsoleCommand {
 	 * @param array $columns
 	 * @param array $records
 	 */
-	protected function insertBlock($table, $columns, $records) {
+	protected function insertBlock($table, $columns, $records)
+	{
 		$db = Yii::app()->db;
-		foreach($columns as &$column) {
+		foreach ($columns as &$column) {
 			$column = $db->quoteColumnName($column);
 		}
 		$insert = array();
-		foreach($records as $record) {
-			foreach($record as &$field) {
-				if($field != 'NULL') {
+		foreach ($records as $record) {
+			foreach ($record as &$field) {
+				if ($field != 'NULL') {
 					$field = $db->quoteValue($field);
 				}
 			}

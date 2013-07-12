@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class MigrateSupportServiceFirmsCommand extends CConsoleCommand {
-	public function run($args) {
+class MigrateSupportServiceFirmsCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$ss_firms = array();
 		foreach (array('EDD','Optometry','Orthoptics','Ultrasound') as $name) {
 			if (!$firm_id = Yii::app()->db->createCommand()->select("id")->from("firm")->where("name=:name",array(':name'=>$name))->queryScalar()) {
@@ -112,7 +114,8 @@ class MigrateSupportServiceFirmsCommand extends CConsoleCommand {
 		Yii::app()->db->createCommand()->delete('specialty','id='.$support_services['id']);
 	}
 
-	public function getSupportServicesEpisode($patient_id, $ss_firm_ids, $deleted) {
+	public function getSupportServicesEpisode($patient_id, $ss_firm_ids, $deleted)
+	{
 		if ($episode = Yii::app()->db->createCommand()->select("*")->from("episode")->where("patient_id = :patient_id and support_services = :one and firm_id is null and deleted = :deleted",array(':patient_id'=>$patient_id,':one'=>1,'deleted'=>$deleted))->queryRow()) {
 			return $episode;
 		}

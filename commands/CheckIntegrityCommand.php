@@ -17,23 +17,25 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class CheckIntegrityCommand extends CConsoleCommand {
-
+class CheckIntegrityCommand extends CConsoleCommand
+{
 	var $db_name = 'oedevelopment';
 
-	public function getName() {
+	public function getName()
+	{
 		return 'Check Integrity Command.';
 	}
 
-	public function getHelp() {
+	public function getHelp()
+	{
 		return "Checks the referential integrity of the database.\n";
 	}
 
-	public function run($args) {
-
+	public function run($args)
+	{
 		echo "Integrity report\n";
 		echo "----------------\n\n";
-		
+
 		// Initialise db
 		$connection = Yii::app()->db;
 
@@ -41,21 +43,21 @@ class CheckIntegrityCommand extends CConsoleCommand {
 		$query = "SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :db_name AND REFERENCED_TABLE_NAME IS NOT NULL";
 		$keys = $connection->createCommand($query)->query(array(':db_name' => $this->db_name));
 
-		foreach($keys as $key) {
+		foreach ($keys as $key) {
 			$command = $connection->createCommand();
 			$command->select('REFERRING.*');
 			$command->from("{$key['TABLE_NAME']} REFERRING");
 			$command->leftJoin("{$key['REFERENCED_TABLE_NAME']} REFERENCED", "REFERRING.{$key['COLUMN_NAME']} = REFERENCED.{$key['REFERENCED_COLUMN_NAME']}");
 			$command->where("REFERRING.{$key['COLUMN_NAME']} IS NOT NULL AND REFERENCED.{$key['REFERENCED_COLUMN_NAME']} IS NULL");
 			$broken = $command->queryAll();
-			if($count = count($broken)) {
+			if ($count = count($broken)) {
 				echo "{$key['TABLE_NAME']}.{$key['COLUMN_NAME']} contains $count broken keys\n";
-				foreach($broken as $key => $line) {
+				foreach ($broken as $key => $line) {
 					echo implode(',',$line)."\n";
 				}
 			}
 		}
-		
+
 		echo "\n";
 	}
 

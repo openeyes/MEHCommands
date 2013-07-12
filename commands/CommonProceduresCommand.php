@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class CommonProceduresCommand extends CConsoleCommand {
-	public function run($args) {
+class CommonProceduresCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$oph = Specialty::model()->find('code=?',array('OPH'));
 
 		foreach (Subspecialty::model()->findAll('specialty_id=?',array($oph->id)) as $subspecialty) {

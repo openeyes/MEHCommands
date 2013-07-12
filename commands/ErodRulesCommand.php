@@ -17,15 +17,18 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ErodRulesCommand extends CConsoleCommand {
-	
-	public function getName() {
-	}
-	
-	public function getHelp() {
+class ErodRulesCommand extends CConsoleCommand
+{
+	public function getName()
+	{
 	}
 
-	public function run($args) {
+	public function getHelp()
+	{
+	}
+
+	public function run($args)
+	{
 		$uveitis = Subspecialty::model()->find('name=?',array('Uveitis'));
 		$mr = Subspecialty::model()->find('name=?',array('Medical Retinal'));
 

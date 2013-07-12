@@ -19,8 +19,10 @@
 
 require_once 'Zend/Loader.php';
 
-class ImportContactsCommand extends CConsoleCommand {
-	public function run($args) {
+class ImportContactsCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Zend_Loader::loadClass('Zend_Gdata');
 		Zend_Loader::loadClass('Zend_Gdata_AuthSub');
 		Zend_Loader::loadClass('Zend_Gdata_ClientLogin');

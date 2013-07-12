@@ -17,34 +17,36 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ExportDataCommand extends CConsoleCommand {
-	
+class ExportDataCommand extends CConsoleCommand
+{
 	const DATA_FOLDER = 'data/export';
 
-	public function getName() {
+	public function getName()
+	{
 		return 'Export Data Command.';
 	}
-	
-	public function getHelp() {
+
+	public function getHelp()
+	{
 		return "Export data from database to CSV files.\n";
 	}
 
-	public function run($args) {
-		
+	public function run($args)
+	{
 		// Initialise db
 		$connection = Yii::app()->db;
 		$tables = $connection->createCommand("SHOW TABLES")->queryColumn();
-		
+
 		$path = Yii::app()->basePath . '/' . self::DATA_FOLDER . '/';
-		foreach($tables as $table) {
+		foreach ($tables as $table) {
 			echo "Exporting $table...";
 			$columns = $connection->createCommand("SHOW COLUMNS FROM `$table`")->queryColumn();
 			$data = $connection->createCommand("SELECT * from `$table`")->queryAll();
-			if($data) {
+			if ($data) {
 				$file_output = fopen($path . $table . '.csv', 'w+');
 				fputcsv($file_output, $columns, ',', '"');
 				$records = 0;
-				foreach($data as $record) {
+				foreach ($data as $record) {
 					fputcsv($file_output, $record, ',', '"');
 					$records++;
 				}

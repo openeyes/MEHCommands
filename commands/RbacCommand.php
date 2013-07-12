@@ -31,16 +31,14 @@ EOD;
 
     public function run($args)
 	{
-		if (($this->_authManager = Yii::app()->authManager) === null)
-		{
+		if (($this->_authManager = Yii::app()->authManager) === null) {
 			echo "No authManager configured.\n";
 			return;
 		}
 
 		echo "Rebuild OpenEyes basic RBAC permissions? [Yes|No]\n";
 
-		if (!strncasecmp(trim(fgets(STDIN)), 'y', 1))
-		{
+		if (!strncasecmp(trim(fgets(STDIN)), 'y', 1)) {
 			$this->_authManager->clearAll();
 
 			$this->_authManager->createOperation('create User', 'create User');
@@ -57,9 +55,7 @@ EOD;
 			$role->addChild('update User');
 			$role->addChild('delete User');
 			$role->addChild('Rbac');
-		}
-		else
-		{
+		} else {
 			echo "Exiting.\n";
 		}
 	}

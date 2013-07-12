@@ -17,15 +17,18 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class FirmSecretaryFaxNumbersCommand extends CConsoleCommand {
-	
-	public function getName() {
-	}
-	
-	public function getHelp() {
+class FirmSecretaryFaxNumbersCommand extends CConsoleCommand
+{
+	public function getName()
+	{
 	}
 
-	public function run($args) {
+	public function getHelp()
+	{
+	}
+
+	public function run($args)
+	{
 		$fp = fopen("/tmp/fax.csv","r");
 
 		while ($data = fgetcsv($fp)) {
@@ -55,7 +58,8 @@ class FirmSecretaryFaxNumbersCommand extends CConsoleCommand {
 		fclose($fp);
 	}
 
-	public function getFirm($firm_code, $subspecialty_name) {
+	public function getFirm($firm_code, $subspecialty_name)
+	{
 		if (!$subspecialty = Subspecialty::model()->find('name=?',array($subspecialty_name))) {
 			echo "Subspecialty not found: $subspecialty_name\n";
 		}

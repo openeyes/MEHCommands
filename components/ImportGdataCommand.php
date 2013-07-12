@@ -17,15 +17,16 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-abstract class ImportGdataCommand extends CConsoleCommand {
-
+abstract class ImportGdataCommand extends CConsoleCommand
+{
 	/**
 	 * Load a Gdata spreadsheet into an array
 	 * @param string $spreadsheet_title
 	 * @param array $worksheet_titles
 	 * @return array
 	 */
-	protected function loadData($spreadsheet_title, $worksheet_titles = null) {
+	protected function loadData($spreadsheet_title, $worksheet_titles = null)
+	{
 		require_once 'Zend/Loader.php';
 		Zend_Loader::loadClass('Zend_Gdata');
 		Zend_Loader::loadClass('Zend_Gdata_AuthSub');
@@ -44,15 +45,15 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				$query = new Zend_Gdata_Spreadsheets_DocumentQuery();
 				$query->setSpreadsheetKey($spreadsheet_key);
 				$worksheet_feed = $ss->getWorksheetFeed($query);
-				foreach($worksheet_titles as $worksheet_title) {
+				foreach ($worksheet_titles as $worksheet_title) {
 					$found = false;
-					foreach($worksheet_feed->entries as $worksheet) {
-						if($worksheet->title == $worksheet_title) {
+					foreach ($worksheet_feed->entries as $worksheet) {
+						if ($worksheet->title == $worksheet_title) {
 							$found = true;
 							break;
 						}
 					}
-					if(!$found) {
+					if (!$found) {
 						throw new CException('Worksheet not found: '.$worksheet_title);
 					}
 					$worksheet_key = basename($worksheet->id);
@@ -61,7 +62,7 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 					$query->setWorksheetId($worksheet_key);
 					$cell_feed = $ss->getCellFeed($query);
 					foreach ($cell_feed as $cell) {
-						$data[(string)$worksheet->getTitle()][$cell->cell->getRow()][$cell->cell->getColumn()] = $cell->cell->getText();
+						$data[(string) $worksheet->getTitle()][$cell->cell->getRow()][$cell->cell->getColumn()] = $cell->cell->getText();
 					}
 				}
 			}
@@ -76,13 +77,14 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 	 * @param array $args
 	 * @return integer
 	 */
-	protected function mapFind($value, $args) {
+	protected function mapFind($value, $args)
+	{
 		$class = $args['class'];
 		$field = $args['field'];
 		$records = BaseActiveRecord::model($class)->findAllByAttributes(array($field => $value));
-		if(count($records) > 1) {
+		if (count($records) > 1) {
 			throw new CException("More than one matching record in $class for $field = $value");
-		} else if(count($records) == 1) {
+		} else if (count($records) == 1) {
 			return $records[0]->id;
 		}
 	}
@@ -92,48 +94,49 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 	 * @param array $data
 	 * @param array $mappings
 	 */
-	protected function importData($data, $mappings) {
-		foreach($data as $worksheet_name => $rows) {
+	protected function importData($data, $mappings)
+	{
+		foreach ($data as $worksheet_name => $rows) {
 			$table = $mappings[$worksheet_name]['table'];
 			$match_condition = array();
-			foreach($mappings[$worksheet_name]['match_fields'] as $match_field) {
+			foreach ($mappings[$worksheet_name]['match_fields'] as $match_field) {
 				$match_condition[] = $match_field.' = :'.$match_field;
 			}
 			$match_condition = implode(' AND ', $match_condition);
 			$columns = array_shift($rows);
-			if(@$mappings[$worksheet_name]['truncate']) {
+			if (@$mappings[$worksheet_name]['truncate']) {
 				echo 'Truncating '.$worksheet_name." ... ";
 				Yii::app()->db->createCommand()->truncateTable($table);
 				echo "done\n";
 			}
 			echo 'Importing '.$worksheet_name." ";
-			foreach($rows as $row_index => $row) {
+			foreach ($rows as $row_index => $row) {
 				$row_import = array();
-				foreach($mappings[$worksheet_name]['column_mappings'] as $gcolumn_name => $oecolumn_name) {
+				foreach ($mappings[$worksheet_name]['column_mappings'] as $gcolumn_name => $oecolumn_name) {
 					$method = null;
-					if(is_int($gcolumn_name)) {
+					if (is_int($gcolumn_name)) {
 						// Straight mapping
 						$gcolumn_name = $oecolumn_name;
-					} else if(is_array($oecolumn_name)) {
+					} else if (is_array($oecolumn_name)) {
 						// Method mapping
 						$method = $oecolumn_name['method'];
 						$args = @$oecolumn_name['args'];
 						$oecolumn_name = $oecolumn_name['field'];
 					}
 					$index = array_search($gcolumn_name, $columns);
-					if($index) {
+					if ($index) {
 						$value = isset($row[$index]) ? $row[$index] : null;
-						if($value == '#N/A' || $value == 'NULL') {
+						if ($value == '#N/A' || $value == 'NULL') {
 							$value = null;
 						}
-						if($method) {
+						if ($method) {
 							$value = $this->{'map'.$method}($value, $args);
 						}
 						$row_import[$oecolumn_name] = $value;
 					}
 				}
 				$match_params = array();
-				foreach($mappings[$worksheet_name]['match_fields'] as $match_field) {
+				foreach ($mappings[$worksheet_name]['match_fields'] as $match_field) {
 					$match_params[':'.$match_field] = $row_import[$match_field];
 				}
 				$existing = Yii::app()->db->createCommand()
@@ -141,26 +144,26 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 				->from($table)
 				->where($match_condition)
 				->queryAll(true, $match_params);
-				if(count($existing) > 1) {
+				if (count($existing) > 1) {
 					throw new CException("More than one existing record found");
 				}
-				if($existing) {
-					
+				if ($existing) {
+
 					// See if it needs updating
 					$update = false;
-					foreach($row_import as $field => $value) {
-						if($existing[0][$field] != $value) {
+					foreach ($row_import as $field => $value) {
+						if ($existing[0][$field] != $value) {
 							$update = true;
 							break;
 						}
 					}
-					
-					if($update) {
+
+					if ($update) {
 						try {
 							$result = Yii::app()->db->createCommand()
 							->update($table, $row_import, $match_condition, $match_params);
 							echo "!";
-						} catch(CDbException $e) {
+						} catch (CDbException $e) {
 							echo "\nError updating row in $table\n";
 							var_dump($row);
 							var_dump($row_import);
@@ -174,7 +177,7 @@ abstract class ImportGdataCommand extends CConsoleCommand {
 						$result = Yii::app()->db->createCommand()
 						->insert($table, $row_import);
 						echo "+";
-					} catch(CDbException $e) {
+					} catch (CDbException $e) {
 						echo "\nError adding row to $table\n";
 						var_dump($row);
 						var_dump($row_import);

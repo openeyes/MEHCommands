@@ -60,7 +60,7 @@ class FetchUsersCommand extends CConsoleCommand
 				(
 						SELECT
 							MUUID_Staff_MUUID,
-							MUUID_Staff_DomainUsername, 
+							MUUID_Staff_DomainUsername,
 							MUUID_Staff_NameFirst,
 							MUUID_Staff_NameLast,
 							MUUID_Staff_EmailAddress,
@@ -84,7 +84,7 @@ class FetchUsersCommand extends CConsoleCommand
 			");
 
 			$i=0;
-			while($row = mssql_fetch_array($result)) {
+			while ($row = mssql_fetch_array($result)) {
 				if (!$user = User::model()->find('code = ?', array($row['MUUID_Staff_MUUID']))) {
 					$user = new User;
 					$user->active = 0;

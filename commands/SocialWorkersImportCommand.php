@@ -17,7 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class SocialWorkersImportCommand extends CConsoleCommand {
+class SocialWorkersImportCommand extends CConsoleCommand
+{
 	public $source;
 	public $sourceName = 'Social worker directory';
 	public $lookup = array();
@@ -26,7 +27,8 @@ class SocialWorkersImportCommand extends CConsoleCommand {
 	public $curl;
 	public $label_socialworker;
 
-	function run($args) {
+	function run($args)
+	{
 		if (!$this->source = ImportSource::model()->find('name=?',array($this->sourceName))) {
 			throw new Exception("Source not found: $this->sourceName");
 		}
@@ -42,7 +44,8 @@ class SocialWorkersImportCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	function getLabel($name) {
+	function getLabel($name)
+	{
 		if (!$cl = ContactLabel::model()->find('name=?',array($name))) {
 			$cl = new ContactLabel;
 			$cl->name = $name;
@@ -54,7 +57,8 @@ class SocialWorkersImportCommand extends CConsoleCommand {
 		return $cl;
 	}
 
-	function refreshSocialWorkers() {
+	function refreshSocialWorkers()
+	{
 		$html = $this->curl->post('http://www.socialworkdirectory.co.uk/',array(
 			'geoengne' => 1,
 			'geoengnw' => 1,
@@ -248,7 +252,8 @@ class SocialWorkersImportCommand extends CConsoleCommand {
 		}
 	}
 
-	function regex($regex,$data) {
+	function regex($regex,$data)
+	{
 		if (preg_match($regex,$data,$m)) {
 			return trim($m[1]);
 		}

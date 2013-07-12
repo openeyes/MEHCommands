@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class GrepLettersCommand extends CConsoleCommand {
-	public function run($args) {
+class GrepLettersCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		# $users = array('');
 		$users = array('ALL');
 
@@ -28,7 +30,7 @@ class GrepLettersCommand extends CConsoleCommand {
 		# $phrases = array('accessory lacrimal canal');
 		$phrases = array('accessory canaliculus','accessory cannaliculus','accessory cannlic','accessory cannilic','accessory lacrimal');
 
-		$user_ids = Yii::app()->db->createCommand("select * from user where username in ('" . join('\',\'',$users)."')")->queryAll(); 
+		$user_ids = Yii::app()->db->createCommand("select * from user where username in ('" . join('\',\'',$users)."')")->queryAll();
 		if ($users[0] == 'ALL') {
 			$user_ids[0]['first_name'] = 'ALL';
 			$user_ids[0]['last_name'] = 'USERS';

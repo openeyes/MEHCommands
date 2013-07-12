@@ -17,17 +17,20 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportConsultantsCommand extends CConsoleCommand {
-	
-	public function getName() {
+class ImportConsultantsCommand extends CConsoleCommand
+{
+	public function getName()
+	{
 		return '';
 	}
-	
-	public function getHelp() {
+
+	public function getHelp()
+	{
 		return "";
 	}
 
-	public function run($args) {
+	public function run($args)
+	{
 		if (!file_exists("/tmp/Econcur.csv")) {
 			die("File not found: /tmp/Econcur.csv\n");
 		}
@@ -59,7 +62,7 @@ class ImportConsultantsCommand extends CConsoleCommand {
 
 		$missing_institutions = array();
 
-		while($data = fgetcsv($fp)) {
+		while ($data = fgetcsv($fp)) {
 			// Ignore consultants not in the same specialty category as Bill (opthalmologists)
 			if ($data[5] == 130) {
 				if ($data[7] != 'RP6') {

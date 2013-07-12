@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class AddFirmCommand extends CConsoleCommand {
-	public function run($args) {
+class AddFirmCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		if (count($args) <3) {
 			echo "Usage: ./yiic addfirm <Firm name> <pas code> <subspecialty> [username / user_id]\n";
 			echo "\nUser is only required if different from the firm name.\n";

@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class OperationNameRulesCommand extends CConsoleCommand {
-	public function run($args) {
+class OperationNameRulesCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
 		Yii::app()->db->createCommand("delete from ophtroperationbooking_operation_name_rule")->query();

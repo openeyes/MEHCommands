@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ReportCommand extends CConsoleCommand {
-	public function run($args) {
+class ReportCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$letters = array();
 
 		foreach (Yii::app()->db->createCommand()
@@ -141,7 +143,8 @@ class ReportCommand extends CConsoleCommand {
 		}
 	}
 
-	public function associateLegacyEvents($patient) {
+	public function associateLegacyEvents($patient)
+	{
 		if (Element_OphLeEpatientletter_EpatientLetter::model()->find('epatient_hosnum=?',array($patient->hos_num))) {
 			$episode = new Episode;
 			$episode->patient_id = $patient->id;

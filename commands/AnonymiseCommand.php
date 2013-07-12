@@ -28,13 +28,14 @@
  * @author jamie
  *
  */
-class AnonymiseCommand extends CConsoleCommand {
-
-	public function run($args) {
+class AnonymiseCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		echo "This command is unfinished and will destroy your swiss cheese plant, are you really sure you want to run it? Type 'hell yeah' to continue: ";
 		$handle = fopen ("php://stdin","r");
 		$line = fgets($handle);
-		if(trim($line) != 'hell yeah'){
+		if (trim($line) != 'hell yeah') {
 			echo "Probably for the best!\n";
 			exit;
 		}
@@ -42,27 +43,29 @@ class AnonymiseCommand extends CConsoleCommand {
 		//$this->anonymisePatients();
 		Yii::app()->db->createCommand()->truncateTable('audit');
 		$this->clearElements();
-		foreach(Event::model()->findAll() as $event) {
+		foreach (Event::model()->findAll() as $event) {
 			$event->delete();
 		}
-		foreach(Episode::model()->findAll() as $episode) {
+		foreach (Episode::model()->findAll() as $episode) {
 			$episode->delete();
 		}
 	}
 
-	protected function clearElements() {
+	protected function clearElements()
+	{
 		$element_types = ElementType::model()->findAll();
-		foreach($element_types as $element_type) {
+		foreach ($element_types as $element_type) {
 			$model_name = $element_type->class_name;
 			echo "Clearing $model_name\n";
 			$elements = $model_name::model()->findAll();
-			foreach($elements as $element) {
+			foreach ($elements as $element) {
 				$element->delete();
 			}
 		}
 	}
 
-	protected function anonymisePatients() {
+	protected function anonymisePatients()
+	{
 		echo "Collecting data...";
 		$first_names = Yii::app()->db->createCommand()
 		->selectDistinct('title, first_name')
@@ -81,7 +84,7 @@ class AnonymiseCommand extends CConsoleCommand {
 		->queryColumn();
 		echo ".";
 		$phone_numbers = array();
-		for($i = 1; $i <= 500; $i++) {
+		for ($i = 1; $i <= 500; $i++) {
 			$phone_numbers[] = '0'.substr(number_format(time() * rand(),0,'',''),0,4)
 			. ' ' . substr(number_format(time() * rand(),0,'',''),0,6);
 		}
@@ -91,7 +94,7 @@ class AnonymiseCommand extends CConsoleCommand {
 		->from('address')
 		->where('address1 REGEXP \'[0-9]\'')
 		->queryColumn();
-		foreach($road_addresses as $index => $road_address) {
+		foreach ($road_addresses as $index => $road_address) {
 			$road_addresses[$index] = preg_replace('/\d+/', rand(1,300), $road_address);
 		}
 		echo ".";
@@ -116,7 +119,7 @@ class AnonymiseCommand extends CConsoleCommand {
 		->where("parent_class = 'Patient'")
 		->queryColumn();
 		echo "processing ".count($contact_ids)." contact records\n";
-		foreach($contact_ids as $contact_id) {
+		foreach ($contact_ids as $contact_id) {
 			$first_name = $first_names[array_rand($first_names)];
 			$title = trim($first_name['title']);
 			$first_name = trim($first_name['first_name']);
@@ -143,7 +146,7 @@ class AnonymiseCommand extends CConsoleCommand {
 		->where("parent_class = 'Patient'")
 		->queryColumn();
 		echo "processing ".count($address_ids)." address records\n";
-		foreach($address_ids as $address_id) {
+		foreach ($address_ids as $address_id) {
 			$address1 = trim($road_addresses[array_rand($road_addresses)]);
 			$location_address = $location_addresses[array_rand($location_addresses)];
 			$city = trim($location_address['city']);
@@ -173,7 +176,7 @@ class AnonymiseCommand extends CConsoleCommand {
 		->from('patient')
 		->queryColumn();
 		echo "processing ".count($patient_ids)." patient records\n";
-		foreach($patient_ids as $patient_id) {
+		foreach ($patient_ids as $patient_id) {
 			$hos_num = substr(number_format(time() * rand(),0,'',''),0,7);
 			$nhs_num = substr(number_format(time() * rand(),0,'',''),0,10);
 
@@ -190,7 +193,7 @@ class AnonymiseCommand extends CConsoleCommand {
 			$dob = date('Y-m-d', rand($dob_from, $dob_to));
 
 			// DOD (1%)
-			if(rand(1,100) == 1) {
+			if (rand(1,100) == 1) {
 				$earliest_dod = Yii::app()->db->createCommand()
 				->select('datetime')
 				->from('event')
@@ -199,7 +202,7 @@ class AnonymiseCommand extends CConsoleCommand {
 				->order('event.datetime DESC')
 				->queryScalar(array(':patient_id' => $patient_id));
 				$dod_from = ($earliest_dod) ? strtotime($earliest_dod) : strtotime($dob);
-				if($dod_from < strtotime('1980-01-01')) {
+				if ($dod_from < strtotime('1980-01-01')) {
 					$dod_from = strtotime('1980-01-01');
 				}
 				$dod_to = time();
@@ -214,9 +217,9 @@ class AnonymiseCommand extends CConsoleCommand {
 			->from('contact')
 			->where("parent_class = 'Patient' AND parent_id = :patient_id")
 			->queryScalar(array(':patient_id' => $patient_id));
-			if(in_array(strtolower($title), array('ms', 'mrs', 'miss'))) {
+			if (in_array(strtolower($title), array('ms', 'mrs', 'miss'))) {
 				$gender = 'F';
-			} else if(in_array(strtolower($title), array('mr'))) {
+			} else if (in_array(strtolower($title), array('mr'))) {
 				$gender = 'M';
 			} else {
 				$gender = (rand(1,3) == 1) ? 'F' : 'M';
@@ -243,9 +246,10 @@ class AnonymiseCommand extends CConsoleCommand {
 		echo "done\n";
 	}
 
-	protected function randomString($length = 10, $no_numbers = false) {
+	protected function randomString($length = 10, $no_numbers = false)
+	{
 		$characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		if(!$no_numbers) {
+		if (!$no_numbers) {
 			$characters .= '0123456789';
 		}
 		$randomString = '';

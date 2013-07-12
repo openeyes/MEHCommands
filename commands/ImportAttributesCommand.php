@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportAttributesCommand extends ImportGdataCommand {
-	public function run($args) {
+class ImportAttributesCommand extends ImportGdataCommand
+{
+	public function run($args)
+	{
 		$data = $this->loadData('Attributes', array('Attribute', 'Element', 'Option'));
 		$this->importData($data, array(
 				'Attribute' => array(

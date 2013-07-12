@@ -17,9 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportTheatresCommand extends ImportGdataCommand {
-
-	public function run($args) {
+class ImportTheatresCommand extends ImportGdataCommand
+{
+	public function run($args)
+	{
 		$data = $this->loadData('Theatres', array('theatre'));
 
 		$this->importData($data, array(

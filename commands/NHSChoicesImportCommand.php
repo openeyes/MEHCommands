@@ -17,7 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class NHSChoicesImportCommand extends CConsoleCommand {
+class NHSChoicesImportCommand extends CConsoleCommand
+{
 	public $source;
 	public $lookup = array();
 	public $consultants = array();
@@ -25,7 +26,8 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 	public $curl;
 	public $label_optometrist;
 
-	function run($args) {
+	function run($args)
+	{
 		if (!$this->source = ImportSource::model()->find('name=?',array('NHS Choices'))) {
 			throw new Exception("Source not found: NHS Choices");
 		}
@@ -39,7 +41,8 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 		$this->refreshOptometrists();
 	}
 
-	function getLabel($name) {
+	function getLabel($name)
+	{
 		if (!$cl = ContactLabel::model()->find('name=?',array($name))) {
 			$cl = new ContactLabel;
 			$cl->name = $name;
@@ -51,7 +54,8 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 		return $cl;
 	}
 
-	function refreshOptometrists($page=1) {
+	function refreshOptometrists($page=1)
+	{
 		$html = $this->curl->get('http://www.nhs.uk/Search/Pages/Results.aspx?q=optometrist&collection=all_results&page='.$page);
 
 		preg_match_all('/<h2><a href="(http:\/\/www\.nhs\.uk\/[a-z]+\/[a-z]+\/[a-z]+\/([a-z]+\/)?([a-z]+\/)?defaultview\.aspx\?id=[0-9]+).*?'.'>(.*?)<\/a>/',$html,$m);
@@ -77,7 +81,8 @@ class NHSChoicesImportCommand extends CConsoleCommand {
 		}
 	}
 
-	function processOptometrist($url,$name) {
+	function processOptometrist($url,$name)
+	{
 		preg_match('/([0-9]+)$/',$url,$m);
 		$remote_id = $m[1];
 

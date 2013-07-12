@@ -17,12 +17,14 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class DrFosterImportCommand extends CConsoleCommand {
+class DrFosterImportCommand extends CConsoleCommand
+{
 	public $source;
 	public $curl;
 	public $html;
 
-	public function run($args) {
+	public function run($args)
+	{
 		if (!$this->source = ImportSource::model()->find('name=?',array('Dr Foster Health'))) {
 			throw new Exception("Source not found: Dr Foster Health");
 		}
@@ -40,7 +42,8 @@ class DrFosterImportCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	public function process_uri($uri) {
+	public function process_uri($uri)
+	{
 		$html = $this->curl->get('http://www.drfosterhealth.co.uk/hospital-guide/full-hospital-list/'.$uri);
 
 		if (preg_match_all('/<a href="(\/hospital\-guide\/hospital\/private\/.*?\.aspx)">/',$html,$m)) {
@@ -50,7 +53,8 @@ class DrFosterImportCommand extends CConsoleCommand {
 		}
 	}
 
-	public function process_hospital($uri) {
+	public function process_hospital($uri)
+	{
 		preg_match('/-([0-9]+)\.aspx$/',$uri,$m);
 
 		$remote_id = $m[1];

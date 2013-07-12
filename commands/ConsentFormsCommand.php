@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ConsentFormsCommand extends CConsoleCommand {
-	public function run($args) {
+class ConsentFormsCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$cf = new OphTrConsent_Leaflet;
 		$cf->name = "Adnexal Patient information on Entropion";
 		$cf->save();
@@ -526,4 +528,3 @@ class ConsentFormsCommand extends CConsoleCommand {
 		$cfs->save();
 	}
 }
-

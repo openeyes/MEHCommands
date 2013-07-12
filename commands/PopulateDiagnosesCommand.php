@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class PopulateDiagnosesCommand extends CConsoleCommand {
-	public function run($args) {
+class PopulateDiagnosesCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$episode_diagnoses = array();
 
 		foreach (Yii::app()->db->createCommand()
@@ -58,7 +60,8 @@ class PopulateDiagnosesCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	public function diagnosis_in_list($disorder_id, $eye_id, $list) {
+	public function diagnosis_in_list($disorder_id, $eye_id, $list)
+	{
 		foreach ($list as $listItem) {
 			if ($disorder_id == $listItem['disorder_id']) {
 				if ($eye_id == $listItem['eye_id'] || $eye_id == 3 || $listItem['eye_id'] == 3) {
@@ -70,7 +73,8 @@ class PopulateDiagnosesCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function getEpisodeDiagnoses($patient_id) {
+	public function getEpisodeDiagnoses($patient_id)
+	{
 		$diagnoses = array();
 
 		foreach (Episode::model()->findAll('patient_id=?',array($patient_id)) as $episode) {
@@ -83,7 +87,8 @@ class PopulateDiagnosesCommand extends CConsoleCommand {
 		return $diagnoses;
 	}
 
-	public function getSecondaryDiagnoses($patient_id) {
+	public function getSecondaryDiagnoses($patient_id)
+	{
 		$diagnoses = array();
 
 		foreach (SecondaryDiagnosis::model()->findAll('patient_id=?',array($patient_id)) as $sd) {

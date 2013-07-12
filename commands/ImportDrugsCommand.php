@@ -17,9 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportDrugsCommand extends ImportGdataCommand {
-
-	public function run($args) {
+class ImportDrugsCommand extends ImportGdataCommand
+{
+	public function run($args)
+	{
 		$data = $this->loadData('Drugs', array('drug_type', 'drug_form', 'drug_route',
 				'drug_route_option', 'drug_frequency', 'drug_duration', 'drug', 'drug_set',
 				'drug_set_item', 'drug_set_item_taper', 'allergy', 'site_subspecialty_drug'));
@@ -30,8 +31,8 @@ class ImportDrugsCommand extends ImportGdataCommand {
 		$columns = array_shift($rows);
 		$site_rows = array($columns);
 		$index = array_search('site_id', $columns);
-		foreach($sites as $site) {
-			foreach($rows as $row) {
+		foreach ($sites as $site) {
+			foreach ($rows as $row) {
 				$row[$index] = $site->id;
 				$site_rows[] = $row;
 			}
@@ -47,8 +48,8 @@ class ImportDrugsCommand extends ImportGdataCommand {
 		));
 		$drug_id_index = array_search('id', $columns);
 		$allergy_id_index = array_search('allergy_id', $columns);
-		foreach($rows as $row) {
-			if($row[$allergy_id_index] &&$row[$allergy_id_index] != '#N/A' && $row[$allergy_id_index] != 'NULL') {
+		foreach ($rows as $row) {
+			if ($row[$allergy_id_index] &&$row[$allergy_id_index] != '#N/A' && $row[$allergy_id_index] != 'NULL') {
 				$daa_rows[] = array(1 => $row[$drug_id_index], 2 => $row[$allergy_id_index]);
 			}
 		}

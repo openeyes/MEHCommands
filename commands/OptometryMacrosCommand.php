@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class OptometryMacrosCommand extends CConsoleCommand {
-	public function run($args) {
+class OptometryMacrosCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$subspecialty = Subspecialty::model()->find('name=?',array('Optometry'));
 		//$ssa = ServiceSubspecialtyAssignment::model()->find('subspecialty_id=?',array($subspecialty->id));
 		//$firm = Firm::model()->find('name=? and service_subspecialty_assignment_id=?',array('Moorfields',$ssa->id));
@@ -28,7 +30,7 @@ class OptometryMacrosCommand extends CConsoleCommand {
 				'name' => 'RGP lens follow up',
 				'body' => 'Diagnosis: [eps] [epd]
 
-This [sub] was seen in the contact lens service today. [Pro] is currently wearing rigid gas permeable lenses in right/left/both eyes and achieves visual acuities RE 6/* and LE 6/*. 
+This [sub] was seen in the contact lens service today. [Pro] is currently wearing rigid gas permeable lenses in right/left/both eyes and achieves visual acuities RE 6/* and LE 6/*.
 
 Anterior eye examination reveals no changes to the condition and we shall review the patient again in ......... time for the contact lenses.',
 			),
@@ -36,7 +38,7 @@ Anterior eye examination reveals no changes to the condition and we shall review
 				'name' => 'Soft lens follow up',
 				'body' => 'Diagnosis: [eps] [epd]
 
-This [sub] was seen in the contact lens service today. [Pro] is currently wearing soft annual/monthly/daily lenses in right/left/both eyes and achieves visual acuities RE 6/* and LE 6/*. 
+This [sub] was seen in the contact lens service today. [Pro] is currently wearing soft annual/monthly/daily lenses in right/left/both eyes and achieves visual acuities RE 6/* and LE 6/*.
 
 Anterior eye examination reveals no changes to the condition and we shall review the patient again in ......... time for the contact lenses.',
 			),
@@ -44,7 +46,7 @@ Anterior eye examination reveals no changes to the condition and we shall review
 				'name' => 'Bandage lens follow up',
 				'body' => 'Diagnosis: [eps] [epd]
 
-This [sub] was seen in the contact lens service today. [Pro] has been fitted with a therapeutic bandage lens to right/left/both eyes. The lens is to be worn on an extended/daily wear basis. Visual acuities today are RE 6/* and LE 6/*. 
+This [sub] was seen in the contact lens service today. [Pro] has been fitted with a therapeutic bandage lens to right/left/both eyes. The lens is to be worn on an extended/daily wear basis. Visual acuities today are RE 6/* and LE 6/*.
 
 We shall review the patient again in ......... time for replacement of the therapeutic contact lenses.',
 			),
@@ -70,12 +72,12 @@ This [sub] has previously been seen in the contact lens service. Unfortunately t
 				'name' => 'New',
 				'body' => 'Diagnosis: [eps] [epd]
 
-This [sub] was seen in the Low Vision Clinic today.  [Pos] corrected Visual Acuities are R logMAR (snellen) L LogMAR (snellen).  At near [pro] can read N* @*cm. 
+This [sub] was seen in the Low Vision Clinic today.  [Pos] corrected Visual Acuities are R logMAR (snellen) L LogMAR (snellen).  At near [pro] can read N* @*cm.
 
 We demonstrated various aids and have loaned
-New spectacles were prescribed for DV/NV/no new spectacles were needed. 
+New spectacles were prescribed for DV/NV/no new spectacles were needed.
 
-The patient was advised 
+The patient was advised
 
 We will see the patient again in *months/ we have not arranged follow up in the Low Vision Clinic but will be happy to see again if needed.',
 			),
@@ -85,10 +87,10 @@ We will see the patient again in *months/ we have not arranged follow up in the 
 
 This [sub] was seen in the Low Vision Clinic today. [Pos] corrected Visual Acuities are R logMAR (snellen) L LogMAR (snellen). At near [pro] can read N* @*cm.
 
-We demonstrated various aids and have loaned 
+We demonstrated various aids and have loaned
 New spectacles were prescribed for DV/NV/no new spectacles were needed.
 
-[Pro] is getting on well at school/ [Pro] is finding difficulties with 
+[Pro] is getting on well at school/ [Pro] is finding difficulties with
 
 We will see the patient again in *months',
 			),

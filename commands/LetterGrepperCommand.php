@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class LetterGrepperCommand extends CConsoleCommand {
-	public function run($args) {
+class LetterGrepperCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$letter_grepper = LetterGrepper::grep(array(
 			//'sources' => array('correspondence','legacy','opnote'),
 			'sources' => array('correspondence','legacy'),
@@ -32,11 +34,13 @@ class LetterGrepperCommand extends CConsoleCommand {
 	}
 }
 
-class LetterGrepper {
+class LetterGrepper
+{
 	public $results = array();
 	public $whereParams = array();
 
-	static public function grep($params) {
+	static public function grep($params)
+	{
 		if (empty($params['phrases'])) {
 			throw new Exception('At least one phrase must be specified');
 		}
@@ -74,13 +78,15 @@ class LetterGrepper {
 		}
 	}
 
-	public function whereUser($user, $user_id_fields=true, $footer_field='l.footer') {
+	public function whereUser($user, $user_id_fields=true, $footer_field='l.footer')
+	{
 		$user = Yii::app()->db->createCommand()->select("user.*")->from("user")->where("lower(username) = '".strtolower($user)."'")->queryRow();
 		$fullname = $user['first_name'].' '.$user['last_name'];
 		return ' ( '.($user_id_fields ? "l.created_user_id = {$user['id']} or l.last_modified_user_id = {$user['id']} or $footer_field like '%$fullname%' " : "$footer_field like '%$fullname%' ").' ) ';
 	}
 
-	public function whereBody($phrase, $body_field='l.body') {
+	public function whereBody($phrase, $body_field='l.body')
+	{
 		$this->whereParams = array();
 
 		if (is_array($phrase)) {
@@ -101,14 +107,16 @@ class LetterGrepper {
 		}
 	}
 
-	public function whereDate($daterange) {
+	public function whereDate($daterange)
+	{
 		$where = '';
 		isset($daterange['from']) and $where .= " and datetime >= '{$daterange['from']} 00:00:00' ";
 		isset($daterange['to']) and $where .= " and datetime <= '{$daterange['to']} 23:59:59' ";
 		return $where;
 	}
 
-	public function searchCorrespondence($phrase, $user, $daterange=false) {
+	public function searchCorrespondence($phrase, $user, $daterange=false)
+	{
 		$where = $user ? $this->whereUser($user).' and ' : '';
 
 		$where .= $this->whereBody($phrase);
@@ -134,7 +142,8 @@ class LetterGrepper {
 		}
 	}
 
-	public function searchLegacy($phrase, $user=false, $daterange=false) {
+	public function searchLegacy($phrase, $user=false, $daterange=false)
+	{
 		$where = $user ? $this->whereUser($user,false,'l.letter_html').' and ' : '';
 
 		$where .= $this->whereBody($phrase,'l.letter_html');
@@ -174,7 +183,8 @@ class LetterGrepper {
 		}
 	}
 
-	public function associateLegacyEvents($patient) {
+	public function associateLegacyEvents($patient)
+	{
 		if (Element_OphLeEpatientletter_EpatientLetter::model()->find('epatient_hosnum=?',array($patient->hos_num))) {
 			$episode = new Episode;
 			$episode->patient_id = $patient->id;
@@ -205,7 +215,8 @@ class LetterGrepper {
 		}
 	}
 
-	public function searchOpnote($phrase, $user, $daterange=false) {
+	public function searchOpnote($phrase, $user, $daterange=false)
+	{
 		$fields = array();
 		$bucket = 0;
 

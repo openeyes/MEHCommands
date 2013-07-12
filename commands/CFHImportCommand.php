@@ -17,13 +17,15 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class CFHImportCommand extends CConsoleCommand {
+class CFHImportCommand extends CConsoleCommand
+{
 	public $source;
 	public $lookup = array();
 	public $consultants = array();
 	public $sites = array();
 
-	public function run($args) {
+	public function run($args)
+	{
 		if (!$this->source = ImportSource::model()->find('name=?',array('Connecting for Health'))) {
 			throw new Exception("Source not found: Connecting for Health");
 		}
@@ -37,7 +39,8 @@ class CFHImportCommand extends CConsoleCommand {
 		$this->refreshConsultants();
 	}
 
-	public function getCFH($name) {
+	public function getCFH($name)
+	{
 		$c = curl_init();
 		curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 		curl_setopt($c,CURLOPT_URL,"http://nww.connectingforhealth.nhs.uk/ods/downloads/zfiles/$name.zip");
@@ -62,7 +65,8 @@ class CFHImportCommand extends CConsoleCommand {
 		return $data;
 	}
 
-	public function refreshSites() {
+	public function refreshSites()
+	{
 		foreach ($this->getCFH('etrust') as $i => $site) {
 			$this->processSiteOrInstitution($site);
 			$this->lookup[] = $site[0];
@@ -75,7 +79,8 @@ class CFHImportCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	public function refreshConsultants() {
+	public function refreshConsultants()
+	{
 		// this serves as a lookup table which massively speeds up the import as we can skip already imported records without having to query the database
 		foreach (Yii::app()->db->createCommand()
 			->select("p.remote_id, s.remote_id as site_code, i.remote_id as institution_code")
@@ -111,7 +116,8 @@ class CFHImportCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	public function sanitiseEtrust($data) {
+	public function sanitiseEtrust($data)
+	{
 		$data[1] = ucwords(strtolower($data[1]));
 		$data[1] = preg_replace('/ nhs/i',' NHS',$data[1]);
 		$data[1] = preg_replace('/ and/i',' and',$data[1]);
@@ -127,7 +133,8 @@ class CFHImportCommand extends CConsoleCommand {
 		return $data;
 	}
 
-	public function processSiteOrInstitution($data) {
+	public function processSiteOrInstitution($data)
+	{
 		if (strlen($data[0]) == 3) {
 			$this->processInstitution($data);
 		} else if (strlen($data[0]) == 5) {
@@ -137,7 +144,8 @@ class CFHImportCommand extends CConsoleCommand {
 		}
 	}
 
-	public function processInstitution($data) {
+	public function processInstitution($data)
+	{
 		if (!$institution = Institution::model()->with(array('contact'=>array('with'=>'address')))->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
 			$contact = new Contact;
 			if (!$contact->save()) {
@@ -189,7 +197,8 @@ class CFHImportCommand extends CConsoleCommand {
 		$this->lookup[$data[0]] = $institution->id;
 	}
 
-	public function processSite($data) {
+	public function processSite($data)
+	{
 		$institution_code = substr($data[0],0,3);
 
 		if (!$institution = Institution::model()->find('source_id=? and remote_id=?',array($this->source->id,$institution_code))) {
@@ -250,7 +259,8 @@ class CFHImportCommand extends CConsoleCommand {
 		$this->lookup[$data[0]] = $site->id;
 	}
 
-	public function processConsultant($data) {
+	public function processConsultant($data)
+	{
 		if (isset($this->consultants[$data[7]]) && in_array($data[0],$this->consultants[$data[7]])) {
 			return;
 		}
@@ -331,7 +341,8 @@ class CFHImportCommand extends CConsoleCommand {
 		echo "+";
 	}
 
-	public function getContactLabel($name) {
+	public function getContactLabel($name)
+	{
 		if ($cl = ContactLabel::model()->find('name=?',array($name))) {
 			return $cl;
 		}

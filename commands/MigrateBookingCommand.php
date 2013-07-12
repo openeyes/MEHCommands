@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class MigrateBookingCommand extends CConsoleCommand {
-	public function run($args) {
+class MigrateBookingCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		Yii::import('application.modules.OphTrOperationbooking.models.*');
 
 		echo "Migrating element_diagnosis ... ";
@@ -442,7 +444,8 @@ class MigrateBookingCommand extends CConsoleCommand {
 		Yii::app()->db->createCommand("update event set event_type_id = $operation_new->id where event_type_id = $operation_old->id")->query();
 	}
 
-	public function findSessionForCancelledBooking($cb) {
+	public function findSessionForCancelledBooking($cb)
+	{
 		$sessions = array();
 
 		foreach (Yii::app()->db->createCommand("select * from session where date = '{$cb['date']}' and start_time = '{$cb['start_time']}' and end_time = '{$cb['end_time']}' and theatre_id = '{$cb['theatre_id']}'")->queryAll() as $session) {
@@ -472,7 +475,8 @@ class MigrateBookingCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function getWardForOperationAndTheatre($eo_id, $theatre_id) {
+	public function getWardForOperationAndTheatre($eo_id, $theatre_id)
+	{
 		$operation = Yii::app()->db->createCommand("select * from element_operation where id = $eo_id")->queryRow();
 
 		if (!$theatre = Yii::app()->db->createCommand("select * from theatre where id = $theatre_id")->queryRow()) {
@@ -539,7 +543,8 @@ class MigrateBookingCommand extends CConsoleCommand {
 		return $results;
 	}
 
-	function isChild($patient) {
+	function isChild($patient)
+	{
 		$age_limit = (isset(Yii::app()->params['child_age_limit'])) ? Yii::app()->params['child_age_limit'] : 16;
 		$age = Helper::getAge($patient['dob'], $patient['date_of_death']);
 		return ($age < $age_limit);

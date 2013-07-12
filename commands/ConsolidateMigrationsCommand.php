@@ -75,7 +75,8 @@ Usage: ./yiic consolidatemigrations <module name>
 		fwrite($fp,'<?php
 class '.$migration_class.' extends CDbMigration
 {
-	public function up() {
+	public function up()
+	{
 		');
 
 		$down = array();
@@ -91,7 +92,8 @@ class '.$migration_class.' extends CDbMigration
 
 		fwrite($fp,'}
 
-	public function down() {
+	public function down()
+	{
 	');
 
 		foreach (array_reverse($down) as $data) {
@@ -106,7 +108,8 @@ class '.$migration_class.' extends CDbMigration
 		echo "Consolidated to: $migration_path\n";
 	}
 
-	public function parse_migration($migration_path) {
+	public function parse_migration($migration_path)
+	{
 		$data = file_get_contents($migration_path);
 
 		if (preg_match('/public function up\(\)[\s\r\t\n]+\{[\s\r\n\t]+(.*)\}[\r\n\s\t]+public function down\(\)[\r\n\t\s]+\{(.*)\}[\s\r\n\t]+\}/s',$data,$m)) {

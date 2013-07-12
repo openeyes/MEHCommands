@@ -17,15 +17,17 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class RelatedImportComplexCommand extends CConsoleCommand {
-
+class RelatedImportComplexCommand extends CConsoleCommand
+{
 	const DATA_FOLDER = 'data/import';
 
-	public function getName() {
+	public function getName()
+	{
 		return 'Related Import Complex Data Command.';
 	}
 
-	public function getHelp() {
+	public function getHelp()
+	{
 		return <<<EOH
 Import data from csv that is related to data already defined in the database, and related to each other in separate tables:
 	[import_name].cpxmap
@@ -39,24 +41,24 @@ Import data from csv that is related to data already defined in the database, an
 
 EOH;
 	}
-	
+
 	private $column_value_map = array();
 	private $imp_id_map = array();
-	
+
 	/**
 	 * Parse csv files from Google Docs, process them into the right format for MySQL import, and import them
 	 */
-	public function run($args) {
-
+	public function run($args)
+	{
 		// Initialise db
 		$connection = Yii::app()->db;
 		$row_count = 0;
 
 		$path = Yii::app()->basePath . '/' . self::DATA_FOLDER . '/';
-		foreach(glob($path."*.cpxmap") as $map_path) {
+		foreach (glob($path."*.cpxmap") as $map_path) {
 			$imp_name = substr(basename($map_path), 0, -7);
 			echo "Performing $imp_name import ...\n";
-				
+
 			// Get mapping info
 			$map = file($map_path);
 			foreach ($map as $map_idx => $tbl_file) {
@@ -65,12 +67,11 @@ EOH;
 				if (preg_match("/^".$imp_name."_([^\.]+)\.csv/",$tbl_file, $match) ) {
 					$table = $match[1];
 					echo "Processing file $map_idx, $tbl_file ...\n";
-				}
-				else {
+				} else {
 					echo "ERROR: bad name for file\n";
 					continue;
 				}
-				
+
 				$file = file($path . $tbl_file);
 				$columns = array();
 				$row_count = 0;
@@ -78,27 +79,26 @@ EOH;
 				// iterate through data rows of the table file
 				foreach ($file as $index => $line) {
 					if (!$index) {
-						$columns = str_getcsv($line, ',', '"');		
-					}
-					else {
+						$columns = str_getcsv($line, ',', '"');
+					} else {
 						if (!strlen(trim($line))) {
 							// skip empty line
 							continue;
 						}
-						
+
 						if (!count($columns)) {
 							echo "ERROR: columns must be defined in first row of $tbl_file\n";
 							break;
 						}
-						
+
 						$record = str_getcsv($line, ',', '"');
 						$data = array();
-						foreach($columns as $i => $col) {
+						foreach ($columns as $i => $col) {
 							$data[$i] = $record[$i];
 						}
 						$this->insert($table, $columns, $data);
 						$row_count++;
-					
+
 					}
 				}
 				echo "imported $row_count records, done.\n";
@@ -106,11 +106,12 @@ EOH;
 		}
 	}
 
-	protected function insert($table, $raw_columns, $raw_data) {
+	protected function insert($table, $raw_columns, $raw_data)
+	{
 		$db = Yii::app()->db;
 		$insert_cols = array();
 		$data = array();
-		
+
 		$imp_id = null;
 		// iterate through columns and map data where necessary
 		foreach ($raw_columns as $i => $column) {
@@ -124,14 +125,14 @@ EOH;
 						echo "ERROR: haven't set import ids for $matches[3] - is your import order correct?\n";
 						exit;
 					}
-					
+
 					if (!(isset($this->imp_id_map[$matches[3]][$raw_data[$i]]) ) ) {
 						echo "ERROR: cannot find import id $raw_data[$i] for $matches[2]\n";
 						exit;
 					}
-					
+
 					$data[] = $this->imp_id_map[$matches[3]][$raw_data[$i]];
-				
+
 				} else {
 					// the value should already exist in the db and we go look for it
 					$data[] = $this->getTableVal($matches[2], $raw_data[$i]);
@@ -141,45 +142,47 @@ EOH;
 				$data[] = $raw_data[$i];
 			}
 		}
-		
+
 		// escape data values
 		foreach ($data as &$field) {
 			if ($field != 'NULL') {
 				$field = $db->quoteValue($field);
 			}
 		}
-		
+
 		// create the query
 		$insert = '('.implode(',', $data).')';
-		
+
 		$query = "INSERT INTO ".$db->quoteTableName($table)." (".implode(',',$insert_cols).") VALUES ".$insert;
 		//echo $query . "\n";
-		
+
 		$db->createCommand($query)->execute();
 		if ($imp_id) {
 			$this->imp_id_map[$table][$imp_id] = $db->getLastInsertID();
 		}
 	}
-	
+
 	// TODO: handle NULL results appropriately
-	protected function _storeTableVal($col_spec, $value) {
+	protected function _storeTableVal($col_spec, $value)
+	{
 		// split the col spec on dot, do select and store
 		list($table, $column) = explode(".", $col_spec);
 		$db = Yii::app()->db;
 		$query = "SELECT id FROM " . $db->quoteTableName($table) . " WHERE " . $db->quoteColumnName($column) . " = "  . $db->quoteValue($value);
 		$res =  $db->createCommand($query)->query();
 		foreach ($res as $row) {
-			// we'll grab the last if there are multiple. 
+			// we'll grab the last if there are multiple.
 			$this->column_value_map[$col_spec][$value] = $row['id'];
 		}
 	}
-	
-	protected function getTableVal($col_spec, $value) {
+
+	protected function getTableVal($col_spec, $value)
+	{
 		if (!isset($this->column_value_map[$col_spec]) || !isset($this->column_value_map[$col_spec][$value])) {
 			$this->_storeTableVal($col_spec, $value);
 		}
-		
+
 		return $this->column_value_map[$col_spec][$value];
 	}
-	
+
 }

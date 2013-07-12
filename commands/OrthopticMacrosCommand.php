@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class OrthopticMacrosCommand extends CConsoleCommand {
-	public function run($args) {
+class OrthopticMacrosCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$subspecialty = Subspecialty::model()->find('name=?',array('Orthoptics'));
 		//$ssa = ServiceSubspecialtyAssignment::model()->find('subspecialty_id=?',array($subspecialty->id));
 		//$firm = Firm::model()->find('name=? and service_subspecialty_assignment_id=?',array('Moorfields',$ssa->id));
@@ -27,18 +29,18 @@ class OrthopticMacrosCommand extends CConsoleCommand {
 			array(
 				'name' => 'CVC Discharge letter',
 				'body' => 'This patient has been discharged from the Eye clinic.
-				
-Date of last appointment: 
-				
+
+Date of last appointment:
+
 Diagnosis: [eps] [epd]
-				
+
 Visual Acuity: Right Eye:   		Left Eye: 		Test:  	With/Without Glasses
-				
-Their last prescription was issued on: 
-Right Eye:				Left Eye:			
-				
-Other information: 
-				
+
+Their last prescription was issued on:
+Right Eye:				Left Eye:
+
+Other information:
+
 We have advised the patient to visit a local optician on a regular basis.  We are happy to review them again if there are future concerns and have advised they will need to seek a re-referral.',
 			),
 			array(

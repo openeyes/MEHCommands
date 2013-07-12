@@ -42,7 +42,7 @@ class ImportLasersCommand extends CConsoleCommand
 		$query = mssql_query("
 			SELECT
               LaserName,
-              LaserType, 
+              LaserType,
               LaserWaveLength,
               LaserSite
             FROM
@@ -50,13 +50,13 @@ class ImportLasersCommand extends CConsoleCommand
             WHERE
               IsInUse = 'True'
 		");
-		
+
 		$created = 0;
 		do {
 			while ($row = mssql_fetch_row($query)) {
-				
+
 				$lkup_name = array_key_exists($row[3], self::$site_map) ? self::$site_map[$row[3]] : $row[3];
-				
+
 				if ( $site = Site::model()->find('short_name = ?', array($lkup_name)) ) {
 					// check the laser hasn't already been created
 					if (!Element_OphTrLaser_Site_Laser::model()->find('name = ? AND site_id = ?', array($row[0], $site->id) )) {
@@ -70,18 +70,16 @@ class ImportLasersCommand extends CConsoleCommand
 						$criteria->order = 'display_order DESC';
 						$criteria->limit = 1;
 						if ($mx_row = Element_OphTrLaser_Site_Laser::model()->find($criteria) ) {
-							$laser->display_order = $mx_row->display_order + 1;	
-						}
-						else {
+							$laser->display_order = $mx_row->display_order + 1;
+						} else {
 							$laser->display_order = 1;
 						}
-						
+
 						$laser->save();
 						$created++;
 					}
-					
-				}
-				else {
+
+				} else {
 					echo "could not find site for name '" . $lkup_name . "'\n";
 					exit;
 				}

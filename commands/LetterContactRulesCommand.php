@@ -19,8 +19,10 @@
 
 Yii::import('application.modules.OphTrOperationbooking.models.*');
 
-class LetterContactRulesCommand extends CConsoleCommand {
-	public function run($args) {
+class LetterContactRulesCommand extends CConsoleCommand
+{
+	public function run($args)
+	{
 		$contact = new OphTrOperationbooking_Letter_Contact_Rule;
 		$contact->parent_rule_id = null;
 		$contact->rule_order = 1;

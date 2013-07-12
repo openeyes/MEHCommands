@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportMacrosCommand extends ImportGdataCommand {
-	public function run($args) {
+class ImportMacrosCommand extends ImportGdataCommand
+{
+	public function run($args)
+	{
 		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
 				'firm_letter_macro' => array(
@@ -55,14 +57,15 @@ class ImportMacrosCommand extends ImportGdataCommand {
 				),
 		));
 	}
-	
+
 	/**
 	 * Lookup attribute in model and return it's id
 	 * @param mixed $value
 	 * @param array $args
 	 * @return integer
 	 */
-	protected function mapFindFirm($value) {
+	protected function mapFindFirm($value)
+	{
 		$tokens = explode('|', $value);
 		$firm_name = trim($tokens[0]);
 		$subspecialty_name = trim($tokens[1]);
@@ -73,7 +76,7 @@ class ImportMacrosCommand extends ImportGdataCommand {
 				';
 		$criteria->condition = 's.name = :subspecialty_name AND t.name = :firm_name';
 		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
-		if($firm = Firm::model()->find($criteria)) {
+		if ($firm = Firm::model()->find($criteria)) {
 			return $firm->id;
 		} else {
 			return null;

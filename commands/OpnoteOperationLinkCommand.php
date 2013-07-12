@@ -17,7 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class OpnoteOperationLinkCommand extends CConsoleCommand {
+class OpnoteOperationLinkCommand extends CConsoleCommand
+{
 	public $count0 = 0;
 	public $count1 = 0;
 	public $count2 = 0;
@@ -66,7 +67,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 		2169111 => 2143289,
 	);
 
-	public function run($args) {
+	public function run($args)
+	{
 		$episode = Episode::model()->findByPk(200);
 		echo $episode->firm->serviceSubspecialtyAssignment->subspecialty->name;
 		exit;
@@ -104,7 +106,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 		}*/
 	}
 
-	public function inferOperation($event) {
+	public function inferOperation($event)
+	{
 		if (isset($this->event_map[$event->id])) {
 			echo ".";
 			$this->count1++;
@@ -165,7 +168,7 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 				$this->count1++;
 				return true;
 			}
-	
+
 			if (count($priorOperations) == 0) {
 				#echo "Error: opnote found with no prior operations.\n";
 				echo "0";
@@ -213,7 +216,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 		}
 	}
 
-	public function operation_matches($operation_event, $opnote_event) {
+	public function operation_matches($operation_event, $opnote_event)
+	{
 		if (!$proclist = ElementProcedureList::model()->find('event_id=?',array($opnote_event->id))) {
 			return false;
 		}
@@ -261,7 +265,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand {
 		*/
 	}
 
-	public function logm($type,$event_id) {
+	public function logm($type,$event_id)
+	{
 		$fp = fopen("$type.log","a+");
 		fwrite($fp,"http://openeyes.moorfields.nhs.uk/OphTrOperationnote/default/view/$event_id\n");
 		fclose($fp);

@@ -17,7 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class FixSitesCommand extends CConsoleCommand {
+class FixSitesCommand extends CConsoleCommand
+{
 	public $remap = array(
 		30 => 36,
 		194 => 193,
@@ -37,7 +38,8 @@ class FixSitesCommand extends CConsoleCommand {
 		2790 => 2773,
 	);
 
-	public function run($args) {
+	public function run($args)
+	{
 		foreach ($this->remap as $from_id => $to_id) {
 			$result = true;
 
@@ -74,7 +76,8 @@ class FixSitesCommand extends CConsoleCommand {
 		}
 	}
 
-	public function switch_table($table, $from_id, $to_id) {
+	public function switch_table($table, $from_id, $to_id)
+	{
 		$bad = false;
 
 		foreach (Yii::app()->db->createCommand("select * from $table where site_id = $from_id")->queryAll() as $row) {
@@ -99,7 +102,8 @@ class FixSitesCommand extends CConsoleCommand {
 		}
 	}
 
-	public function exists($table, $row) {
+	public function exists($table, $row)
+	{
 		$select = implode(',',array_keys($row));
 
 		$where = '';

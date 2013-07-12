@@ -17,31 +17,34 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class HousekeepingCommand extends CConsoleCommand {
-
+class HousekeepingCommand extends CConsoleCommand
+{
 	const ARCHIVE_FOLDER = 'data/archive';
 
-	public function getName() {
+	public function getName()
+	{
 		return 'Housekeeping Command.';
 	}
 
-	public function getHelp() {
+	public function getHelp()
+	{
 		return "Various housekeeping procedures.\n";
 	}
 
-	public function run($args) {
+	public function run($args)
+	{
 		$this->deceasedPatients();
 		//$this->archiveAuditTrail();
 	}
 
 	// Check for operations where patient is deceased and cancel them
-	protected function deceasedPatients() {
-
+	protected function deceasedPatients()
+	{
 		echo "Cancelling operations for deceased patients...";
-		
+
 		// TODO: This needs to be made more robust
 		$cancellation_reason = CancellationReason::model()->find("text = 'Patient has died'");
-		if(!$cancellation_reason) {
+		if (!$cancellation_reason) {
 			throw new CException('Cannot find cancellation code for "patient has died"');
 		}
 
@@ -60,34 +63,34 @@ class HousekeepingCommand extends CConsoleCommand {
 		}
 
 		echo "done.\n";
-		
+
 	}
 
 	// Archive audit trail records older than 2 months
-	protected function archiveAuditTrail() {
-
+	protected function archiveAuditTrail()
+	{
 		echo "Archiving old audit trail records (> 2 months)...\n";
-		
+
 		$connection = Yii::app()->db;
-		
+
 		$path = Yii::app()->basePath . '/' . self::ARCHIVE_FOLDER . '/';
-		if(!file_exists($path)) {
-			if(!mkdir($path)) {
+		if (!file_exists($path)) {
+			if (!mkdir($path)) {
 				throw new CException('Could not create archive folder');
 			}
 		}
-		
+
 		$to_date = date('Y-m-d', mktime(0, 0, 0, date("m") - 2, date("d"),   date("Y")));
 		$file_path = $path . 'tbl_audit_trail.' . $to_date . '.csv';
-		if(file_exists($file_path)) {
+		if (file_exists($file_path)) {
 			throw new CException("Archive file already exists for $to_date");
 		}
-		
+
 		$data = $connection->createCommand("SELECT * from `tbl_audit_trail` WHERE stamp < '$to_date'")->queryAll();
-		if($data) {
+		if ($data) {
 			$file_output = fopen($file_path, 'w+');
 			$records = 0;
-			foreach($data as $record) {
+			foreach ($data as $record) {
 				fputcsv($file_output, $record, ',', '"');
 				$records++;
 			}

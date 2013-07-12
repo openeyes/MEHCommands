@@ -17,8 +17,8 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
-
+class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand
+{
 	public $subspecialty_remap = array(
 		'ST' => 'PE',
 	);
@@ -27,7 +27,8 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
 		'Mr David Bessant' => 11,
 	);
 
-	public function run($args) {
+	public function run($args)
+	{
 		$dbe = mssql_connect(Yii::app()->params['epatient_hostname'],Yii::app()->params['epatient_username'],Yii::app()->params['epatient_password']);
 		mssql_select_db(Yii::app()->params['epatient_database'], $dbe);
 
@@ -155,13 +156,14 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
 		echo "\n";
 	}
 
-	public function get_or_create_episode($patient_id, $firm, $timestamp, $created_by_user) {
+	public function get_or_create_episode($patient_id, $firm, $timestamp, $created_by_user)
+	{
 		foreach (Episode::model()->findAll('patient_id=?',array($patient_id)) as $episode) {
 			if ($episode->firm->serviceSubspecialtyAssignment->subspecialty_id == $firm->serviceSubspecialtyAssignment->subspecialty_id) {
 				return $episode;
 			}
 		}
-		
+
 		$episode = new Episode;
 		$episode->patient_id = $patient_id;
 		$episode->firm_id = $firm->id;
@@ -177,7 +179,8 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
 		return $episode;
 	}
 
-	public function get_hosnum_for_episode($pers_id) {
+	public function get_hosnum_for_episode($pers_id)
+	{
 		$result = mssql_query("select * from patients where pers_id = $pers_id");
 
 		if ($row = mssql_fetch_object($result)) {
@@ -187,7 +190,8 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function getFirmForLetter($letter) {
+	public function getFirmForLetter($letter)
+	{
 		$result = mssql_query("select * from patientepisode where patientepisodeid = $letter->patientepisodeid");
 
 		if ($row = mssql_fetch_object($result)) {
@@ -230,7 +234,8 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function find_person($pers_id) {
+	public function find_person($pers_id)
+	{
 		if (!$result3 = mssql_query("select * from appusers where pers_id = $pers_id")) {
 			echo mssql_get_last_message() . "\n";
 			return false;
