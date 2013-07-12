@@ -166,4 +166,3 @@ class ImportConsultantsCommand extends CConsoleCommand
 		echo "Missing institutions: ".implode(", ",$missing_institutions)."\n\n";
 	}
 }
-?>

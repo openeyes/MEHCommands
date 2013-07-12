@@ -228,4 +228,3 @@ Usage: ./yiic importepatientletters
 			$count = $count + 1000;
 	}
 }
-?>

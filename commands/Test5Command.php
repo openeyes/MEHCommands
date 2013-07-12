@@ -110,7 +110,7 @@ class Test5Command extends CConsoleCommand
 
 /*			if ($x == 1) {
 				echo "OK\n";
-			} else if ($x >1) {
+			} elseif ($x >1) {
 				echo "MANY\n";
 			} else {
 				echo "\n";

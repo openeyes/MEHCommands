@@ -39,7 +39,7 @@ class LetterGrepper
 	public $results = array();
 	public $whereParams = array();
 
-	static public function grep($params)
+	public static function grep($params)
 	{
 		if (empty($params['phrases'])) {
 			throw new Exception('At least one phrase must be specified');

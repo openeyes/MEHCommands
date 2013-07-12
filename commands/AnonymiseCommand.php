@@ -219,7 +219,7 @@ class AnonymiseCommand extends CConsoleCommand
 			->queryScalar(array(':patient_id' => $patient_id));
 			if (in_array(strtolower($title), array('ms', 'mrs', 'miss'))) {
 				$gender = 'F';
-			} else if (in_array(strtolower($title), array('mr'))) {
+			} elseif (in_array(strtolower($title), array('mr'))) {
 				$gender = 'M';
 			} else {
 				$gender = (rand(1,3) == 1) ? 'F' : 'M';

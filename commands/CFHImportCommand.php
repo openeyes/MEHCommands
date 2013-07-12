@@ -137,7 +137,7 @@ class CFHImportCommand extends CConsoleCommand
 	{
 		if (strlen($data[0]) == 3) {
 			$this->processInstitution($data);
-		} else if (strlen($data[0]) == 5) {
+		} elseif (strlen($data[0]) == 5) {
 			$this->processSite($data);
 		} else {
 			throw new Exception("Invalid format:\n".print_r($data,true));

@@ -26,7 +26,7 @@ class NHSChoicesImportCommand extends CConsoleCommand
 	public $curl;
 	public $label_optometrist;
 
-	function run($args)
+	public function run($args)
 	{
 		if (!$this->source = ImportSource::model()->find('name=?',array('NHS Choices'))) {
 			throw new Exception("Source not found: NHS Choices");
@@ -41,7 +41,7 @@ class NHSChoicesImportCommand extends CConsoleCommand
 		$this->refreshOptometrists();
 	}
 
-	function getLabel($name)
+	public function getLabel($name)
 	{
 		if (!$cl = ContactLabel::model()->find('name=?',array($name))) {
 			$cl = new ContactLabel;
@@ -54,7 +54,7 @@ class NHSChoicesImportCommand extends CConsoleCommand
 		return $cl;
 	}
 
-	function refreshOptometrists($page=1)
+	public function refreshOptometrists($page=1)
 	{
 		$html = $this->curl->get('http://www.nhs.uk/Search/Pages/Results.aspx?q=optometrist&collection=all_results&page='.$page);
 
@@ -81,7 +81,7 @@ class NHSChoicesImportCommand extends CConsoleCommand
 		}
 	}
 
-	function processOptometrist($url,$name)
+	public function processOptometrist($url,$name)
 	{
 		preg_match('/([0-9]+)$/',$url,$m);
 		$remote_id = $m[1];
@@ -114,7 +114,7 @@ class NHSChoicesImportCommand extends CConsoleCommand
 			$address2 = array_shift($address);
 			$town = array_shift($address);
 			$county = array_shift($address);
-		} else if (count($address) == 2) {
+		} elseif (count($address) == 2) {
 			$address2 = array_shift($address);
 			$town = array_shift($address);
 		} else {

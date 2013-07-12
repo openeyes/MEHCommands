@@ -27,7 +27,7 @@ class SocialWorkersImportCommand extends CConsoleCommand
 	public $curl;
 	public $label_socialworker;
 
-	function run($args)
+	public function run($args)
 	{
 		if (!$this->source = ImportSource::model()->find('name=?',array($this->sourceName))) {
 			throw new Exception("Source not found: $this->sourceName");
@@ -44,7 +44,7 @@ class SocialWorkersImportCommand extends CConsoleCommand
 		echo "\n";
 	}
 
-	function getLabel($name)
+	public function getLabel($name)
 	{
 		if (!$cl = ContactLabel::model()->find('name=?',array($name))) {
 			$cl = new ContactLabel;
@@ -57,7 +57,7 @@ class SocialWorkersImportCommand extends CConsoleCommand
 		return $cl;
 	}
 
-	function refreshSocialWorkers()
+	public function refreshSocialWorkers()
 	{
 		$html = $this->curl->post('http://www.socialworkdirectory.co.uk/',array(
 			'geoengne' => 1,
@@ -188,7 +188,7 @@ class SocialWorkersImportCommand extends CConsoleCommand
 					$address2 = array_shift($address);
 					$town = array_shift($address);
 					$county = array_shift($address);
-				} else if (count($address >= 2)) {
+				} elseif (count($address >= 2)) {
 					$town = array_shift($address);
 					$county = array_shift($address);
 				} else {
@@ -252,7 +252,7 @@ class SocialWorkersImportCommand extends CConsoleCommand
 		}
 	}
 
-	function regex($regex,$data)
+	public function regex($regex,$data)
 	{
 		if (preg_match($regex,$data,$m)) {
 			return trim($m[1]);

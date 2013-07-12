@@ -543,7 +543,7 @@ class MigrateBookingCommand extends CConsoleCommand
 		return $results;
 	}
 
-	function isChild($patient)
+	public function isChild($patient)
 	{
 		$age_limit = (isset(Yii::app()->params['child_age_limit'])) ? Yii::app()->params['child_age_limit'] : 16;
 		$age = Helper::getAge($patient['dob'], $patient['date_of_death']);

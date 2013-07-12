@@ -61,7 +61,7 @@ class ImportContactsCommand extends CConsoleCommand
 		foreach ($data as $row) {
 			if ($row[1] == 'Ophthalmic consultants') {
 				$mode = "ophthalmic";
-			} else if ($row[1] == 'Non-ophthalmic consultants') {
+			} elseif ($row[1] == 'Non-ophthalmic consultants') {
 				$mode = "non-ophthalmic";
 			} else {
 				if ($row[1] == 'Prefix') {
@@ -111,7 +111,7 @@ class ImportContactsCommand extends CConsoleCommand
 								$consultant = new Consultant;
 								if ($row['Prefix'] == 'Mr') {
 									$consultant->gender = 'M';
-								} else if (in_array($row['Prefix'],array('Mrs','Miss','Ms'))) {
+								} elseif (in_array($row['Prefix'],array('Mrs','Miss','Ms'))) {
 									$consultant->gender = 'F';
 								}
 								if (!$consultant->save(false)) {

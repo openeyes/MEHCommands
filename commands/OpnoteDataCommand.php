@@ -235,4 +235,3 @@ class OpnoteDataCommand extends CConsoleCommand
 		}
 	}
 }
-?>

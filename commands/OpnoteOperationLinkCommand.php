@@ -201,13 +201,13 @@ class OpnoteOperationLinkCommand extends CConsoleCommand
 		if ($matches == 1) {
 			echo ".";
 			$this->count1++;
-		} else if ($matches == 0) {
+		} elseif ($matches == 0) {
 			echo "A";
 			$this->countA++;
 			$this->logm('a',$event->id);
 			#echo "Error: opnote had no matches to booked operations.\n";
 			return false;
-		} else if ($matches >1) {
+		} elseif ($matches >1) {
 			echo "2";
 			$this->count2++;
 			$this->logm(2,$event->id);

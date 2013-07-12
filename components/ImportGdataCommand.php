@@ -84,7 +84,7 @@ abstract class ImportGdataCommand extends CConsoleCommand
 		$records = BaseActiveRecord::model($class)->findAllByAttributes(array($field => $value));
 		if (count($records) > 1) {
 			throw new CException("More than one matching record in $class for $field = $value");
-		} else if (count($records) == 1) {
+		} elseif (count($records) == 1) {
 			return $records[0]->id;
 		}
 	}
@@ -117,7 +117,7 @@ abstract class ImportGdataCommand extends CConsoleCommand
 					if (is_int($gcolumn_name)) {
 						// Straight mapping
 						$gcolumn_name = $oecolumn_name;
-					} else if (is_array($oecolumn_name)) {
+					} elseif (is_array($oecolumn_name)) {
 						// Method mapping
 						$method = $oecolumn_name['method'];
 						$args = @$oecolumn_name['args'];

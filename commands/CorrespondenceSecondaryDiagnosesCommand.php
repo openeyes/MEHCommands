@@ -40,4 +40,3 @@ class CorrespondenceSecondaryDiagnosesCommand extends CConsoleCommand
 		}
 	}
 }
-?>

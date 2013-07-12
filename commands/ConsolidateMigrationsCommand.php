@@ -119,4 +119,3 @@ class '.$migration_class.' extends CDbMigration
 		die("Failed to parse migration: $migration_path\n");
 	}
 }
-?>

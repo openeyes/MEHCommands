@@ -307,4 +307,3 @@ No further follow up is required, and I have discharged [obj] from the clinic.';
 		}
 	}
 }
-?>

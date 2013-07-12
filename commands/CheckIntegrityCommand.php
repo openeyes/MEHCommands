@@ -19,7 +19,7 @@
 
 class CheckIntegrityCommand extends CConsoleCommand
 {
-	var $db_name = 'oedevelopment';
+	public $db_name = 'oedevelopment';
 
 	public function getName()
 	{
