@@ -24,27 +24,27 @@ class Test6Command extends CConsoleCommand
 		echo "Correspondence\n\n";
 
 		foreach (Yii::app()->db->createCommand()
-			->select("p.hos_num, c.first_name, c.last_name, e.id as event_id, e.datetime")
+			->select("p.hos_num, c.first_name, c.last_name, e.id as event_id, e.created_date")
 			->from("patient p")
 			->join("contact c","c.parent_class = 'Patient' and c.parent_id = p.id")
 			->join("episode ep","ep.patient_id = p.id")
 			->join("event e","e.episode_id = ep.id")
 			->join("et_ophcocorrespondence_letter l","l.event_id = e.id")
 			->where("e.deleted = 0 and ep.deleted = 0 and (lower(l.body) like '%anterior capsule tear%' or lower(l.body) like '%anterior capsular tear%')")
-			->order("e.datetime")
+			->order("e.created_date")
 			->queryAll() as $row) {
 
-			echo $row['hos_num'].",".$row['first_name'].",".$row['last_name'].",".date('j M Y',strtotime($row['datetime'])).",http://openeyes.moorfields.nhs.uk/OphCoCorrespondence/default/view/{$row['event_id']}\n";
+			echo $row['hos_num'].",".$row['first_name'].",".$row['last_name'].",".date('j M Y',strtotime($row['created_date'])).",http://openeyes.moorfields.nhs.uk/OphCoCorrespondence/default/view/{$row['event_id']}\n";
 		}
 
 		echo "\nLegacy letters\n\n";
 
 		foreach (Yii::app()->db->createCommand()
-			->select("l.event_id, e.episode_id, l.epatient_hosnum, e.datetime")
+			->select("l.event_id, e.episode_id, l.epatient_hosnum, e.created_date")
 			->from("et_ophleepatientletter_epatientletter l")
 			->join("event e","l.event_id = e.id")
 			->where("e.deleted = 0 and (lower(l.letter_html) like '%anterior capsule tear%' or lower(l.letter_html) like '%anterior capsular tear%')")
-			->order('e.datetime')
+			->order('e.created_date')
 			->queryAll() as $row) {
 
 			if (!$patient = Patient::model()->find('hos_num=?',array($row['epatient_hosnum']))) {
@@ -64,13 +64,13 @@ class Test6Command extends CConsoleCommand
 				$this->associateLegacyEvents($patient);
 			}
 
-			echo $patient->hos_num.",".$patient->first_name.",".$patient->last_name.",".date('j M Y',strtotime($row['datetime'])).",http://openeyes.moorfields.nhs.uk/OphLeEpatientletter/default/view/{$row['event_id']}\n";
+			echo $patient->hos_num.",".$patient->first_name.",".$patient->last_name.",".date('j M Y',strtotime($row['created_date'])).",http://openeyes.moorfields.nhs.uk/OphLeEpatientletter/default/view/{$row['event_id']}\n";
 		}
 
 		echo "\nOpnotes\n\n";
 
 		foreach (Yii::app()->db->createCommand()
-			->select("p.hos_num, c.first_name, c.last_name, e.id as event_id, e.datetime")
+			->select("p.hos_num, c.first_name, c.last_name, e.id as event_id, e.created_date")
 			->from("patient p")
 			->join("contact c","c.parent_class = 'Patient' and c.parent_id = p.id")
 			->join("episode ep","ep.patient_id = p.id")
@@ -78,10 +78,10 @@ class Test6Command extends CConsoleCommand
 			->join("et_ophtroperationnote_cataract cat","cat.event_id = e.id")
 			->join("et_ophtroperationnote_cataract_complication com","com.cataract_id = cat.id")
 			->where("e.deleted = 0 and ep.deleted = 0 and com.complication_id = 16")
-			->order("e.datetime")
+			->order("e.created_date")
 			->queryAll() as $row) {
 
-			echo $row['hos_num'].",".$row['first_name'].",".$row['last_name'].",".date('j M Y',strtotime($row['datetime'])).",http://openeyes.moorfields.nhs.uk/OphTrOperationnote/default/view/{$row['event_id']}\n";
+			echo $row['hos_num'].",".$row['first_name'].",".$row['last_name'].",".date('j M Y',strtotime($row['created_date'])).",http://openeyes.moorfields.nhs.uk/OphTrOperationnote/default/view/{$row['event_id']}\n";
 		}
 	}
 
@@ -109,8 +109,8 @@ class Test6Command extends CConsoleCommand
 					throw new Exception('Unable to associate legacy event with episode: '.print_r($event->getErrors(),true));
 				}
 
-				if (strtotime($event->datetime) < $earliest) {
-					$earliest = strtotime($event->datetime);
+				if (strtotime($event->created_date) < $earliest) {
+					$earliest = strtotime($event->created_date);
 				}
 			}
 

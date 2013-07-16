@@ -182,11 +182,11 @@ class AnonymiseCommand extends CConsoleCommand
 
 			// DOB
 			$latest_dob = Yii::app()->db->createCommand()
-			->select('datetime')
+			->select('created_date')
 			->from('event')
 			->join('episode', 'episode.id = event.episode_id')
 			->where('episode.patient_id = :patient_id')
-			->order('event.datetime ASC')
+			->order('event.created_date ASC')
 			->queryScalar(array(':patient_id' => $patient_id));
 			$dob_to = ($latest_dob) ? strtotime($latest_dob) : strtotime('2010-01-01');
 			$dob_from = strtotime('1913-01-01');
@@ -195,11 +195,11 @@ class AnonymiseCommand extends CConsoleCommand
 			// DOD (1%)
 			if (rand(1,100) == 1) {
 				$earliest_dod = Yii::app()->db->createCommand()
-				->select('datetime')
+				->select('created_date')
 				->from('event')
 				->join('episode', 'episode.id = event.episode_id')
 				->where('episode.patient_id = :patient_id')
-				->order('event.datetime DESC')
+				->order('event.created_date DESC')
 				->queryScalar(array(':patient_id' => $patient_id));
 				$dod_from = ($earliest_dod) ? strtotime($earliest_dod) : strtotime($dob);
 				if ($dod_from < strtotime('1980-01-01')) {

@@ -30,7 +30,7 @@ class Test5Command extends CConsoleCommand
 		#echo "Hospital no,Opnote date,First name,Last name,Left VA,Right VA\n";
 
 		foreach (Yii::app()->db->createCommand()
-			->select('p.id as patient_id, p.hos_num, ep.id as episode_id, e.datetime, c.first_name, c.last_name, pl.eye_id')
+			->select('p.id as patient_id, p.hos_num, ep.id as episode_id, e.created_date, c.first_name, c.last_name, pl.eye_id')
 			->from('patient p')
 			->join('contact c',"c.parent_class='Patient' and c.parent_id = p.id")
 			->join('episode ep','ep.patient_id = p.id')
@@ -38,7 +38,7 @@ class Test5Command extends CConsoleCommand
 			->join('et_ophtroperationnote_procedurelist pl','pl.event_id = e.id')
 			->join('et_ophtroperationnote_cataract cat','cat.event_id = e.id')
 			->where('e.deleted = 0 and ep.deleted = 0')
-			->order('e.datetime desc')
+			->order('e.created_date desc')
 			->limit(1500)
 			->queryAll() as $row) {
 
@@ -50,8 +50,8 @@ class Test5Command extends CConsoleCommand
 				->select('vis.id')
 				->from('et_ophciexamination_visualacuity vis')
 				->join('event e','vis.event_id = e.id')
-				->where("e.episode_id = {$row['episode_id']} and e.datetime < '{$row['datetime']}' and e.deleted = 0")
-				->order('e.datetime desc')
+				->where("e.episode_id = {$row['episode_id']} and e.created_date < '{$row['created_date']}' and e.deleted = 0")
+				->order('e.created_date desc')
 				->limit(1)
 				->queryAll() as $i => $row2) {
 				$x++;
@@ -64,8 +64,8 @@ class Test5Command extends CConsoleCommand
 				->join('event e','vis.event_id = e.id')
 				->join('episode ep','e.episode_id = ep.id')
 				->join('patient p','ep.patient_id = p.id')
-				->where("p.id = {$row['patient_id']} and e.datetime < '{$row['datetime']}' and ep.deleted = 0 and e.deleted = 0")
-				->order('e.datetime desc')
+				->where("p.id = {$row['patient_id']} and e.created_date < '{$row['created_date']}' and ep.deleted = 0 and e.deleted = 0")
+				->order('e.created_date desc')
 				->limit(1)
 				->queryAll() as $i => $row2) {
 

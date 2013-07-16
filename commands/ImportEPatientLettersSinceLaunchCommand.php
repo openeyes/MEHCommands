@@ -118,7 +118,7 @@ class ImportEPatientLettersSinceLaunchCommand extends CConsoleCommand
 					$event->created_user_id = $created_by_user->id;
 					$event->created_date = date('Y-m-d',$timestamp);
 					$event->event_type_id = $event_type->id;
-					$event->datetime = date('Y-m-d H:i:s',$timestamp);
+					$event->created_date = date('Y-m-d H:i:s',$timestamp);
 					$event->last_modified_user_id = $created_by_user->id;
 					$event->last_modified_date = date('Y-m-d H:i:s',$timestamp);
 					$event->save(true,null,true);

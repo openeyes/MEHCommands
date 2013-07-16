@@ -123,8 +123,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand
 			->select("event.*")
 			->from("event")
 			->join("episode","event.episode_id = episode.id")
-			->where("episode_id = $event->episode_id and datetime < '$event->datetime' and event.deleted = 0 and episode.deleted = 0")
-			->order("datetime desc")
+			->where("episode_id = $event->episode_id and created_date < '$event->created_date' and event.deleted = 0 and episode.deleted = 0")
+			->order("created_date desc")
 			->queryAll() as $event2) {
 
 			if ($event2['event_type_id'] == $op->id) {
@@ -153,8 +153,8 @@ class OpnoteOperationLinkCommand extends CConsoleCommand
 				->select("event.*")
 				->from("event")
 				->join("episode","event.episode_id = episode.id")
-				->where("datetime < '$event->datetime' and event.deleted = 0 and episode.deleted = 0 and episode.patient_id = $patient_id and event.event_type_id = $op->id")
-				->order("datetime desc")
+				->where("created_date < '$event->created_date' and event.deleted = 0 and episode.deleted = 0 and episode.patient_id = $patient_id and event.event_type_id = $op->id")
+				->order("created_date desc")
 				->queryAll() as $event2) {
 
 				$operation = ElementOperation::model()->find('event_id=?',array($event2['id']));

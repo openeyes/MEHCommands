@@ -110,8 +110,8 @@ class LetterGrepper
 	public function whereDate($daterange)
 	{
 		$where = '';
-		isset($daterange['from']) and $where .= " and datetime >= '{$daterange['from']} 00:00:00' ";
-		isset($daterange['to']) and $where .= " and datetime <= '{$daterange['to']} 23:59:59' ";
+		isset($daterange['from']) and $where .= " and created_date >= '{$daterange['from']} 00:00:00' ";
+		isset($daterange['to']) and $where .= " and created_date <= '{$daterange['to']} 23:59:59' ";
 		return $where;
 	}
 
@@ -123,7 +123,7 @@ class LetterGrepper
 		$where .= $this->whereDate($daterange);
 
 		foreach (Yii::app()->db->createCommand()
-			->select("l.id, l.event_id, c.first_name, c.last_name, p.dob, p.hos_num, ev.datetime")
+			->select("l.id, l.event_id, c.first_name, c.last_name, p.dob, p.hos_num, ev.created_date")
 			->from("et_ophcocorrespondence_letter l")
 			->join("event ev","l.event_id = ev.id")
 			->join("episode e","ev.episode_id = e.id")
@@ -150,7 +150,7 @@ class LetterGrepper
 		$where .= $this->whereDate($daterange);
 
 		foreach (Yii::app()->db->createCommand()
-			->select("l.id, l.event_id, ev.datetime, l.epatient_hosnum, ev.episode_id")
+			->select("l.id, l.event_id, ev.created_date, l.epatient_hosnum, ev.episode_id")
 			->from("et_ophleepatientletter_epatientletter l")
 			->join("event ev","l.event_id = ev.id")
 			->where($where,$this->whereParams)
@@ -206,8 +206,8 @@ class LetterGrepper
 					throw new Exception('Unable to associate legacy event with episode: '.print_r($event->getErrors(),true));
 				}
 
-				if (strtotime($event->datetime) < $earliest) {
-					$earliest = strtotime($event->datetime);
+				if (strtotime($event->created_date) < $earliest) {
+					$earliest = strtotime($event->created_date);
 				}
 			}
 
@@ -258,7 +258,7 @@ class LetterGrepper
 
 		foreach ($fields as $bucket => $bucketFields) {
 			$query = Yii::app()->db->createCommand()
-				->select("ev.id as event_id, c.first_name, c.last_name, p.dob, p.hos_num, ev.datetime")
+				->select("ev.id as event_id, c.first_name, c.last_name, p.dob, p.hos_num, ev.created_date")
 				->from("event ev")
 				->join("episode e","ev.episode_id = e.id")
 				->join("patient p","e.patient_id = p.id")

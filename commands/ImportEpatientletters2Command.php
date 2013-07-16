@@ -78,7 +78,7 @@ Usage: ./yiic importepatientletters
 				// create event
 				$event = new Event;
 				$event->episode_id = NULL;
-				$event->datetime = date( 'Y-m-d H:i:s', strtotime($row->letterdate));
+				$event->created_date = date( 'Y-m-d H:i:s', strtotime($row->letterdate));
 				$event->event_type_id = $event_type_id;
 				$event->created_user_id = 1;
 				$event->last_modified_user_id = 1;
@@ -215,7 +215,7 @@ Usage: ./yiic importepatientletters
 						$legacy_episode = new Episode;
 						$legacy_episode->patient_id = $letter->patient_id;
 						$legacy_episode->firm_id = NULL;
-						$legacy_episode->start_date = $event->datetime;
+						$legacy_episode->start_date = $event->created_date;
 						$legacy_episode->legacy = 1;
 						$legacy_episode->save();
 

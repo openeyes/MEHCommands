@@ -24,13 +24,13 @@ class ReportCommand extends CConsoleCommand
 		$letters = array();
 
 		foreach (Yii::app()->db->createCommand()
-			->select("e.id, epatient_hosnum, datetime")
+			->select("e.id, epatient_hosnum, created_date")
 			->from("et_ophleepatientletter_epatientletter epl")
 			->join("event e","epl.event_id = e.id")
-			->where("letter_html like '%Martina Suzani%' and datetime >= '2011-01-01 00:00:00' and e.deleted = 0")
+			->where("letter_html like '%Martina Suzani%' and created_date >= '2011-01-01 00:00:00' and e.deleted = 0")
 			->queryAll() as $row) {
 
-			$timestamp = strtotime($row['datetime']);
+			$timestamp = strtotime($row['created_date']);
 
 			while (isset($letters[$timestamp])) {
 				$timestamp++;
@@ -83,7 +83,7 @@ class ReportCommand extends CConsoleCommand
 
 		foreach (ElementLetter::model()->findAll($criteria) as $letter) {
 			if ($letter->event->deleted == 0 && $letter->event->episode->deleted == 0) {
-				$timestamp = strtotime($letter->event->datetime);
+				$timestamp = strtotime($letter->event->created_date);
 				while (isset($letters[$timestamp])) $timestamp++;
 
 				$letters[$timestamp] = array(
@@ -97,7 +97,7 @@ class ReportCommand extends CConsoleCommand
 		}
 
 		foreach (Yii::app()->db->createCommand()
-			->select("e.id, e.datetime, p.hos_num, c.first_name, c.last_name")
+			->select("e.id, e.created_date, p.hos_num, c.first_name, c.last_name")
 			->from("et_ophtroperationnote_surgeon s")
 			->join("event e","s.event_id = e.id")
 			->join("episode ep","e.episode_id = ep.id")
@@ -106,7 +106,7 @@ class ReportCommand extends CConsoleCommand
 			->where("(s.surgeon_id = 1873 or s.assistant_id = 1873) and e.deleted = 0 and ep.deleted = 0")
 			->queryAll() as $row) {
 
-			$timestamp = strtotime($row['datetime']);
+			$timestamp = strtotime($row['created_date']);
 			while (isset($letters[$timestamp])) $timestamp++;
 
 			$letters[$timestamp] = array(
@@ -166,8 +166,8 @@ class ReportCommand extends CConsoleCommand
 					throw new Exception('Unable to associate legacy event with episode: '.print_r($event->getErrors(),true));
 				}
 
-				if (strtotime($event->datetime) < $earliest) {
-					$earliest = strtotime($event->datetime);
+				if (strtotime($event->created_date) < $earliest) {
+					$earliest = strtotime($event->created_date);
 				}
 			}
 
