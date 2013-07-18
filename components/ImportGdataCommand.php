@@ -81,7 +81,20 @@ abstract class ImportGdataCommand extends CConsoleCommand
 	{
 		$class = $args['class'];
 		$field = $args['field'];
-		$records = BaseActiveRecord::model($class)->findAllByAttributes(array($field => $value));
+
+		$criteria = new CDbCriteria;
+		$criteria->addCondition($field.' = :value');
+		$criteria->params[':value'] = $value;
+
+		if (is_array(@$args['where'])) {
+			foreach ($args['where'] as $_key => $_value) {
+				$criteria->addCondition($_key.' = :'.$_key);
+				$criteria->params[':'.$_key] = $_value;
+			}
+		}
+
+		$records = $class::model()->findAll($criteria);
+
 		if (count($records) > 1) {
 			throw new CException("More than one matching record in $class for $field = $value");
 		} elseif (count($records) == 1) {
