@@ -35,7 +35,7 @@ class ImportLasersCommand extends CConsoleCommand
 		}
 
 		if (!$selected = mssql_select_db($dbMlsParams['Database'], $link)) {
-			echo "Couldn’t open database: $myDB";
+			echo "Could not open database: $myDB";
 			exit;
 		}
 
