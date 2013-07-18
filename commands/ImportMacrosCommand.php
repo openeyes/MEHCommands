@@ -21,8 +21,24 @@ class ImportMacrosCommand extends ImportGdataCommand
 {
 	public function run($args)
 	{
-		$data = $this->loadData('Correspondence Macros', array('firm_letter_macro', 'subspecialty_letter_macro'));
+		$data = $this->loadData('Correspondence Macros 1.4', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
+				'letter_macro' => array(
+					'table' => 'et_ophcocorrespondence_letter_macro',
+					'match_fields' => array('name', 'site_id'),
+					'column_mappings' => array(
+						'name',
+						'site_name' => array('field' => 'site_id', 'method' => 'Find', 'args' => array('class' => 'Site', 'field' => 'name', 'where' => array('institution_id'=>1))),
+						'display_order',
+						'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
+						'body',
+						'recipient_patient',
+						'recipient_doctor',
+						'cc_patient',
+						'cc_doctor',
+						'use_nickname',
+					),
+				),
 				'firm_letter_macro' => array(
 						'table' => 'et_ophcocorrespondence_firm_letter_macro',
 						'match_fields' => array('name', 'firm_id'),
@@ -66,8 +82,13 @@ class ImportMacrosCommand extends ImportGdataCommand
 	 */
 	protected function mapFindFirm($value)
 	{
+		if (!preg_match('/\|/',$value)) {
+			return Firm::model()->find('name=?',array($value))->id;
+		}
+
 		$tokens = explode('|', $value);
 		$firm_name = trim($tokens[0]);
+
 		$subspecialty_name = trim($tokens[1]);
 		$criteria = new CDbCriteria;
 		$criteria->join = '
