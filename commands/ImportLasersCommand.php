@@ -59,8 +59,8 @@ class ImportLasersCommand extends CConsoleCommand
 
 				if ( $site = Site::model()->find('short_name = ?', array($lkup_name)) ) {
 					// check the laser hasn't already been created
-					if (!Element_OphTrLaser_Site_Laser::model()->find('name = ? AND site_id = ?', array($row[0], $site->id) )) {
-						$laser = new Element_OphTrLaser_Site_Laser;
+					if (!OphTrLaser_Site_Laser.php::model()->find('name = ? AND site_id = ?', array($row[0], $site->id) )) {
+						$laser = new OphTrLaser_Site_Laser.php;
 						$laser->name = $row[0];
 						$laser->type = $row[1];
 						$laser->wavelength = $row[2];
@@ -69,7 +69,7 @@ class ImportLasersCommand extends CConsoleCommand
 						$criteria = new CdbCriteria;
 						$criteria->order = 'display_order DESC';
 						$criteria->limit = 1;
-						if ($mx_row = Element_OphTrLaser_Site_Laser::model()->find($criteria) ) {
+						if ($mx_row = OphTrLaser_Site_Laser.php::model()->find($criteria) ) {
 							$laser->display_order = $mx_row->display_order + 1;
 						} else {
 							$laser->display_order = 1;
