@@ -28,7 +28,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 					'match_fields' => array('name', 'site_id'),
 					'column_mappings' => array(
 						'name',
-						'site_name' => array('field' => 'site_id', 'method' => 'Find', 'args' => array('class' => 'Site', 'field' => 'name', 'where' => array('institution_id'=>1))),
+						'site_name' => array('field' => 'site_id', 'method' => 'FindSite'),
 						'display_order',
 						'episode_status_name' => array('field' => 'episode_status_id', 'method' => 'Find', 'args' => array('class' => 'EpisodeStatus', 'field' => 'name')),
 						'body',
@@ -99,6 +99,18 @@ class ImportMacrosCommand extends ImportGdataCommand
 		$criteria->params = array(':subspecialty_name' => $subspecialty_name, ':firm_name' => $firm_name);
 		if ($firm = Firm::model()->find($criteria)) {
 			return $firm->id;
+		} else {
+			return null;
+		}
+	}
+
+	protected function mapFindSite($value) {
+		$site_name = $value;
+		$criteria = new CDbCriteria;
+		$criteria->condition = 't.name = :site_name AND t.institution_id = 1';
+		$criteria->params = array(':site_name' => $site_name);
+		if($site = Site::model()->find($criteria)) {
+			return $site->id;
 		} else {
 			return null;
 		}
