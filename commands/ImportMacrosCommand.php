@@ -88,7 +88,11 @@ class ImportMacrosCommand extends ImportGdataCommand
 		$subspecialty_name = trim($tokens[1]);
 
 		if(!$subspecialty_name) {
-			return Firm::model()->find('name=?',array($value))->id;
+			if($firm = Firm::model()->find('name=?',array($firm_name))) {
+				return $firm->id;
+			} else {
+				return null;
+			}
 		}
 
 		$criteria = new CDbCriteria;
