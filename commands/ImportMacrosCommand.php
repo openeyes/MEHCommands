@@ -21,7 +21,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 {
 	public function run($args)
 	{
-		$data = $this->loadData('Correspondence Macros 1.4', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
+		$data = $this->loadData('Correspondence Macros', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
 				'letter_macro' => array(
 					'table' => 'et_ophcocorrespondence_letter_macro',
@@ -82,14 +82,15 @@ class ImportMacrosCommand extends ImportGdataCommand
 	 */
 	protected function mapFindFirm($value)
 	{
-		if (!preg_match('/\|/',$value)) {
-			return Firm::model()->find('name=?',array($value))->id;
-		}
-
 		$tokens = explode('|', $value);
 		$firm_name = trim($tokens[0]);
 
 		$subspecialty_name = trim($tokens[1]);
+
+		if(!$subspecialty_name) {
+			return Firm::model()->find('name=?',array($value))->id;
+		}
+
 		$criteria = new CDbCriteria;
 		$criteria->join = '
 				JOIN service_subspecialty_assignment ssa ON ssa.id = t.service_subspecialty_assignment_id
