@@ -60,7 +60,7 @@ class CorrespondenceDataCommand extends CConsoleCommand
 			$lm->use_nickname = 1;
 			$lm->body = 'This [age] year old [sub] was discharged from hospital today.
 
-Diagnosis: [epd]
+Diagnosis: [obd]
 
 Operation: [ops]
 Prescription: [pre]
@@ -89,7 +89,7 @@ Prescription: [pre]
 		$lm->use_nickname = 1;
 		$lm->body = 'This [age] year old [sub] was discharged from hospital today.
 
-Diagnosis: [epd]
+Diagnosis: [obd]
 
 Operation: [ops]
 Prescription: [pre]
