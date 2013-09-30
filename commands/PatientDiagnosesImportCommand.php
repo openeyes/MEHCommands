@@ -152,14 +152,16 @@ EOH;
 	 * @param $pas_key
 	 * @param $snomed
 	 * @param null $date
-	 * @return bool
 	 * @throws PatientCreationException
+	 * @throws DisorderClashException
+	 * @throws Exception
+	 * @return bool
 	 */
 	protected function processPatient($hos_num, $pas_key, $snomed, $date=null)
 	{
 		$hos_num = sprintf('%07s',$hos_num);
 
-		if (!$patient = Patient::model()->noPas()->find('hos_num = ?', array($hos_num))) {
+		if (!$patient = Patient::model()->noPas()->with('secondarydiagnoses')->find('hos_num = ?', array($hos_num))) {
 			// create a new blank patient that the PAS can populate at a later stage
 			$transaction = Yii::app()->db->beginTransaction();
 			try {
@@ -181,7 +183,6 @@ EOH;
 				$transaction->commit();
 			}
 			catch (Exception $e) {
-				echo $hos_num;
 				$transaction->rollback();
 				throw $e;
 				throw new PatientCreationException();
@@ -206,10 +207,11 @@ EOH;
 					|| array_intersect($psd_ids, $disorder->descendentIds()) ) {
 					return false;
 				}
+
 				foreach ($this->distinct_disorders as $distinct) {
 					if ($distinct != $snomed) {
 						$distinct_disorder = $this->getDisorder($distinct);
-						if (in_array($distinct, $psd_ids) 
+						if (in_array($distinct, $psd_ids)
 							|| array_intersect($psd_ids, $distinct_disorder->descendentIds())) {
 							$e = new DisorderClashException();
 							$e->hos_num = $hos_num;
