@@ -89,7 +89,7 @@ EOH;
 		if (count($failed_patients)) {
 			echo "FAILED to create some patients: ";
 			echo implode(", ", array_slice($failed_patients, 0, 5));
-			if ($left_over = count($failed_patients) - 5) {
+			if ($left_over = count($failed_patients) - 5 && $left_over > 0) {
 				echo " ... (" . $left_over . " more)";
 			}
 			echo "\n";
