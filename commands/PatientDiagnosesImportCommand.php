@@ -35,6 +35,9 @@ EOH;
 
 	const USE_DATE = false;
 	const TREE_CHECK = true;
+	// if a patient has a disorder in one, and the the disorder provided is in one of the other
+	// trees of this disorder id, then throw an error as they clash.
+	protected $distinct_disorders = array(44054006, 46635009);
 
 	public function run($args)
 	{
@@ -58,7 +61,11 @@ EOH;
 		$diagnosis_count = 0;
 		$failed_patients = array();
 		$invalid_disorders = array();
+		$clashing_patients = array();
 		foreach (file($fname) as $idx => $line) {
+			if ($patient_count % 100 == 0) {
+				echo ".";
+			}
 			$data = str_getcsv($line, ',', '"');
 			if (!$header) {
 				$header = $data;
@@ -84,9 +91,12 @@ EOH;
 			catch (InvalidDisorderException $e) {
 				$invalid_disorders[] = $e->disorder_id;
 			}
+			catch (DisorderClashException $e) {
+				$clashing_patients[] = $e->hos_num;
+			}
 		}
-		$error_count = count($failed_patients) + count($invalid_disorders);
-
+		$error_count = count($failed_patients) + count($invalid_disorders) + count($clashing_patients);
+		echo "\n";
 		if (count($failed_patients)) {
 			echo "FAILED to create some patients: ";
 			echo implode(", ", array_slice($failed_patients, 0, 5));
@@ -98,6 +108,11 @@ EOH;
 		if (count($invalid_disorders)) {
 			echo "Invalid disorders: ";
 			echo implode(",", array_unique($invalid_disorders)) . "\n";
+			echo "\n";
+		}
+		if (count($clashing_patients)) {
+			echo count($clashing_patients) . " Patients with clashing disorders: ";
+			echo implode(",", array_unique($clashing_patients)) . "\n";
 			echo "\n";
 		}
 		echo $patient_count . " rows processed\n";
@@ -126,7 +141,7 @@ EOH;
 			}
 			$this->disorder_cache[$snomed] = $disorder;
 		}
-		return $this->disorder_cache[$snomed] = $disorder;
+		return $this->disorder_cache[$snomed];
 	}
 
 	/**
@@ -191,7 +206,17 @@ EOH;
 					|| array_intersect($psd_ids, $disorder->descendentIds()) ) {
 					return false;
 				}
-
+				foreach ($this->distinct_disorders as $distinct) {
+					if ($distinct != $snomed) {
+						$distinct_disorder = $this->getDisorder($distinct);
+						if (in_array($distinct, $psd_ids) 
+							|| array_intersect($psd_ids, $distinct_disorder->descendentIds())) {
+							$e = new DisorderClashException();
+							$e->hos_num = $hos_num;
+							throw $e;
+						}
+					}
+				}
 			}
 		}
 
@@ -217,4 +242,9 @@ class InvalidDisorderException extends Exception
 {
 	public $disorder_id = null;
 
+}
+
+class DisorderClashException extends Exception
+{
+	public $hos_num = null;
 }
