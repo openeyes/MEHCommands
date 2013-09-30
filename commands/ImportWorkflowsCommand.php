@@ -46,7 +46,7 @@ class ImportWorkflowsCommand extends ImportGdataCommand
 						'match_fields' => array('id'),
 						'column_mappings' => array(
 								'set_id',
-								'element_type_name' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'name')),
+								'element_type_classname' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'class_name')),
 								'id',
 						),
 				),
