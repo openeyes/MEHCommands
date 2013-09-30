@@ -85,12 +85,13 @@ EOH;
 				$invalid_disorders[] = $e->disorder_id;
 			}
 		}
+		$error_count = count($failed_patients) + count($invalid_disorders);
 
 		if (count($failed_patients)) {
 			echo "FAILED to create some patients: ";
 			echo implode(", ", array_slice($failed_patients, 0, 5));
-			if ($left_over = count($failed_patients) - 5 && $left_over > 0) {
-				echo " ... (" . $left_over . " more)";
+			if (count($failed_patients) - 5 > 0) {
+				echo " ... (" . count($failed_patients) - 5 . " more)";
 			}
 			echo "\n";
 		}
@@ -100,7 +101,7 @@ EOH;
 			echo "\n";
 		}
 		echo $patient_count . " rows processed\n";
-		echo $patient_count - $diagnosis_count . " already had diagnosis set\n";
+		echo $patient_count - $error_count - $diagnosis_count . " already had diagnosis set\n";
 	}
 
 	protected $disorder_cache = array();
@@ -141,6 +142,8 @@ EOH;
 	 */
 	protected function processPatient($hos_num, $pas_key, $snomed, $date=null)
 	{
+		$hos_num = sprintf('%07s',$hos_num);
+
 		if (!$patient = Patient::model()->noPas()->find('hos_num = ?', array($hos_num))) {
 			// create a new blank patient that the PAS can populate at a later stage
 			$transaction = Yii::app()->db->beginTransaction();
@@ -163,7 +166,9 @@ EOH;
 				$transaction->commit();
 			}
 			catch (Exception $e) {
+				echo $hos_num;
 				$transaction->rollback();
+				throw $e;
 				throw new PatientCreationException();
 			}
 		}
@@ -172,7 +177,7 @@ EOH;
 		if (count($psds)) {
 			$psd_ids = array();
 			foreach ($psds as $psd) {
-				$psd_ids[] = $psd->id;
+				$psd_ids[] = $psd->disorder_id;
 			}
 			if (in_array($snomed, $psd_ids)) {
 				return false;
@@ -199,7 +204,7 @@ EOH;
 			throw new Exception("Date code not implemented yet");
 		}
 
-		$sd->save();
+		return $sd->save();
 	}
 }
 
