@@ -178,7 +178,10 @@ EOH;
 				$assignment->external_type = 'PAS_Patient';
 				$assignment->internal_type = 'Patient';
 				$assignment->internal_id = $patient->id;
-				$assignment->save();
+				// set the assignment to stale to ensure that it is updated when patient first viewed.
+				$assignment->created_date = date('Y-m-d H:i:s');
+				$assignment->last_modified_date = '1970-01-01 00:00:00';
+				$assignment->save(true, null, true);
 
 				$transaction->commit();
 			}
