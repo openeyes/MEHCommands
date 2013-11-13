@@ -202,9 +202,16 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 			if ($patient = $this->getPatient($subject)) {
 				if (Pedigree::model()->findByPk($subject['newgc'])) {
+					if ($subject['status'] == null) {
+						$subject['status'] = 'Unknown';
+					}
+
+					$status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
+
 					if (!$pp = PatientPedigree::model()->find('patient_id=?',array($patient->id))) {
 						$pp = new PatientPedigree;
 						$pp->patient_id = $patient->id;
+						$pp->status_id = $status->id;
 					}
 
 					if ($pp->pedigree_id != $subject['newgc']) {
@@ -382,10 +389,17 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			throw new Exception("Unable to save patient: ".print_r($patient->getErrors(),true));
 		}
 
+		if ($subject['status'] === null) {
+			$subject['status'] = 'Unknown';
+		}
+
+		$status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
+
 		if (Pedigree::model()->findByPk($subject['newgc'])) {
 			$pp = new PatientPedigree;
 			$pp->patient_id = $patient->id;
 			$pp->pedigree_id = $subject['newgc'];
+			$pp->status_id = $status->id;
 
 			if (!$pp->save()) {
 				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
