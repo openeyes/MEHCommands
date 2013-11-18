@@ -353,7 +353,11 @@ class GeneticMigrationCommand extends CConsoleCommand {
 							$effect_id = OphInGenetictest_Test_Effect::model()->find('name=?',array($assay['effect']))->id;
 						}
 
-						$gene = PedigreeGene::model()->findByPk($assay['geneid']);
+						if ($gene = PedigreeGene::model()->findByPk($assay['geneid'])) {
+							$gene_id = $gene->id;
+						} else {
+							$gene_id = null;
+						}
 
 						$user_id = $this->findUserIDForString($assay['enteredby']);
 
@@ -362,7 +366,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 						$test = new Element_OphInGenetictest_Test;
 						$test->id = $assay['testid'];
 						$test->event_id = $event->id;
-						$test->gene_id = $gene->id;
+						$test->gene_id = $gene_id;
 						$test->method_id = $method_id;
 						$test->result = $assay['result'];
 						$test->result_date = $assay['resultdate'];
