@@ -54,7 +54,7 @@ class BillCommand extends CConsoleCommand {
 			->limit($rows)
 			->queryAll(); //);
 
-		echo "Surgery date,Surgery site,Eye,Age,Gender,BCVA preop,Target refraction,Comorbidities,Surgeon role,Anaesthetic type,Anaesthetic delivery,Complications,BCVA postop,Refraction preop,Refraction postop,Notes indicate pc rupture,Notes indicate vitreous loss\n";
+		echo "Surgery date,Surgery site,Eye,Age,Gender,BCVA preop,Target refraction,Comorbidities,Surgeon role,Anaesthetic type,Anaesthetic delivery,Complications,BCVA postop,Refraction preop,Refraction postop,Notes indicate pc rupture,Notes indicate vitreous loss,First or second eye\n";
 
 		foreach ($data as $row) {
 			$age = Helper::getAge($row['dob'], $row['date_of_death']);
@@ -72,6 +72,8 @@ class BillCommand extends CConsoleCommand {
 				$row['anaesthetic_delivery'] = 'N/A';
 			}
 
+			$first_second_eye = $this->findFirstSecondEye($row['episode_id'], $row['created_date'], $row['booking_created_date']);
+
 			$complications = '';
 			foreach (CataractComplication::model()->findAll('cataract_id=?',array($row['cat_id'])) as $i => $complication) {
 				if ($i >0) {
@@ -83,14 +85,11 @@ class BillCommand extends CConsoleCommand {
 			$vitreous_loss = preg_match('/vitreous loss/',strtolower($row['complication_notes'])) && !preg_match('/no vitreous loss/',strtolower($row['complication_notes']));
 			$pc_rupture = preg_match('/pc rupture/',strtolower($row['complication_notes'])) && !preg_match('/no pc rupture/',strtolower($row['complication_notes']));
 
-			echo "\"{$row['session_date']}\",\"{$row['site_name']}\",\"{$row['eye']}\",\"$age\",\"{$row['gender']}\",\"'$bcva_preop\",\"$target_refraction\",\"$comorbidities\",\"{$row['surgeon_role']}\",\"{$row['anaesthetic_type']}\",\"{$row['anaesthetic_delivery']}\",\"$complications\",\"'$bcva_postop\",\"$refraction_preop\",\"$refraction_postop\",".($pc_rupture ? 'Yes' : 'No').",".($vitreous_loss ? 'Yes' : 'No')."\n";
+			echo "\"{$row['session_date']}\",\"{$row['site_name']}\",\"{$row['eye']}\",\"$age\",\"{$row['gender']}\",\"'$bcva_preop\",\"$target_refraction\",\"$comorbidities\",\"{$row['surgeon_role']}\",\"{$row['anaesthetic_type']}\",\"{$row['anaesthetic_delivery']}\",\"$complications\",\"'$bcva_postop\",\"$refraction_preop\",\"$refraction_postop\",".($pc_rupture ? 'Yes' : 'No').",".($vitreous_loss ? 'Yes' : 'No').",\"$first_second_eye\"\n";
 		}
 	}
 
-	public function findExamination($episode_id, $created_date, $booking_created_date, $eye_id, $table) {
-		$eye = Eye::model()->findByPk($eye_id);
-		$eye = strtolower($eye->name);
-
+	public function findExamination($episode_id, $created_date, $booking_created_date, $table) {
 		if ($examination = Yii::app()->db->createCommand()
 			->select("e.id, va.id as va_id")
 			->from("event e")
@@ -116,10 +115,7 @@ class BillCommand extends CConsoleCommand {
 		return false;
 	}
 
-	public function findExamination2($episode_id, $created_date, $eye_id, $table) {
-		$eye = Eye::model()->findByPk($eye_id);
-		$eye = strtolower($eye->name);
-
+	public function findExamination2($episode_id, $created_date, $table) {
 		if ($examination = Yii::app()->db->createCommand()
 			->select("e.id, va.id as va_id")
 			->from("event e")
@@ -134,10 +130,24 @@ class BillCommand extends CConsoleCommand {
 		return false;
 	}
 
+	public function findFirstSecondEye($episode_id, $created_date, $booking_created_date)
+	{
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_cataractmanagement')) {
+			if ($cm = Element_OphCiExamination_CataractManagement::model()->findByPk($examination['va_id'])) {
+				if ($cm->eye_id == 1) {
+					return "First eye";
+				}
+				return "Second eye";
+			}
+		}
+
+		return "Not recorded";
+	}
+
 	public function findBCVA_preop($episode_id, $created_date, $booking_created_date, $eye_id) {
 		$eye = strtolower(Eye::model()->findByPk($eye_id)->name);
 
-		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, $eye_id, 'et_ophciexamination_visualacuity')) {
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_visualacuity')) {
 			$va = Element_OphCiExamination_VisualAcuity::model()->findByPk($examination['va_id']);
 
 			if ($r = $va->getBestReading($eye)) {
@@ -151,7 +161,7 @@ class BillCommand extends CConsoleCommand {
 	public function findBCVA_postop($episode_id, $created_date, $eye_id) {
 		$eye = strtolower(Eye::model()->findByPk($eye_id)->name);
 
-		if ($examination = $this->findExamination2($episode_id, $created_date, $eye_id, 'et_ophciexamination_visualacuity')) {
+		if ($examination = $this->findExamination2($episode_id, $created_date, 'et_ophciexamination_visualacuity')) {
 			$va = Element_OphCiExamination_VisualAcuity::model()->findByPk($examination['va_id']);
 
 			if ($r = $va->getBestReading($eye)) {
@@ -167,7 +177,7 @@ class BillCommand extends CConsoleCommand {
 
 		$comorbidities = array();
 
-		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, $eye_id, 'et_ophciexamination_comorbidities')) {
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_comorbidities')) {
 			$va = Element_OphCiExamination_Comorbidities::model()->findByPk($examination['va_id']);
 
 			foreach ($va->items as $i => $item) {
@@ -175,7 +185,7 @@ class BillCommand extends CConsoleCommand {
 			}
 		}
 
-		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, $eye_id, 'et_ophciexamination_anteriorsegment')) {
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_anteriorsegment')) {
 			$as = Element_OphCiExamination_AnteriorSegment::model()->findByPk($examination['va_id']);
 
 			if ($as->{$eye.'_pxe'}) {
@@ -193,7 +203,7 @@ class BillCommand extends CConsoleCommand {
 	public function findTargetRefraction($episode_id, $created_date, $booking_created_date, $eye_id) {
 		$eye = strtolower(Eye::model()->findByPk($eye_id)->name);
 
-		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, $eye_id, 'et_ophciexamination_cataractmanagement')) {
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_cataractmanagement')) {
 			$tr = Element_OphCiExamination_CataractManagement::model()->findByPk($examination['va_id']);
 
 			return $tr->target_postop_refraction;
@@ -205,7 +215,7 @@ class BillCommand extends CConsoleCommand {
 	public function findRefractionPreop($episode_id, $created_date, $booking_created_date, $eye_id) {
 		$eye = strtolower(Eye::model()->findByPk($eye_id)->name);
 
-		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, $eye_id, 'et_ophciexamination_refraction')) {
+		if ($examination = $this->findExamination($episode_id, $created_date, $booking_created_date, 'et_ophciexamination_refraction')) {
 			$re = Element_OphCiExamination_Refraction::model()->findByPk($examination['va_id']);
 
 			return $re->getCombined($eye);
@@ -217,7 +227,7 @@ class BillCommand extends CConsoleCommand {
 	public function findRefractionPostop($episode_id, $created_date, $booking_created_date, $eye_id) {
 		$eye = strtolower(Eye::model()->findByPk($eye_id)->name);
 
-		if ($examination = $this->findExamination2($episode_id, $created_date, $eye_id, 'et_ophciexamination_refraction')) {
+		if ($examination = $this->findExamination2($episode_id, $created_date, 'et_ophciexamination_refraction')) {
 			$re = Element_OphCiExamination_Refraction::model()->findByPk($examination['va_id']);
 
 			return $re->getCombined($eye);
