@@ -86,10 +86,13 @@ class CFHImportCommand extends CConsoleCommand
 			->select("p.remote_id, s.remote_id as site_code, i.remote_id as institution_code")
 			->from("person p")
 			->join("contact c","p.contact_id = c.id")
-			->leftJoin("contact_location cl","cl.contact_id = c.id")
-			->leftJoin("site s","cl.site_id = s.id")
-			->leftJoin("institution i","cl.institution_id = i.id")
-			->where("p.source_id = ?",array($this->source->id))
+			->leftJoin("contact_location cl","cl.contact_id = c.id and cl.deleted = :notdeleted")
+			->leftJoin("site s","cl.site_id = s.id and s.deleted = :notdeleted")
+			->leftJoin("institution i","cl.institution_id = i.id and i.deleted = :notdeleted")
+			->where("p.source_id = :source_id and p.deleted = :notdeleted and c.deleted = :notdeleted",array(
+				':source_id' => $this->source->id,
+				':notdeleted' => 0,
+			))
 			->queryAll() as $row) {
 
 			$code = $row['site_code'] ? $row['site_code'] : $row['institution_code'];
@@ -97,11 +100,11 @@ class CFHImportCommand extends CConsoleCommand
 			$this->consultants[$code][] = $row['remote_id'];
 		}
 
-		foreach (Yii::app()->db->createCommand()->select("*")->from("institution")->queryAll() as $row) {
+		foreach (Yii::app()->db->createCommand()->select("*")->from("institution")->where("deleted = :notdeleted",array(":notdeleted" => 0))->queryAll() as $row) {
 			$this->sites[$row['remote_id']] = $row;
 		}
 
-		foreach (Yii::app()->db->createCommand()->select("*")->from("site")->queryAll() as $row) {
+		foreach (Yii::app()->db->createCommand()->select("*")->from("site")->where("deleted = :notdeleted",array(":notdeleted" => 0))->queryAll() as $row) {
 			$this->sites[$row['remote_id']] = $row;
 		}
 
