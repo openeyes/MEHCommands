@@ -69,7 +69,11 @@ class ImportMissingMRExamsCommand extends CConsoleCommand
 				continue;
 			}
 			$hosnum = sprintf('%07s', $data[$columns['hosnum']]);
-			$date = date('Y-m-d',strtotime($data[$columns['date']]));
+			if (preg_match('/^([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{1,2})$/',$data[$columns['date']],$m)) {
+				$date = date('Y-m-d',mktime(0,0,0,$m[2],$m[1],((integer)$m[3])+2000));
+			} else {
+				$date = date('Y-m-d',strtotime($data[$columns['date']]));
+			}
 			$missing_grades[] = array(
 				'hosnum' => $hosnum,
 				'date' => $date,
