@@ -34,11 +34,11 @@ class FixCollationCommand extends CConsoleCommand
 					}
 
 					Yii::app()->db->createCommand("alter table $table->name convert to character set utf8 collate utf8_unicode_ci;")->query();
-					Yii::app()->db->createCommand("alter table authitemchild convert to character set utf8 collate utf8_unicode_ci;")->query();
-					Yii::app()->db->createCommand("alter table authitem convert to character set utf8 collate utf8_unicode_ci;")->query();
-					Yii::app()->db->createCommand("alter table authitem_type convert to character set utf8 collate utf8_unicode_ci;")->query();
 
 					if ($table->name == 'authassignment') {
+						Yii::app()->db->createCommand("alter table authitemchild convert to character set utf8 collate utf8_unicode_ci;")->query();
+						Yii::app()->db->createCommand("alter table authitem convert to character set utf8 collate utf8_unicode_ci;")->query();
+						Yii::app()->db->createCommand("alter table authitem_type convert to character set utf8 collate utf8_unicode_ci;")->query();
 						Yii::app()->db->createCommand("alter table authitemchild add foreign key authitemchild_parent_fk (parent) references authitem (name);")->query();
 						Yii::app()->db->createCommand("alter table authitemchild add foreign key authitemchild_child_fk (child) references authitem (name);")->query();
 						Yii::app()->db->createCommand("alter table authassignment add foreign key authassignment_itemname_fk (itemname) references authitem (name);")->query();
