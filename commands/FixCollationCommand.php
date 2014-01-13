@@ -24,9 +24,26 @@ class FixCollationCommand extends CConsoleCommand
 		foreach (Yii::app()->db->getSchema()->getTables() as $table) {
 			echo "$table->name ... ";
 
-			$create = Yii::app()->db->createCommand("show create table $table->name")->queryRow();
-			if (!preg_match('/DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci/',$create['Create Table'])) {
-				Yii::app()->db->createCommand("alter table $table->name convert to character set utf8 collate utf8_unicode_ci;")->query();
+			if (!in_array($table->name,array('authitem','authitemchild','authitem_type'))) {
+				$create = Yii::app()->db->createCommand("show create table $table->name")->queryRow();
+				if (!preg_match('/DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci/',$create['Create Table'])) {
+					if ($table->name == 'authassignment') {
+						Yii::app()->db->createCommand("alter table authassignment drop foreign key authassignment_itemname_fk")->query();
+						Yii::app()->db->createCommand("alter table authitemchild drop foreign key authitemchild_parent_fk;")->query();
+						Yii::app()->db->createCommand("alter table authitemchild drop foreign key authitemchild_child_fk;")->query();
+					}
+
+					Yii::app()->db->createCommand("alter table $table->name convert to character set utf8 collate utf8_unicode_ci;")->query();
+					Yii::app()->db->createCommand("alter table authitemchild convert to character set utf8 collate utf8_unicode_ci;")->query();
+					Yii::app()->db->createCommand("alter table authitem convert to character set utf8 collate utf8_unicode_ci;")->query();
+					Yii::app()->db->createCommand("alter table authitem_type convert to character set utf8 collate utf8_unicode_ci;")->query();
+
+					if ($table->name == 'authassignment') {
+						Yii::app()->db->createCommand("alter table authitemchild add foreign key authitemchild_parent_fk (parent) references authitem (name);")->query();
+						Yii::app()->db->createCommand("alter table authitemchild add foreign key authitemchild_child_fk (child) references authitem (name);")->query();
+						Yii::app()->db->createCommand("alter table authassignment add foreign key authassignment_itemname_fk (itemname) references authitem (name);")->query();
+					}
+				}
 			}
 
 			echo "ok\n";
