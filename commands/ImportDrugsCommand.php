@@ -39,6 +39,17 @@ class ImportDrugsCommand extends ImportGdataCommand
 		}
 		$data['site_subspecialty_drug'] = $site_rows;
 
+
+		// Build allergy array (indexed by name)
+		$allergy_rows = $data['allergy'];
+		$allergy_columns = array_shift($allergy_rows);
+		$allergy_id_index = array_search('id', $allergy_columns);
+		$allergy_name_index = array_search('name', $allergy_columns);
+		$allergies = array();
+		foreach($allergy_rows as $allergy_row) {
+			$allergies[strtolower($allergy_row[$allergy_name_index])] = $allergy_row[$allergy_id_index];
+		}
+
 		// Generate drug_allergy_assignment
 		$rows = $data['drug'];
 		$columns = array_shift($rows);
@@ -47,10 +58,16 @@ class ImportDrugsCommand extends ImportGdataCommand
 				2 => 'allergy_id'
 		));
 		$drug_id_index = array_search('id', $columns);
-		$allergy_id_index = array_search('allergy_id', $columns);
+		$drug_allergies_index = array_search('allergies', $columns);
 		foreach ($rows as $row) {
-			if ($row[$allergy_id_index] &&$row[$allergy_id_index] != '#N/A' && $row[$allergy_id_index] != 'NULL') {
-				$daa_rows[] = array(1 => $row[$drug_id_index], 2 => $row[$allergy_id_index]);
+			if(!isset($row[$drug_allergies_index])) {
+				continue;
+			}
+			$drug_allergies = array_map('trim',explode(',',$row[$drug_allergies_index]));
+			foreach($drug_allergies as $drug_allergy) {
+				if($drug_allergy && isset($allergies[strtolower($drug_allergy)])) {
+					$daa_rows[] = array(1 => $row[$drug_id_index], 2 => $allergies[strtolower($drug_allergy)]);
+				}
 			}
 		}
 		$data['drug_allergy_assignment'] = $daa_rows;
