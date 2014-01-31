@@ -63,6 +63,7 @@ class AnonymiseDataCommand extends CConsoleCommand
 	public $related_data = array();
 	public $threads = 8;
 	public $thread_workload = 1000;
+	public $debug = false;
 
 	public function run()
 	{
@@ -100,6 +101,12 @@ class AnonymiseDataCommand extends CConsoleCommand
 					$this->related_data[$table][$related_table] = array();
 
 					$fields = "$related_table.id, $related_table.".implode(", $related_table.",array_keys($params['fields']));
+
+					$this->debug(Yii::app()->getDb()->createCommand()
+						->select($fields)
+						->from($related_table)
+						->join($table,"$table.{$params['relation_field']} = $related_table.id")
+						->getText());
 
 					foreach (Yii::app()->getDb()->createCommand()
 						->select($fields)
@@ -160,6 +167,14 @@ class AnonymiseDataCommand extends CConsoleCommand
 				if ($pid == 0) {
 					$thread_offset = $offset + ($thread_id * $this->thread_workload);
 
+					$this->debug(Yii::app()->getDb()->createCommand()
+						->select($this->getSelectClause($fields))
+						->from($table)
+						->order('id asc')
+						->limit($this->thread_workload)
+						->offset($thread_offset)
+						->getText());
+
 					$data = Yii::app()->getDb()->createCommand()
 						->select($this->getSelectClause($fields))
 						->from($table)
@@ -209,6 +224,8 @@ class AnonymiseDataCommand extends CConsoleCommand
 								$related_update[$related_field] = $this->getFieldOfType($related_field, $related_params['type'], @$related_params['length'], @$related_params['unique'], @$row['gender']);
 							}
 
+							$this->debug("update: $table, ".print_r($related_update,true)."\n[".$related['id']."]\n");
+
 							Yii::app()->getDb()->createCommand()->update($related_table,$related_update,"id = {$related['id']}");
 						}
 					}
@@ -216,6 +233,8 @@ class AnonymiseDataCommand extends CConsoleCommand
 					$update[$field] = $this->getFieldOfType($field, $params['type'], @$params['length'], @$params['unique']);
 				}
 			}
+
+			$this->debug("update: $table, ".print_r($update,true)."[".$row['id']."]\n");
 
 			Yii::app()->getDb()->createCommand()->update($table,$update,"id = {$row['id']}");
 
@@ -245,7 +264,21 @@ class AnonymiseDataCommand extends CConsoleCommand
 				if (preg_match('/char/i',$properties->dbType) || preg_match('/text/i',$properties->dbType)) {
 
 					// Test for eyedraw columns
-					if ($row = Yii::app()->getDb()->createCommand()->select("*")->from($table->name)->where("$column is not null and $column != ''")->queryRow()) {
+					$this->debug(Yii::app()->getDb()
+						->createCommand()
+						->select("*")
+						->from($table->name)
+						->where("$column is not null and $column != ''")
+						->limit(1)
+						->getText());
+
+					if ($row = Yii::app()->getDb()
+							->createCommand()
+							->select("*")
+							->from($table->name)
+							->where("$column is not null and $column != ''")
+							->limit(1)
+							->queryRow()) {
 						if (!@json_decode($row[$column])) {
 							$fields[] = $column;
 						}
@@ -261,16 +294,24 @@ class AnonymiseDataCommand extends CConsoleCommand
 
 	public function processModuleData($table, $data, $fields)
 	{
+		$lorum_ipsum = $this->lorum_ipsum;
+
 		foreach ($data as $i => $row) {
 			$update = array();
 
 			foreach ($fields as $field) {
 				if (strlen($row[$field]) >0) {
-					$update[$field] = substr($this->lorum_ipsum,0,strlen($row[$field]));
+					while (strlen($row[$field]) > strlen($lorum_ipsum)) {
+						$lorum_ipsum = $lorum_ipsum."\n".$lorum_ipsum;
+					}
+
+					$update[$field] = substr($lorum_ipsum,0,strlen($row[$field]));
 				}
 			}
 
 			if (!empty($update)) {
+				$this->debug("update: $table, ".print_r($update,true)."\n[".$row['id']."]\n");
+
 				Yii::app()->getDb()->createCommand()->update($table,$update,"id = {$row['id']}");
 
 				if ($i %10 == 0) {
@@ -346,6 +387,14 @@ class AnonymiseDataCommand extends CConsoleCommand
 		$thread_id = 0;
 		$workload = array();
 
+		$this->debug(Yii::app()->getDb()->createCommand()
+			->select("address.id, address.address1, address.postcode")
+			->from("address")
+			->where("address1 != '' or postcode != ''")
+			->join("contact c","address.parent_class = 'Contact' and address.parent_id = c.id")
+			->join("patient p","p.contact_id = c.id")
+			->getText());
+
 		foreach (Yii::app()->getDb()->createCommand()
 			->select("address.id, address.address1, address.postcode")
 			->from("address")
@@ -377,6 +426,8 @@ class AnonymiseDataCommand extends CConsoleCommand
 
 			if ($pid == 0) {
 				foreach ($workload[$thread_id] as $i => $id) {
+					$this->debug("update: $table, ".print_r(array('address1' => $address1[rand(0,count($address1)-1)], 'postcode' => $postcode[rand(0,count($postcode)-1)]),true)."\n[$id]\n");
+
 					Yii::app()->getDb()->createCommand()->update('address',array('address1' => $address1[rand(0,count($address1)-1)], 'postcode' => $postcode[rand(0,count($postcode)-1)]), "id = $id");
 
 					if ($i %10 == 0) {
@@ -401,10 +452,25 @@ class AnonymiseDataCommand extends CConsoleCommand
 	{
 		echo "audit:";
 
-		foreach (Yii::app()->getDb()->createCommand()->select("id")->from("audit")->where("data like 'a:%:{%'")->queryAll() as $row) {
+		$this->debug(Yii::app()->getDb()
+			->createCommand()
+			->select("id")
+			->from("audit")
+			->where("data like 'a:%:{%'")
+			->getText());
+
+		foreach (Yii::app()->getDb()
+			->createCommand()
+			->select("id")
+			->from("audit")
+			->where("data like 'a:%:{%'")
+			->queryAll() as $row) {
+
 			$ids[] = $row['id'];
 
 			if (count($ids) >= 1000) {
+				$this->debug("update: audit, data=null\n[".print_r($ids,true)."]\n");
+
 				Yii::app()->getDb()->createCommand()->update('audit',array('data' => null),"id in (".implode(',',$ids).")");
 				$ids = array();
 				echo ".";
@@ -412,10 +478,21 @@ class AnonymiseDataCommand extends CConsoleCommand
 		}
 
 		if (!empty($ids)) {
+			$this->debug("update: audit, data=null\n[".print_r($ids,true)."]\n");
+
 			Yii::app()->getDb()->createCommand()->update('audit',array('data' => null),"id in (".implode(',',$ids).")");
 			echo ".";
 		}
 
 		echo "\n";
+	}
+
+	public function debug($msg)
+	{
+		if ($this->debug) {
+			$fp = fopen("/tmp/debug.log","a+");
+			fwrite($fp,date('Y-m-d H:i:s')." - $msg\n");
+			fclose($fp);
+		}
 	}
 }
