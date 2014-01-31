@@ -53,6 +53,10 @@ class AnonymiseDataCommand extends CConsoleCommand
 		),
 	);
 
+	public $exclude_tables = array(
+		'et_ophleepatientletter_epatientletter',
+	);
+
 	public $male_first = array();
 	public $male_last = array();
 	public $female_first = array();
@@ -247,7 +251,7 @@ class AnonymiseDataCommand extends CConsoleCommand
 	public function processModuleTables()
 	{
 		foreach (Yii::app()->getDb()->getSchema()->getTables() as $table) {
-			if ((preg_match('/^et_/',$table->name) || preg_match('/^oph/',$table->name)) && !preg_match('/_version$/',$table->name)) {
+			if (!in_array($table->name,$this->excude_tables) && (preg_match('/^et_/',$table->name) || preg_match('/^oph/',$table->name)) && !preg_match('/_version$/',$table->name)) {
 				$this->processModuleTable($table);
 			}
 		}
