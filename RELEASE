@@ -3,5 +3,12 @@ Release History
 
 This document is intended to summarise the changes made for each release. It should be noted that this document was only introduced with version 1.4, and therefore doesn't cover earlier releases.
 
+1.5.1
+-----
+- Refer to PCTs as CCGs
+- Import drugs script handles multiple allergies per drug
+- Fix MR exam importer to handle american dates
+
 1.5.0
 -----
+
