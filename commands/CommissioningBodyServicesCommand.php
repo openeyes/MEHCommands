@@ -102,8 +102,7 @@ class CommissioningBodyServicesCommand extends CConsoleCommand {
 
 			if (!$address = $contact->address) {
 				$address = new Address;
-				$address->parent_class = 'Contact';
-				$address->parent_id = $contact->id;
+				$address->contact_id = $contact->id;
 			}
 
 			$address->address1 = @$row[5].", ".$row[6];
