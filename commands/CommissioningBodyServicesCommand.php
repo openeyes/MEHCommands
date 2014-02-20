@@ -73,14 +73,15 @@ class CommissioningBodyServicesCommand extends CConsoleCommand {
 
 		foreach ($data as $i => $row) {
 			$criteria = new CDbCriteria;
-			$criteria->addCondition('name=:name');
-			$criteria->params[':name'] = $row[2];
-			$criteria->addCondition('commissioning_body_service_type_id=:cbst');
-			$criteria->params[':cbst'] = $service_type->id;
 			if (isset($row[1])) {
 				$criteria->addCondition('code=:code');
 				$criteria->params[':code'] = $row[1];
+			} else {
+				$criteria->addCondition('name=:name');
+				$criteria->params[':name'] = $row[2];
 			}
+			$criteria->addCondition('commissioning_body_service_type_id=:cbst');
+			$criteria->params[':cbst'] = $service_type->id;
 			if (!$cbs = CommissioningBodyService::model()->find($criteria)) {
 				$cbs = new CommissioningBodyService;
 				$cbs->code = @$row[1];
@@ -101,8 +102,7 @@ class CommissioningBodyServicesCommand extends CConsoleCommand {
 
 			if (!$address = $contact->address) {
 				$address = new Address;
-				$address->parent_class = 'Contact';
-				$address->parent_id = $contact->id;
+				$address->contact_id = $contact->id;
 			}
 
 			$address->address1 = @$row[5].", ".$row[6];
@@ -116,6 +116,7 @@ class CommissioningBodyServicesCommand extends CConsoleCommand {
 				throw new Exception("Unable to save address: ".print_r($address->getErrors(),true));
 			}
 
+			$cbs->name = $row[2];
 			$cbs->contact_id = $contact->id;
 			$cbs->commissioning_body_id = isset($commissioning_bodies[$cbs->code]) ? $commissioning_bodies[$cbs->code] : null;
 

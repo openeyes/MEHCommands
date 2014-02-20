@@ -109,8 +109,7 @@ class DrFosterImportCommand extends CConsoleCommand
 
 		if (!$address = $institution->contact->address) {
 			$address = new Address;
-			$address->parent_class = 'Contact';
-			$address->parent_id = $institution->contact_id;
+			$address->contact_id = $institution->contact_id;
 		}
 
 		if ($address->address1 != $address1 ||

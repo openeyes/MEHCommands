@@ -167,8 +167,7 @@ class CFHImportCommand extends CConsoleCommand
 		if (!$address = $contact->address) {
 			$address = new Address;
 			$address->country_id = 1;
-			$address->parent_class = 'Contact';
-			$address->parent_id = $contact->id;
+			$address->contact_id = $contact->id;
 		}
 
 		if ($data[6]) {
@@ -229,8 +228,7 @@ class CFHImportCommand extends CConsoleCommand
 		if (!$address = $site->contact->address) {
 			$address = new Address;
 			$address->country_id = 1;
-			$address->parent_class = 'Contact';
-			$address->parent_id = $site->contact_id;
+			$address->contact_id = $site->contact_id;
 		}
 
 		if ($data[6]) {
