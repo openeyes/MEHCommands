@@ -33,6 +33,34 @@ class OpnoteDataCommand extends CConsoleCommand
 	{
 		Yii::import('application.modules.OphTrOperationnote.models.*');
 
+		$show_cataract_element_for_procedures = array(
+				'Phakoemulsification and IOL',
+				'Secondary lens implant',
+				'Aspiration of lens',
+				'Other extraction of lens',
+				'Repositioning of IOL',
+				'Removal of IOL',
+				'IOL exchange',
+				'IOL insertion - anterior chamber',
+				'IOL insertion - posterior chamber',
+				'IOL insertion - sutured',
+				'Phakic IOL insertion',
+				'Insertion of IOL',
+				'Revision of IOL',
+				'Extracapsular cataract extraction and insertion of IOL',
+				'Extracapsular cataract extraction');
+
+		foreach($show_cataract_element_for_procedures as $procedure)
+		{
+			$cataract_element = ElementType::model()->find('name = ?',array('Cataract'));
+			if($procedure = Procedure::model()->find('term = ?',array($procedure)))
+			{
+				$procedure_to_element_mapping = new OphTrOperationnote_ProcedureListOperationElement();
+				$procedure_to_element_mapping->element_type_id=	$cataract_element['id'];
+				$procedure_to_element_mapping->procedure_id = $procedure['id'];
+				$procedure_to_element_mapping->save();
+			}
+		}
 
  		$drugs = array(
 			'Cataract' => array(
