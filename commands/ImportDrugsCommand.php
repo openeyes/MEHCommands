@@ -134,7 +134,7 @@ class ImportDrugsCommand extends ImportGdataCommand
 								'name',
 								'id',
 								'aliases',
-								'discontinued',
+								'active',
 								'type_id',
 								'form_id',
 								'dose_unit',
