@@ -39,7 +39,6 @@ class ImportDrugsCommand extends ImportGdataCommand
 		}
 		$data['site_subspecialty_drug'] = $site_rows;
 
-
 		// Build allergy array (indexed by name)
 		$allergy_rows = $data['allergy'];
 		$allergy_columns = array_shift($allergy_rows);
@@ -134,7 +133,7 @@ class ImportDrugsCommand extends ImportGdataCommand
 								'name',
 								'id',
 								'aliases',
-								'discontinued',
+								'active',
 								'type_id',
 								'form_id',
 								'dose_unit',
