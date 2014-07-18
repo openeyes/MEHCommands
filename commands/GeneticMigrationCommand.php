@@ -454,6 +454,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$event->episode_id = $episode->id;
 		if (isset($created_date)) {
 			$event->created_date = $created_date;
+			$event->event_date = $created_date;
 			$event->last_modified_date = $created_date;
 		}
 		$event->created_user_id = $user_id;
