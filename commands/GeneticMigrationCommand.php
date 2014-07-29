@@ -58,7 +58,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		fclose($fp);
 
 		$missing_diagnoses = array();
-
+		
 		echo "Importing genes: ";
 
 		foreach (Yii::app()->db2->createCommand()->select("*")->from("genelist")->queryAll() as $gene) {
@@ -84,7 +84,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		echo "\n";
 
 		echo "Importing pedigrees: ";
-/*
+
 		foreach (Yii::app()->db2->createCommand()->select("*")->from("pedigree")->queryAll() as $pedigree) {
 			if (!$_pedigree = Pedigree::model()->findByPk($pedigree['newgc'])) {
 				$_pedigree = new Pedigree;
@@ -147,7 +147,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 
 		echo "\n";
-*/
+
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
@@ -357,7 +357,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 						if ($gene = PedigreeGene::model()->findByPk($assay['geneid'])) {
 							$gene_id = $gene->id;
 						} else {
-							$gene_id = null;
+							$gene_id = new CDbExpression('NULL');
 						}
 
 						$user_id = $this->findUserIDForString($assay['enteredby']);
@@ -402,6 +402,8 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		echo "Matched n (with hosnum): $this->matched_n\n";
 		echo "Matched n (without hosnum): $this->matched_n_hosnum\n";
 
+		echo var_export($missing_diagnoses);
+
 		echo "\n";
 	}
 
@@ -430,11 +432,14 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				$created_date = $object[$timeField];
 			}
 
-			if ($date == date('Y-m-d')) {
+			if ($date=='0000-00-00' || $date == date('Y-m-d')) {
 				$date = '1970-01-01';
+				$created_date = '1970-01-01';
 			}
+
 		} else {
 			$date = date('Y-m-d');
+			$created_date = date('Y-m-d');
 		}
 
 		if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null',array($patient->id,$firm->id))) {
@@ -462,6 +467,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$event->last_modified_user_id = $user_id;
 
 		if (!$event->save(true,null,true)) {
+			echo var_export($created_date);
+			echo var_export($event);
+			echo var_export($object);
 			throw new Exception("Unable to save event: ".print_r($event->getErrors(),true));
 		}
 
