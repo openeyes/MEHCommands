@@ -33,7 +33,36 @@ class OpnoteDataCommand extends CConsoleCommand
 	{
 		Yii::import('application.modules.OphTrOperationnote.models.*');
 
-		$drugs = array(
+		$show_cataract_element_for_procedures = array(
+				'Phakoemulsification and IOL',
+				'Secondary lens implant',
+				'Aspiration of lens',
+				'Other extraction of lens',
+				'Repositioning of IOL',
+				'Removal of IOL',
+				'IOL exchange',
+				'IOL insertion - anterior chamber',
+				'IOL insertion - posterior chamber',
+				'IOL insertion - sutured',
+				'Phakic IOL insertion',
+				'Insertion of IOL',
+				'Revision of IOL',
+				'Extracapsular cataract extraction and insertion of IOL',
+				'Extracapsular cataract extraction');
+
+		foreach($show_cataract_element_for_procedures as $procedure)
+		{
+			$cataract_element = ElementType::model()->find('name = ?',array('Cataract'));
+			if($procedure = Procedure::model()->find('term = ?',array($procedure)))
+			{
+				$procedure_to_element_mapping = new OphTrOperationnote_ProcedureListOperationElement();
+				$procedure_to_element_mapping->element_type_id=	$cataract_element['id'];
+				$procedure_to_element_mapping->procedure_id = $procedure['id'];
+				$procedure_to_element_mapping->save();
+			}
+		}
+
+ 		$drugs = array(
 			'Cataract' => array(
 				'Intracameral Cefuroxime',
 				'Sub-conj Cephalexin 0.25 mg',
@@ -63,18 +92,18 @@ class OpnoteDataCommand extends CConsoleCommand
 			//$subspecialty = Subspecialty::model()->find('name=?',array($subspecialty_name));
 			foreach (Subspecialty::model()->findAll() as $subspecialty) {
 				foreach ($s_drugs as $drug) {
-					if (!$d = PostopDrug::model()->find('name=?',array($drug))) {
+					if (!$d = OphTrOperationnote_PostopDrug::model()->find('name=?',array($drug))) {
 						echo "Adding drug: $drug\n";
 
-						$d = new PostopDrug;
+						$d = new OphTrOperationnote_PostopDrug;
 						$d->name = $drug;
 						$d->save();
 					}
 
 					foreach (Site::model()->findAll() as $site) {
-						if (!$ssd = PostopSiteSubspecialtyDrug::model()->find('site_id = ? and subspecialty_id = ? and drug_id = ?',array($site->id,$subspecialty->id,$d->id))) {
+						if (!$ssd = OphTrOperationnote_PostopSiteSubspecialtyDrug::model()->find('site_id = ? and subspecialty_id = ? and drug_id = ?',array($site->id,$subspecialty->id,$d->id))) {
 							echo "Creating association: [$site->id][$subspecialty->id][$d->id]\n";
-							$ssd = new PostopSiteSubspecialtyDrug;
+							$ssd = new OphTrOperationnote_PostopSiteSubspecialtyDrug;
 							$ssd->site_id = $site->id;
 							$ssd->subspecialty_id = $subspecialty->id;
 							$ssd->drug_id = $d->id;
@@ -143,7 +172,7 @@ class OpnoteDataCommand extends CConsoleCommand
 		);
 
 		$operative_device_defaults['Cataract']['HPMC'] = true;
-
+		
 		foreach ($operative_devices as $subspecialty_name => $devices) {
 			//$subspecialty = Subspecialty::model()->find('name=?',array($subspecialty_name));
 			foreach (Subspecialty::model()->findAll() as $subspecialty) {
@@ -173,12 +202,12 @@ class OpnoteDataCommand extends CConsoleCommand
 				}
 			}
 		}
-
+		
 		// Post-op instructions [cataract]
-		$specialty = Specialty::model()->find('code=?',array('OPH'));
+		$specialty = Specialty::model()->find('abbreviation=?',array('OPH'));
 		$subspecialty = Subspecialty::model()->find('specialty_id=? and ref_spec=?',array($specialty->id,'CA'));
-
-		foreach (PostopInstruction::model()->findAll('subspecialty_id=?',array($subspecialty->id)) as $pi) {
+		
+		foreach (OphTrOperationnote_PostopInstruction::model()->findAll('subspecialty_id=?',array($subspecialty->id)) as $pi) {
 			$pi->delete();
 		}
 
@@ -192,7 +221,7 @@ class OpnoteDataCommand extends CConsoleCommand
 			echo "Adding cataract post-op instruction: $instruction ";
 
 			foreach (Site::model()->findAll() as $site) {
-				$pi = new PostopInstruction;
+				$pi = new OphTrOperationnote_PostopInstruction;
 				$pi->site_id = $site->id;
 				$pi->subspecialty_id = $subspecialty->id;
 				$pi->content = $instruction;
@@ -203,10 +232,10 @@ class OpnoteDataCommand extends CConsoleCommand
 		}
 
 		// Post-op instructions [vitreoretinal]
-		$specialty = Specialty::model()->find('code=?',array('OPH'));
+		$specialty = Specialty::model()->find('abbreviation=?',array('OPH'));
 		$subspecialty = Subspecialty::model()->find('specialty_id=? and ref_spec=?',array($specialty->id,'VR'));
 
-		foreach (PostopInstruction::model()->findAll('subspecialty_id=?',array($subspecialty->id)) as $pi) {
+		foreach (OphTrOperationnote_PostopInstruction::model()->findAll('subspecialty_id=?',array($subspecialty->id)) as $pi) {
 			$pi->delete();
 		}
 
@@ -224,7 +253,7 @@ class OpnoteDataCommand extends CConsoleCommand
 			echo "Adding vitreoretinal post-op instruction: $instruction ";
 
 			foreach (Site::model()->findAll() as $site) {
-				$pi = new PostopInstruction;
+				$pi = new OphTrOperationnote_PostopInstruction;
 				$pi->site_id = $site->id;
 				$pi->subspecialty_id = $subspecialty->id;
 				$pi->content = $instruction;

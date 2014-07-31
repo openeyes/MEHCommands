@@ -267,7 +267,7 @@ class CFHImportCommand extends CConsoleCommand
 			throw new Exception("Unknown specialty function code: {$data[5]}");
 		}
 
-		if (!$person = Person::model()->with('contact')->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
+		if (!$person = Person::model()->notDeleted()->with('contact')->find('source_id=? and remote_id=?',array($this->source->id,$data[0]))) {
 			$contact = new Contact;
 
 			if ($specialty->default_is_surgeon) {
