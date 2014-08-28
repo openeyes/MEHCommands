@@ -213,6 +213,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				$subject['forename'] = $subject['initial'];
 			}
 
+			$patient_comments = '';
 			if ($patient = $this->getPatient($subject)) {
 				if (Pedigree::model()->findByPk($subject['newgc'])) {
 					if ($subject['status'] == null) {
@@ -231,12 +232,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 					if ($subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where("SubjectID = :subjectid",array(":subjectid" => $subject['subjectid']))->queryRow()) {
 						if (trim($subject_extra['Free_text'])) {
-							$pp->comments = trim($subject_extra['Free_text']);
+							$patient_comments = trim($subject_extra['Free_text']);
 						}
 					}
-
-					if($pp->comments == null) $pp->comments='';
-					$pp->comments = utf8_encode($pp->comments);
 
 					if (!$pp->save()) {
 						throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
@@ -244,8 +242,29 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				}
 			} else {
 				$patient = $this->createPatient($subject);
-				//echo "p";
 			}
+
+			if (!$pp->save()) {
+				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
+			}
+
+			//patient comments
+			if(!empty($patient_comments)) {
+				$patient_comments= utf8_encode($patient_comments);
+				if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
+					$genetics_patient->comments = $patient_comments;
+				}
+				else {
+					$genetics_patient = new GeneticsPatient();
+					$genetics_patient->patient_id = $patient->id;
+					$genetics_patient->comments = $patient_comments;
+				}
+				echo "\nAdding comments to patient ".$patient->id." ".$patient_comments."\n";
+				if (!$genetics_patient->save()) {
+					throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
+				}
+			}
+
 
 			if ($i %10 == 0) {
 				echo ".";
@@ -259,13 +278,24 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($diagnosis['diagnosis'])))) {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
-						$ppn = PatientPedigree::model()->find('patient_id=?',array($patient->id));
-						$ppn->comments .= "\nMissing SNOMED on import for diagnosis: ". $diagnosis['diagnosis']."\n";
-						$ppn->save();
-						echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
+
+						$patient_comments= $diagnosis['diagnosis'];
+
+						//add comments to patient with missing diagnosis
+						if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
+							$genetics_patient->comments .= "\n".$patient_comments;
+						}
+						else {
+							$genetics_patient = new GeneticsPatient();
+							$genetics_patient->patient_id = $patient->id;
+							$genetics_patient->comments = $patient_comments;
+						}
+						echo "\nAdding missing diagnosis comments to patient ".$patient->id." ".$patient_comments."\n";
+						if (!$genetics_patient->save()) {
+							throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
+						}
 					}
-					echo "\nMissing diagnosis ". $diagnosis['diagnosis']. "\n";
-					echo var_export($missing_diagnoses);
+					echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
 					continue;
 				}
 
@@ -531,7 +561,6 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			$pp->patient_id = $patient->id;
 			$pp->pedigree_id = $subject['newgc'];
 			$pp->status_id = $status->id;
-			$pp->comments='';
 
 			if (!$pp->save()) {
 				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
