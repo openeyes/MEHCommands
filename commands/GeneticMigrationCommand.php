@@ -84,7 +84,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 			echo ".";
 		}
-/*
+
 		echo "\n";
 
 		echo "Importing pedigrees: ";
@@ -154,7 +154,6 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 
 		echo "\n";
-*/
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
