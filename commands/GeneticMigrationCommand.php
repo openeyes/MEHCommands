@@ -158,7 +158,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 */
 
-		echo "Adding specialty";
+		echo "\nAdding specialty\n";
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
@@ -260,11 +260,11 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
 						$ppn = PatientPedigree::model()->find('patient_id=?',array($patient->id));
-						$ppn->comments += "{Missing SNOMED on import for diagnosis: ". $diagnosis['diagnosis'].'}';
+						$ppn->comments .= "\nMissing SNOMED on import for diagnosis: ". $diagnosis['diagnosis']."\n";
 						$ppn->save();
-						echo '\nMissing diagnosis for patient '.$patient->id.' comments saved\n';
+						echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
 					}
-					echo " missing ". $diagnosis['diagnosis'];
+					echo "\nMissing diagnosis ". $diagnosis['diagnosis']. "\n";
 					echo var_export($missing_diagnoses);
 					continue;
 				}
