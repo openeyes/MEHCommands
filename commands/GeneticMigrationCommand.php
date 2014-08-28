@@ -69,10 +69,14 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 			$_gene->name = $gene['gene'];
 			$_gene->location = $gene['location'];
+			if($_gene->location == null) $_gene->location = '';
 			$_gene->priority = $gene['priority'];
 			$_gene->description = $gene['descritption'];
+			if($_gene->description == null) $_gene->description = '';
 			$_gene->details = $gene['details'];
+			if($_gene->details == null) $_gene->details = '';
 			$_gene->refs = $gene['refs'];
+			if($_gene->refs == null) $_gene->refs = '';
 
 			if (!$_gene->save(false)) {
 				throw new Exception("Unable to save gene: ".print_r($_gene->getErrors(),true));
@@ -80,7 +84,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 			echo ".";
 		}
-
+/*
 		echo "\n";
 
 		echo "Importing pedigrees: ";
@@ -128,11 +132,14 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			}
 
 			$_pedigree->inheritance_id = $inheritance_id;
-			$_pedigree->comments = $pedigree['FreeText'];
+			$_pedigree->comments = utf8_encode($pedigree['FreeText']);
+			if($_pedigree->comments == null) $_pedigree->comments = '';
 			$_pedigree->consanguinity = $pedigree['consanguinity'] == 'Y' ? 1 : 0;
 			$_pedigree->gene_id = $pedigree['geneid'];
 			$_pedigree->base_change = $pedigree['basechange'];
+			if($_pedigree->base_change == null) $_pedigree->base_change = '';
 			$_pedigree->amino_acid_change = $pedigree['aminoacidchange'];
+			if($_pedigree->amino_acid_change==null)  $_pedigree->amino_acid_change='';
 			$_pedigree->last_modified_user_id = $user->id;
 			$_pedigree->last_modified_date = $pedigree['timestamp'];
 			$_pedigree->created_user_id = $user->id;
@@ -147,7 +154,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 
 		echo "\n";
-
+*/
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
@@ -224,6 +231,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 						}
 					}
 
+					if($pp->comments == null) $pp->comments='';
+					$pp->comments = utf8_encode($pp->comments);
+
 					if (!$pp->save()) {
 						throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
 					}
@@ -254,6 +264,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					$sd = new SecondaryDiagnosis;
 					$sd->patient_id = $patient->id;
 					$sd->disorder_id = $disorder->id;
+					$sd->date='';
 
 					if (!$sd->save()) {
 						throw new Exception("Unable to save SecondaryDiagnosis: ".print_r($sd->getErrors(),true));
@@ -292,6 +303,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					$_sample->blood_date = $sample['bloodtaken'];
 					$_sample->blood_location = $sample['bloodlocation'];
 					$_sample->comments = $sample['comment'];
+					if($_sample->comments == null) $_sample->comments = '';
 					$_sample->type_id = $_type->id;
 					$_sample->volume = 10;
 					$_sample->created_date = $sample['timelogged'];
@@ -465,6 +477,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 		$event->created_user_id = $user_id;
 		$event->last_modified_user_id = $user_id;
+		$event->delete_pending = 0;
 
 		if (!$event->save(true,null,true)) {
 			echo var_export($created_date);
@@ -479,7 +492,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 	public function createPatient($subject) {
 		$contact = new Contact;
 		$contact->first_name = $subject['forename'];
+		if($contact->first_name==null)$contact->first_name='';
 		$contact->last_name = $subject['surname'];
+		if($contact->last_name == null )$contact->last_name ='';
 		$contact->maiden_name = $subject['maiden'];
 
 		if (!$contact->save()) {
@@ -507,6 +522,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			$pp->patient_id = $patient->id;
 			$pp->pedigree_id = $subject['newgc'];
 			$pp->status_id = $status->id;
+			$pp->comments='';
 
 			if (!$pp->save()) {
 				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
