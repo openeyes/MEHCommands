@@ -124,7 +124,8 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!in_array($pedigree['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $pedigree['diagnosis'];
 					}
-					echo " missing ".$pedigree['diagnosis']." ";
+					echo " missing ".$pedigree['diagnosis'];
+					echo var_export($missing_diagnoses);
 					continue;
 				}
 
@@ -255,7 +256,8 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
 					}
-					echo " missing ".$pedigree['diagnosis']." ";
+					echo " missing ".$pedigree['diagnosis'];
+					echo var_export($missing_diagnoses);
 					continue;
 				}
 
