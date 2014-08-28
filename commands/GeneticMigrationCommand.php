@@ -255,6 +255,10 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($diagnosis['diagnosis'])))) {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
+						$ppn = PatientPedigree::model()->find('patient_id=?',array($patient->id));
+						$ppn->comments += "{Missing SNOMED on import for diagnosis: ". $diagnosis['diagnosis'].'}';
+						$ppn->save();
+						echo '\nMissing diagnosis for patient '.$patient->id.' comments saved\n';
 					}
 					echo " missing ".$pedigree['diagnosis'];
 					echo var_export($missing_diagnoses);
