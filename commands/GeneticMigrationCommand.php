@@ -88,7 +88,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		echo "\n";
 
 		echo "Importing pedigrees: ";
-
+/*
 		foreach (Yii::app()->db2->createCommand()->select("*")->from("pedigree")->queryAll() as $pedigree) {
 			if (!$_pedigree = Pedigree::model()->findByPk($pedigree['newgc'])) {
 				$_pedigree = new Pedigree;
@@ -155,6 +155,10 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 
 		echo "\n";
+
+*/
+
+		echo "Adding specialty";
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
@@ -260,7 +264,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 						$ppn->save();
 						echo '\nMissing diagnosis for patient '.$patient->id.' comments saved\n';
 					}
-					echo " missing ".$pedigree['diagnosis'];
+					echo " missing ". $diagnosis['diagnosis'];
 					echo var_export($missing_diagnoses);
 					continue;
 				}
