@@ -58,7 +58,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		fclose($fp);
 
 		$missing_diagnoses = array();
-		
+
 		echo "Importing genes: ";
 
 		foreach (Yii::app()->db2->createCommand()->select("*")->from("genelist")->queryAll() as $gene) {
@@ -120,7 +120,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!in_array($pedigree['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $pedigree['diagnosis'];
 					}
-					echo "x";
+					echo " missing ".$pedigree['diagnosis']." ";
 					continue;
 				}
 
@@ -246,7 +246,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
 					}
-					echo "x";
+					echo " missing ".$pedigree['diagnosis']." ";
 					continue;
 				}
 
