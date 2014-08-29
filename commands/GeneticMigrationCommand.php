@@ -278,22 +278,23 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($diagnosis['diagnosis'])))) {
 					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
 						$missing_diagnoses[] = $diagnosis['diagnosis'];
+					}
+					$patient_comments= $diagnosis['diagnosis'];
 
-						$patient_comments= $diagnosis['diagnosis'];
-
-						//add comments to patient with missing diagnosis
-						if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
+					//add comments to patient with missing diagnosis
+					if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
+						if (strpos($genetics_patient->comments, $patient_comments) == FALSE)
 							$genetics_patient->comments .= "\n".$patient_comments;
-						}
-						else {
-							$genetics_patient = new GeneticsPatient();
-							$genetics_patient->patient_id = $patient->id;
-							$genetics_patient->comments = $patient_comments;
-						}
-						echo "\nAdding missing diagnosis comments to patient ".$patient->id." ".$patient_comments."\n";
-						if (!$genetics_patient->save()) {
-							throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
-						}
+					}
+					else {
+						$genetics_patient = new GeneticsPatient();
+						$genetics_patient->patient_id = $patient->id;
+						$genetics_patient->comments = $patient_comments;
+					}
+					echo "\nAdding missing diagnosis comments to patient ".$patient->id." ".$patient_comments."\n";
+					if (!$genetics_patient->save()) {
+						throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
+					}
 					}
 					echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
 					continue;
