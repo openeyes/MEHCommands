@@ -253,7 +253,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				$patient_comments= utf8_encode($patient_comments);
 				if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
 					if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
-					$genetics_patient->comments = $patient_comments;
+					$genetics_patient->comments .= $patient_comments;
 					}
 				}
 				else {
@@ -286,7 +286,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					//add comments to patient with missing diagnosis
 					if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
 						if (strpos($genetics_patient->comments, $patient_comments) == FALSE)
-							$genetics_patient->comments .= "\n".$patient_comments;
+							$genetics_patient->comments .= "\n".$patient_comments."\n";
 					}
 					else {
 						$genetics_patient = new GeneticsPatient();
