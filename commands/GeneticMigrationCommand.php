@@ -295,7 +295,6 @@ class GeneticMigrationCommand extends CConsoleCommand {
 					if (!$genetics_patient->save()) {
 						throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
 					}
-					}
 					echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
 					continue;
 				}
