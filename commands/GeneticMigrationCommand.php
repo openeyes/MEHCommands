@@ -252,7 +252,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			if(!empty($patient_comments)) {
 				$patient_comments= utf8_encode($patient_comments);
 				if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
+					if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
 					$genetics_patient->comments = $patient_comments;
+					}
 				}
 				else {
 					$genetics_patient = new GeneticsPatient();
