@@ -24,7 +24,7 @@ class ImportSalisburyCommand extends ImportGdataCommand
 		Yii::app()->db->createCommand("delete from ophtrlaser_laserprocedure")->query();
 		Yii::app()->db->createCommand("delete from proc where term = 'Laser dummy procedure'")->query();
 
-		$data = $this->loadData('Procedures', array('Subspecialty','SubspecialtySubsection','Procedure','Benefit','ProcedureBenefit','Complication','ProcedureComplication','OPCSCode','ProcedureSubspecialtyAssignment','ProcSubspecialtySubsectionAssignment','CommonOphthalmicDisorder','CommonSystemicDisorder'));
+		$data = $this->loadData('Salisbury', array('Subspecialty','SubspecialtySubsection','Procedure','Benefit','ProcedureBenefit','Complication','ProcedureComplication','OPCSCode','ProcedureSubspecialtyAssignment','ProcSubspecialtySubsectionAssignment','CommonOphthalmicDisorder','CommonSystemicDisorder','PostopDrug','PostOpSiteSubspecialtyDrug','PostOpInstructions'));
 
 		$this->importData($data, array(
 			'Subspecialty' => array(
@@ -153,6 +153,39 @@ class ImportSalisburyCommand extends ImportGdataCommand
 				'column_mappings' => array(
 					'id',
 					'disorder_id',
+				),
+			),
+			'PostopDrug' => array(
+				'table' => 'ophtroperationnote_postop_drug',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'name',
+					'display_order',
+					'active',
+				),
+			),
+			'PostOpSiteSubspecialtyDrug' => array(
+				'table' => 'ophtroperationnote_postop_site_subspecialty_drug',
+				'match_fields' => array('site_id','subspecialty_id','drug_id'),
+				'column_mappings' => array(
+					'id',
+					'site_id',
+					'subspecialty_id',
+					'drug_id',
+					'display_order',
+					'default',
+				),
+			),
+			'PostOpInstructions' => array(
+				'table' => 'ophtroperationnote_site_subspecialty_postop_instructions',
+				'match_fields' => array('site_id','subspecialty_id'),
+				'column_mappings' => array(
+					'id',
+					'site_id',
+					'subspecialty_id',
+					'content',
+					'display_order',
 				),
 			),
 		));
