@@ -24,9 +24,103 @@ class ImportSalisburyCommand extends ImportGdataCommand
 		Yii::app()->db->createCommand("delete from ophtrlaser_laserprocedure")->query();
 		Yii::app()->db->createCommand("delete from proc where term = 'Laser dummy procedure'")->query();
 
-		$data = $this->loadData('Salisbury', array('Subspecialty','SubspecialtySubsection','Procedure','Benefit','ProcedureBenefit','Complication','ProcedureComplication','OPCSCode','ProcedureSubspecialtyAssignment','ProcSubspecialtySubsectionAssignment','CommonOphthalmicDisorder','CommonSystemicDisorder','PostopDrug','PostOpSiteSubspecialtyDrug','PostOpInstructions'));
+		$data = $this->loadData('Salisbury', array(
+				'Contact',
+				'Address',
+				'Institution',
+				'Site',
+				'AnaestheticAgent',
+				'OperativeDevice',
+				'Subspecialty',
+				'SubspecialtySubsection',
+				'SiteSubspecialtyAnaestheticAgent',
+				'SiteSubspecialtyOperativeDevice',
+				'Service',
+				'ServiceSubspecialtyAssignment',
+				'Procedure',
+				'Benefit',
+				'ProcedureBenefit',
+				'Complication',
+				'ProcedureComplication',
+				'OPCSCode',
+				'ProcedureSubspecialtyAssignment',
+				'ProcSubspecialtySubsectionAssignment',
+				'CommonOphthalmicDisorder',
+				'CommonSystemicDisorder',
+				'PostopDrug',
+				'PostOpSiteSubspecialtyDrug',
+				'PostOpInstructions'
+		));
 
 		$this->importData($data, array(
+			'Contact' => array(
+				'table' => 'contact',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'nick_name',
+					'primary_phone',
+					'title',
+					'first_name',
+					'last_name',
+					'qualifications',
+					'contact_label_id',
+				),
+			),
+			'Address' => array(
+				'table' => 'address',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'address1',
+					'address2',
+					'city',
+					'postcode',
+					'county',
+					'country_id',
+					'contact_id',
+				),
+			),
+			'Institution' => array(
+				'table' => 'institution',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'name',
+					'active',
+					'contact_id',
+				),
+			),
+			'Site' => array(
+				'table' => 'site',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'name',
+					'institution_id',
+					'active',
+					'contact_id',
+				),
+			),
+			'AnaestheticAgent' => array(
+				'table' => 'anaesthetic_agent',
+				'match_fields' => array('name'),
+				'column_mappings' => array(
+					'id',
+					'name',
+					'display_order',
+					'active',
+				),
+			),
+			'OperativeDevice' => array(
+				'table' => 'operative_device',
+				'match_fields' => array('name'),
+				'column_mappings' => array(
+					'id',
+					'name',
+					'active',
+				),
+			),
 			'Subspecialty' => array(
 				'table' => 'subspecialty',
 				'match_fields' => array('id'),
@@ -45,6 +139,43 @@ class ImportSalisburyCommand extends ImportGdataCommand
 					'subspecialty_id',
 					'name',
 					'active',
+				),
+			),
+			'SiteSubspecialtyAnaestheticAgent' => array(
+				'table' => 'site_subspecialty_anaesthetic_agent',
+				'match_fields' => array('site_id','subspecialty_id','anaesthetic_agent_id'),
+				'column_mappings' => array(
+					'id',
+					'site_id',
+					'subspecialty_id',
+					'anaesthetic_agent_id',
+				),
+			),
+			'SiteSubspecialtyOperativeDevice' => array(
+				'table' => 'site_subspecialty_operative_device',
+				'match_fields' => array('site_id','subspecialty_id','operative_device_id'),
+				'column_mappings' => array(
+					'id',
+					'site_id',
+					'subspecialty_id',
+					'operative_device_id',
+				),
+			),
+			'Service' => array(
+				'table' => 'service',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+					'id',
+					'name',
+				),
+			),
+			'ServiceSubspecialtyAssignment' => array(
+				'table' => 'service_subspecialty_assignment',
+				'match_fields' => array('service_id','subspecialty_id'),
+				'column_mappings' => array(
+					'id',
+					'service_id',
+					'subspecialty_id',
 				),
 			),
 			'Procedure' => array(
