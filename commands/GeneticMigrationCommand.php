@@ -155,9 +155,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		}
 
 		echo "\n";
-
 */
-
 		echo "\nAdding specialty\n";
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
@@ -244,9 +242,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 				$patient = $this->createPatient($subject);
 			}
 
-			if (!$pp->save()) {
-				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
-			}
+
 
 			//patient comments
 			if(!empty($patient_comments)) {
@@ -369,12 +365,11 @@ class GeneticMigrationCommand extends CConsoleCommand {
 							$dna->letter_id = $letter->id;
 							$dna->number_id = $number->id;
 
-							$event = $this->createEvent($et_dna, $patient, $firm, $sample, $user_id, 'timelogged');
+							$event = $this->createEvent($et_dna, $patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
 
 							$dna->event_id = $event->id;
 						}
 
-						$dna->orientry = $address['orientry'];
 						$dna->extracted_date = $address['extracted'];
 						$dna->extracted_by = $address['extractedby'];
 						$dna->comments = $address['comment'];
@@ -382,6 +377,14 @@ class GeneticMigrationCommand extends CConsoleCommand {
 						if (!$dna->save()) {
 							throw new Exception("Unable to save dna extraction: ".print_r($dna->getErrors(),true));
 						}
+
+						$dna_tests = new Element_OphInDnaextraction_DnaTests;
+						$dna_tests ->event_id = $event->id;
+
+						if (!$dna_tests->save()) {
+							throw new Exception("Unable to save dna tests element: ".print_r($dna->getErrors(),true));
+						}
+
 
 						echo "-";
 					}
@@ -475,7 +478,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		return $user_id;
 	}
 
-	public function createEvent($event_type, $patient, $firm, $object, $user_id, $timeField=false)
+	public function createEvent($event_type, $patient, $firm, $object, $user_id, $timeField=false, $parent_id=null)
 	{
 		if ($timeField) {
 			$date = date('Y-m-d');
@@ -511,6 +514,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$event = new Event;
 		$event->event_type_id = $event_type->id;
 		$event->episode_id = $episode->id;
+		$event->parent_id = $parent_id;
 		if (isset($created_date)) {
 			$event->created_date = $created_date;
 			$event->event_date = $created_date;
