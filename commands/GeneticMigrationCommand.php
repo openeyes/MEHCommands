@@ -194,6 +194,8 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$et_dna = EventType::model()->find('class_name=?',array('OphInDnaextraction'));
 		$et_genetictest = EventType::model()->find('class_name=?',array('OphInGenetictest'));
 
+		return true;
+
 		echo "Importing subjects and samples: ";
 
 		foreach (Yii::app()->db2->createCommand()->select("*")->from("subject")->queryAll() as $i => $subject) {
