@@ -124,6 +124,7 @@ abstract class ImportGdataCommand extends CConsoleCommand
 			}
 			echo 'Importing '.$worksheet_name." ";
 			foreach ($rows as $row_index => $row) {
+				try {
 				$row_import = array();
 				foreach ($mappings[$worksheet_name]['column_mappings'] as $gcolumn_name => $oecolumn_name) {
 					$method = null;
@@ -196,6 +197,11 @@ abstract class ImportGdataCommand extends CConsoleCommand
 						var_dump($row_import);
 						throw $e;
 					}
+				}
+				}
+				catch(Exception $exp)
+				{
+					var_dump($exp);
 				}
 			}
 			echo " done.\n";
