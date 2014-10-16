@@ -88,9 +88,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 		$tokens = explode('|', $value);
 		$firm_name = trim($tokens[0]);
 
-		if(count($tokens[1])<2) return null;
-		$subspecialty_name = trim($tokens[1]);
-
+		$subspecialty_name = @trim($tokens[1]);
 
 		if(!$subspecialty_name) {
 			if($firm = Firm::model()->find('name=?',array($firm_name))) {
