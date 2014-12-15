@@ -21,7 +21,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 {
 	public function run($args)
 	{
-		$data = $this->loadData('Correspondence Macros G2.1', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
+		$data = $this->loadData('Correspondence Macros', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
 				'letter_macro' => array(
 					'table' => 'ophcocorrespondence_letter_macro',
