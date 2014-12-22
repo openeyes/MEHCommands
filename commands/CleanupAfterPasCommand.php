@@ -20,10 +20,26 @@ class CleanupAfterPasCommand extends CConsoleCommand
 {
 	public function run($args)
 	{
-		foreach (array('patient', 'gp', 'practice', 'commissioning_body') as $table) {
-			Yii::app()->db->createCommand(
-				"delete from t, c, a using {$table}_version t left join contact_version c on c.id = t.contact_id left join address_version a on a.contact_id = c.id "
-			)->execute();
+		echo "Deleting version records...\n";
+		foreach (array('patient', 'gp', 'practice', 'commissioning_body', 'user') as $table) {
+			$records = Yii::app()->db->createCommand(
+				"select distinct id, contact_id from {$table}_version t"
+			)->queryAll();
+			foreach($records as $record) {
+				$tran = Yii::app()->db->beginTransaction();	
+				echo "$table: id=".$record['id'].", contact_id=".$record['contact_id']."\n";
+				Yii::app()->db->createCommand(
+					"delete from `address_version` where contact_id = :contact_id"
+				)->execute(array(':contact_id' => $record['contact_id']));
+				Yii::app()->db->createCommand(
+					"delete from `contact_version` where id = :contact_id"
+				)->execute(array(':contact_id' => $record['contact_id']));
+				Yii::app()->db->createCommand(
+					"delete from `{$table}_version` where id = :id and contact_id = :contact_id"
+				)->execute(array(':id' => $record['id'], ':contact_id' => $record['contact_id']));
+				$tran->commit();
+			}
 		}
+		echo "done.\n";
 	}
 }
