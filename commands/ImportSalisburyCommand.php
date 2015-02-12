@@ -21,9 +21,16 @@ class ImportSalisburyCommand extends ImportGdataCommand
 {
 	public function run($args)
 	{
+        try{
 		Yii::app()->db->createCommand("delete from ophtrlaser_laserprocedure")->query();
-		Yii::app()->db->createCommand("delete from proc where term = 'Laser dummy procedure'")->query();
+        }
+        catch (Exception $e){
+        }
+        Yii::app()->db->createCommand("delete from proc where term = 'Laser dummy procedure'")->query();
+        Yii::app()->db->createCommand("DELETE FROM ophtroperationnote_cataract_iol_type WHERE id NOT IN (SELECT DISTINCT iol_type_id FROM et_ophtroperationnote_cataract)")->query();
 
+        echo 'loading data - may take some time...';
+        
 		$data = $this->loadData('Salisbury', array(
 				'Contact',
 				'Address',
@@ -43,13 +50,22 @@ class ImportSalisburyCommand extends ImportGdataCommand
 				'Complication',
 				'ProcedureComplication',
 				'OPCSCode',
+                'ProcedureOPCSCode',
 				'ProcedureSubspecialtyAssignment',
 				'ProcSubspecialtySubsectionAssignment',
 				'CommonOphthalmicDisorder',
 				'CommonSystemicDisorder',
 				'PostopDrug',
 				'PostOpSiteSubspecialtyDrug',
-				'PostOpInstructions'
+				'PostOpInstructions',
+                'User',
+                'Firm',
+                'OpNoteProcedureElements',
+                'IOLTypes',
+                'Workflow',
+                'WorkflowSet',
+                'WorkflowItem',
+                'WorkflowRules'
 		));
 
 		$this->importData($data, array(
@@ -89,6 +105,7 @@ class ImportSalisburyCommand extends ImportGdataCommand
 					'name',
 					'active',
 					'contact_id',
+                    'remote_id',
 				),
 			),
 			'Site' => array(
@@ -97,9 +114,11 @@ class ImportSalisburyCommand extends ImportGdataCommand
 				'column_mappings' => array(
 					'id',
 					'name',
+                    'short_name',
 					'institution_id',
 					'active',
 					'contact_id',
+                    'remote_id',
 				),
 			),
 			'AnaestheticAgent' => array(
@@ -310,15 +329,101 @@ class ImportSalisburyCommand extends ImportGdataCommand
 			),
 			'PostOpInstructions' => array(
 				'table' => 'ophtroperationnote_site_subspecialty_postop_instructions',
-				'match_fields' => array('site_id','subspecialty_id'),
+				'match_fields' => array('id'),
 				'column_mappings' => array(
-					'id',
+                    'id',
 					'site_id',
 					'subspecialty_id',
 					'content',
 					'display_order',
 				),
 			),
+            'User' => array(
+				'table' => 'user',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+                    'id',
+                    'username',
+                    'title',
+                    'first_name',
+                    'last_name',
+                    'email',
+                    'active',
+                    'global_firm_rights',
+                    'contact_id',
+                    'is_doctor',
+                    'is_clinical',
+                    'is_surgeon',
+				),
+			),
+            'Firm' => array(
+				'table' => 'firm',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+                    'id',
+                    'service_subspecialty_assignment_id',
+                    'pas_code',
+                    'name',
+                    'consultant_id',
+                    'active',
+				),
+			),
+            'OpNoteProcedureElements' => array(
+				'table' => 'ophtroperationnote_procedure_element',
+				'match_fields' => array('id'),
+				'column_mappings' => array(
+                    'id',
+                    'procedure_id',
+                    'element_type_classname' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'class_name')),
+                    'display_order',
+				),
+			),
+            'IOLTypes' => array(
+				'table' => 'ophtroperationnote_cataract_iol_type',
+				'match_fields' => array('name'),
+				'column_mappings' => array(
+					'name',
+					'display_order',
+				),
+			),
+            'Workflow' => array(
+                    'table' => 'ophciexamination_workflow',
+                    'match_fields' => array('id'),
+                    'column_mappings' => array(
+                            'name',
+                            'id',
+                    ),
+            ),
+            'WorkflowSet' => array(
+                    'table' => 'ophciexamination_element_set',
+                    'match_fields' => array('id'),
+                    'column_mappings' => array(
+                            'name',
+                            'workflow_id',
+                            'position',
+                            'id',
+                    ),
+            ),
+            'WorkflowItem' => array(
+                    'table' => 'ophciexamination_element_set_item',
+                    'match_fields' => array('id'),
+                    'column_mappings' => array(
+                            'set_id',
+                            'element_type_classname' => array('field' => 'element_type_id', 'method' => 'Find', 'args' => array('class' => 'ElementType', 'field' => 'class_name')),
+                            'id',
+                    ),
+            ),
+            'WorkflowRules' => array(
+                    'table' => 'ophciexamination_workflow_rule',
+                    'match_fields' => array('id'),
+                    'column_mappings' => array(
+                            'id',
+                            'workflow_id',
+                            'subspecialty_id',
+                            'firm_id',
+                            'episode_status_id',
+                    ),
+				),
 		));
 	}
 
