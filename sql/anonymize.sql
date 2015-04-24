@@ -5,27 +5,8 @@ DROP PROCEDURE IF EXISTS shuffleAddress;
 DELIMITER $$
 CREATE PROCEDURE shuffleAddress()
 BEGIN
-DECLARE done INT DEFAULT FALSE;
-DECLARE myId integer;
-DECLARE pc_cursor CURSOR FOR SELECT id FROM address;
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+UPDATE address a1 JOIN (SELECT id, @i:=(SELECT floor((rand()*max(id))) FROM address), @j:=(SELECT floor((rand()*max(id))) FROM address), (SELECT address1 FROM address a WHERE a.id = @i) address1, (SELECT postcode FROM address a WHERE a.id = @j) postcode FROM address) a2 ON a1.id = a2.id SET a1.address1 = a2.address1, a1.postcode=a2.postcode;
 
-OPEN pc_cursor;
-    
-pc_loop: LOOP
-FETCH pc_cursor INTO myId;
-IF done THEN
-LEAVE pc_loop;
-END IF;
-IF myId mod 1000 = 0 THEN
-SELECT CONCAT('Current row:',myId);
-END IF;
-UPDATE address SET postcode=(SELECT t.postc FROM (SELECT postcode AS postc FROM address WHERE id = (SELECT a.id FROM address a JOIN (SELECT (rand()*max(id)) AS rand_id FROM address) AS r WHERE a.id>=r.rand_id LIMIT 1)) t ) WHERE id=myId; 
-UPDATE address SET address1=(SELECT t.addr1 FROM (SELECT address1 AS addr1 FROM address WHERE id = (SELECT a.id FROM address a JOIN (SELECT (rand()*max(id)) AS rand_id FROM address) AS r WHERE a.id>=r.rand_id LIMIT 1)) t ) WHERE id=myId; 
-END LOOP;
-	
-CLOSE pc_cursor;
-    
 END $$
 DELIMITER ;
 

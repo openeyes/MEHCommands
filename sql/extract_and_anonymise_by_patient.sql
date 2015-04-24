@@ -1,0 +1,1 @@
+DROP PROCEDURE IF EXISTS extract_and_anonymise_
