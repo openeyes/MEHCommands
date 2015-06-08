@@ -60,17 +60,21 @@ BEGIN
     DELETE FROM firm WHERE id != 1;
     DELETE FROM site WHERE id != 1;
     SELECT 'Set default values for firm and site';
+    INSERT INTO contact (first_name, last_name) VALUES ('John', 'Doe');
+    INSERT INTO address (address1,country_id,contact_id,address_type_id) VALUES ('Default Address', 1, 1, 2);
     UPDATE firm SET name='Default Firm';
-    UPDATE site SET name='Default Site', short_name='Default', telephone='123456789';
+    UPDATE user SET last_firm_id = 1;
+    UPDATE site SET name='Default Site', short_name='Default', telephone='123456789', remote_id='AAAA', contact_id=1;
+    UPDATE institution SET name='Default Institution', short_name='Default', contact_id=1;
 END $$
 
 CREATE PROCEDURE emptyOEDatabase()
 BEGIN
     SET foreign_key_checks = 0;
-    
+
     CALL emptyET_tables;
     CALL emptyMainTables;
-        
+
     SET foreign_key_checks = 1;
 
 END $$
