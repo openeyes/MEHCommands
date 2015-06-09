@@ -19,7 +19,6 @@ BEGIN
  read_loop: LOOP
     FETCH cur1 INTO table_n, column_n;
     SET @updateQuery = CONCAT('UPDATE ', table_n, ' SET ',column_n,'=1');
-    SELECT CONCAT('Running: UPDATE ', table_n, ' SET ',column_n,'=1');
     PREPARE myQuery FROM @updateQuery;
     EXECUTE myQuery;
     DEALLOCATE PREPARE myQuery;
@@ -37,10 +36,10 @@ BEGIN
  DECLARE cur1 CURSOR FOR SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'et\_%' AND table_schema=(SELECT DATABASE()) AND table_type='BASE TABLE';
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
  OPEN cur1;
+ SELECT 'Tuncating et_* tables...';
  read_loop: LOOP
     FETCH cur1 INTO table_n;
     SET @truncQuery = CONCAT('TRUNCATE ', table_n);
-    SELECT CONCAT('TRUNCATE ', table_n);
     PREPARE myQuery FROM @truncQuery;
     EXECUTE myQuery;
     DEALLOCATE PREPARE myQuery;
@@ -59,10 +58,10 @@ BEGIN
  DECLARE cur1 CURSOR FOR SELECT table_name FROM information_schema.tables WHERE table_name LIKE '%\_version' AND table_schema=(SELECT DATABASE()) AND table_type='BASE TABLE';
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
  OPEN cur1;
+ SELECT 'Tuncating *_version tables...';
  read_loop: LOOP
     FETCH cur1 INTO table_n;
     SET @truncQuery = CONCAT('TRUNCATE ', table_n);
-    SELECT CONCAT('TRUNCATE ', table_n);
     PREPARE myQuery FROM @truncQuery;
     EXECUTE myQuery;
     DEALLOCATE PREPARE myQuery;
@@ -77,7 +76,7 @@ END $$
 # truncating main tables, keep 1 user, 1 site, 1 firm
 CREATE PROCEDURE emptyMainTables()
 BEGIN
-    SELECT 'Will truncate main tables...';
+    SELECT 'Truncating main tables...';
     TRUNCATE patient;
     TRUNCATE contact;
     TRUNCATE address;
@@ -167,8 +166,8 @@ BEGIN
     SET foreign_key_checks = 0;
 
     CALL emptyET_tables;
-    CALL emptyMainTables;
     CALL emptyVersionTables;
+    CALL emptyMainTables;
     CALL updateUserId;
 
     SET foreign_key_checks = 1;
