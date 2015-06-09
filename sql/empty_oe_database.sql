@@ -12,7 +12,7 @@ BEGIN
  DECLARE done INT DEFAULT FALSE;
  DECLARE table_n VARCHAR(255);
  DECLARE column_n VARCHAR(255);
- DECLARE cur1 CURSOR FOR SELECT table_name, column_name FROM information_schema.columns WHERE column_name LIKE '%_user_id' AND table_schema=(SELECT DATABASE()) AND table_name NOT LIKE '%\_version';
+ DECLARE cur1 CURSOR FOR SELECT table_name, column_name FROM information_schema.columns WHERE (column_name LIKE '%_user_id' OR column_name = 'site_id' OR column_name = 'firm_id') AND table_schema=(SELECT DATABASE()) AND table_name NOT LIKE '%\_version';
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
  OPEN cur1;
  SELECT 'Updating user_id columns...';
