@@ -15,7 +15,7 @@ BEGIN
  DECLARE cur1 CURSOR FOR SELECT table_name, column_name FROM information_schema.columns WHERE (column_name LIKE '%_user_id' OR column_name = 'site_id' OR column_name = 'firm_id') AND table_schema=(SELECT DATABASE()) AND table_name NOT LIKE '%\_version';
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
  OPEN cur1;
- SELECT 'Updating user_id columns...';
+ SELECT 'Updating user_id, site_id, firm_id columns...';
  read_loop: LOOP
     FETCH cur1 INTO table_n, column_n;
     SET @updateQuery = CONCAT('UPDATE ', table_n, ' SET ',column_n,'=1');
