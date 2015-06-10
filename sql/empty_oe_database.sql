@@ -150,8 +150,11 @@ BEGIN
     TRUNCATE user_site;
 
     DELETE FROM user WHERE id != 1;
+    ALTER TABLE user AUTO_INCREMENT = 1;
     DELETE FROM firm WHERE id != 1;
+    ALTER TABLE firm AUTO_INCREMENT = 1;
     DELETE FROM site WHERE id != 1;
+    ALTER TABLE site AUTO_INCREMENT = 1;
     SELECT 'Set default values for firm and site';
     INSERT INTO contact (first_name, last_name) VALUES ('John', 'Doe');
     INSERT INTO address (address1,country_id,contact_id,address_type_id) VALUES ('Default Address', 1, 1, 2);
