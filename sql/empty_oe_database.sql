@@ -84,7 +84,7 @@ BEGIN
     TRUNCATE family_history;
     TRUNCATE medication_adherence;
     TRUNCATE patient_allergy_assignment;
-    TRUNCATE patient_risk_assignment;
+   # TRUNCATE patient_risk_assignment;
     TRUNCATE patient_contact_assignment;
     TRUNCATE patient_measurement;
     TRUNCATE previous_operation;
@@ -109,7 +109,7 @@ BEGIN
     TRUNCATE user_firm_rights;
     TRUNCATE user_service_rights;
     TRUNCATE user_site;
-    TRUNCATE audit;
+   # TRUNCATE audit;
     TRUNCATE audit_ipaddr;
     TRUNCATE audit_model;
     TRUNCATE audit_module;
@@ -148,6 +148,14 @@ BEGIN
     TRUNCATE user_service_rights;
     TRUNCATE user_session;
     TRUNCATE user_site;
+    TRUNCATE ophdrprescription_item;
+    TRUNCATE ophdrprescription_item_taper;
+    TRUNCATE ophtroperationbooking_operation_procedures_procedures;
+    TRUNCATE ophtroperationnote_procedurelist_procedure_assignment;
+    TRUNCATE ophciexamination_diagnosis;
+    TRUNCATE ophciexamination_dilation_treatment;
+    TRUNCATE ophciexamination_intraocularpressure_value;
+    TRUNCATE ophciexamination_nearvisualacuity_reading;
 
     DELETE FROM user WHERE id != 1;
     ALTER TABLE user AUTO_INCREMENT = 1;
@@ -158,7 +166,7 @@ BEGIN
     SELECT 'Set default values for firm and site';
     INSERT INTO contact (first_name, last_name) VALUES ('John', 'Doe');
     INSERT INTO address (address1,country_id,contact_id,address_type_id) VALUES ('Default Address', 1, 1, 2);
-    UPDATE firm SET name='Default Firm';
+    UPDATE firm SET name='Default Firm', consultant_id=1;
     UPDATE user SET last_firm_id = 1;
     UPDATE site SET name='Default Site', short_name='Default', telephone='123456789', remote_id='AAAA', contact_id=1;
     UPDATE institution SET name='Default Institution', short_name='Default', contact_id=1;
