@@ -1,5 +1,6 @@
 -- Configuration settings for this script --
 SET SESSION group_concat_max_len = 100000;
+SET max_sp_recursion_depth = 1024;
 
 
 
@@ -23,6 +24,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
     declare tablename text;
     declare ColName text;
     declare tmp text;
+    declare Columns text;
 
     SET tablename=in_table;
     SET @in_row_id = TRIM(in_row_id);
@@ -33,43 +35,62 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
     IF( (@in_row_id IS NOT NULL) AND (@in_row_id != '')) THEN
 
       -- Comma separated column names - used for Select --
-      select group_concat(concat('concat(\'"\',','ifnull(',column_name,','''')',',\'"\')'))
-      INTO @Sels from information_schema.columns where table_schema=in_db and table_name=tablename;
+      select group_concat(concat('if(',column_name,' IS NOT NULL, concat(\'"\',',column_name,',\'"\'), "NULL")'))
+      INTO @Sels from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
 
-      SELECT @Sels;
+      #SELECT @Sels;
+
+      select group_concat(column_name)
+      INTO @Columns from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
+
+      #SELECT @Columns;
 
       -- Comma separated column names - used for Group By --
       select group_concat('`',column_name,'`')
-      INTO @Whrs from information_schema.columns where table_schema=in_db and table_name=tablename;
+      INTO @Whrs from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
 
       #SELECT @Whrs;
 
-      SELECT /*tablename, @Sels, in_ColumnName, in_ColumnValue, @in_row_id, @Whrs,*/ @tmp;
+      #SELECT /*tablename, @Sels, in_ColumnName, in_ColumnValue, @in_row_id, @Whrs,*/ @tmp;
       SET @current_table = tablename;
 
       -- Main Select Statement for fetching comma separated table value --
-      SET @Inserts= concat("(select concat('insert into ", in_db,".",@current_table," values(',concat_ws(',',",@Sels,"),');')
-        as MyColumn from ", in_db,".",@current_table, " where ", in_ColumnName, " = " , in_ColumnValue, " AND id = " , @in_row_id," group by ",@Whrs, " INTO @tmp);");
+      SET @Inserts= concat("(select concat('insert into ", @current_table," (",@Columns,") values(',concat_ws(',',",@Sels,"),');')
+        as MyColumn from ", @current_table, " where ", in_ColumnName, " = " , in_ColumnValue, " AND id = " , @in_row_id," group by ",@Whrs, " INTO @tmp);");
 
       #SELECT @Inserts;
 
       IF ((@Inserts IS NOT NULL) AND (@Sels IS NOT NULL)) THEN
         PREPARE Inserts FROM @Inserts ;
 
-        SELECT @tmp;
+        #SELECT @tmp;
+
 
         EXECUTE Inserts;
 
         IF (@tmp IS NOT NULL) THEN
           INSERT INTO patient_data_extract VALUES ('', @tmp);
+
+          # we also need to update the event_type_id here
+          IF( tablename = 'event' ) THEN
+            SELECT class_name INTO @class_n FROM event_type WHERE id = (SELECT event_type_id FROM event WHERE id = @in_row_id);
+            SET @update_str = CONCAT("UPDATE event SET event_type_id=(SELECT id FROM event_type WHERE class_name='", @class_n ,"') WHERE id=", @in_row_id,";");
+            INSERT INTO patient_data_extract VALUES ('', @update_str );
+          END IF;
         END IF;
       END IF;
+
+
+
 
     END IF;
 
   END $$
 
 DELIMITER ;
+
+
+
 
 -- Extract each individual row of data : calls InsGen() --
 DELIMITER $$
@@ -97,8 +118,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_row(
         SET @ids = SUBSTRING(@ids, LOCATE(',', @ids) + 1);
         SET @current_id =  (SELECT TRIM(SUBSTRING_INDEX(@ids, ',', 1)));
         SET @current_id = TRIM(@current_id);
-        call InsGen(in_db, in_table, in_ColumnName, in_ColumnValue, @current_id);
 
+        call InsGen(in_db, in_table, in_ColumnName, in_ColumnValue, @current_id);
 
       END WHILE;
 
@@ -171,6 +192,176 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_dependant_row(
 
   END $$
 
+DELIMITER ;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS get_episode_related_rows;
+CREATE DEFINER =`root`@`localhost` PROCEDURE get_episode_related_rows(
+  episode_ids text,
+  count integer(10)
+)
+  BEGIN
+
+    SET @count = count;
+    SET @ep_ids = concat(',',episode_ids);
+
+    #SELECT @count, @ids;
+
+    if( @count > 0 AND @ep_ids IS NOT NULL) THEN
+      WHILE (LOCATE(',', @ep_ids) > 0) DO
+        SET @ep_ids = SUBSTRING(@ep_ids, LOCATE(',', @ep_ids) + 1);
+        SET @current_id =  (SELECT TRIM(SUBSTRING_INDEX(@ep_ids, ',', 1)));
+        SET @current_id = TRIM(@current_id);
+
+        SET @firm_id = (SELECT firm_id FROM episode WHERE id = @current_id );
+
+        IF (@firm_id IS NOT NULL) THEN
+          SET @firm_consultant_id = (SELECT consultant_id from firm where id = @firm_id);
+        END IF;
+
+        IF (@firm_id IS NOT NULL) THEN
+          SET @firm_service_subspecialty_assignment_id = (SELECT service_subspecialty_assignment_id from firm WHERE id = @firm_id);
+        END IF;
+
+        IF (@firm_service_subspecialty_assignment_id IS NOT NULL) THEN
+          SET @service_subspecialty_assignment_service_id = (SELECT service_id from service_subspecialty_assignment where id = @firm_service_subspecialty_assignment_id);
+        END IF;
+
+        IF(@firm_service_subspecialty_assignment_id IS NOT NULL) THEN
+          SET @service_subspecialty_assignment_subspecialty_id = (SELECT subspecialty_id FROM service_subspecialty_assignment where id = @firm_service_subspecialty_assignment_id);
+        END IF;
+
+        IF (@service_subspecialty_assignment_subspecialty_id IS NOT NULL) THEN
+          SET @subspecialty_specialty_id = (SELECT specialty_id FROM subspecialty WHERE id = @service_subspecialty_assignment_subspecialty_id);
+        END IF;
+
+        IF (@subspecialty_specialty_id IS NOT NULL) THEN
+          SET @specialty_specialty_type_id = (SELECT specialty_type_id FROM specialty WHERE id = @subspecialty_specialty_id);
+        END IF;
+
+        /* SELECT @firm_id;
+         SELECT @firm_consultant_id;
+         SELECT @firm_service_subspecialty_assignment_id;
+         SELECT @service_subspecialty_assignment_service_id;
+         SELECT @service_subspecialty_assignment_subspecialty_id;
+         SELECT @subspecialty_specialty_id;
+         SELECT @specialty_specialty_type_id;
+         SELECT @ids;*/
+
+
+        IF (@specialty_specialty_type_id IS NOT NULL) THEN
+          call extract_row(1, @specialty_specialty_type_id, 'openeyes', 'specialty_specialty_type', 'id', @specialty_specialty_type_id);
+        END IF;
+
+
+        IF (@subspecialty_specialty_id IS NOT NULL) THEN
+          call extract_row(1, @subspecialty_specialty_id, 'openeyes', 'subspecialty_specialty', 'id', @specialty_specialty_id);
+        END IF;
+
+        IF (@service_subspecialty_assignment_subspecialty_id IS NOT NULL) THEN
+          call extract_row(1, @service_subspecialty_assignment_subspecialty_id, 'openeyes', 'service_subspecialty_assignment', 'subspecialty_id', @service_subspecialty_assignment_subspecialty_id);
+        END IF;
+
+        IF (@service_subspecialty_assignment_service_id IS NOT NULL) THEN
+          call extract_row(1, @service_subspecialty_assignment_service_id, 'openeyes', 'service_subspecialty_assignment', 'service_id', @service_subspecialty_assignment_service_id);
+        END IF;
+
+        IF(@firm_service_subspecialty_assignment_id IS NOT NULL) THEN
+          call extract_row(1, @firm_service_subspecialty_assignment_id, 'openeyes', 'service_subspecialty_assignment', 'id', @firm_service_subspecialty_assignment_id);
+        END IF;
+
+        IF(@firm_consultant_id IS NOT NULL) THEN
+          SET @contact_id = (SELECT contact_id FROM user WHERE id = @firm_consultant_id);
+          SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
+          call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
+          call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+          call extract_row(1, @firm_consultant_id, 'openeyes', 'user', 'id', @firm_consultant_id);
+        END IF;
+
+        IF (@firm_id IS NOT NULL) THEN
+          call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+        END IF;
+
+      END WHILE;
+
+    END IF;
+
+  END $$
+DELIMITER ;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS extract_et_data;
+CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
+  in_table text,
+  ids text,
+  count integer(10)
+)
+  BEGIN
+    SET @count = count;
+    SET @et_ids = concat(',',ids);
+    SET @table = in_table;
+    if( @count > 0 AND @et_ids IS NOT NULL) THEN
+
+      WHILE (LOCATE(',', @et_ids) > 0) DO
+        SET @et_ids = SUBSTRING(@et_ids, LOCATE(',', @et_ids) + 1);
+        SET @current_id =  (SELECT TRIM(SUBSTRING_INDEX(@et_ids, ',', 1)));
+        SET @current_id = TRIM(@current_id);
+
+        IF (@table = 'et_ophtrintravitinjection_site') THEN
+
+          SET @site_id = (SELECT site_id FROM et_ophtrintravitinjection_site WHERE id = @current_id);
+          SET @contact_id = (SELECT contact_id FROM site WHERE id = @site_id);
+          SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
+          SET @replyto_contact_id = (SELECT replyto_contact_id FROM site WHERE id = @site_id);
+          SET @replyto_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @replyto_contact_id);
+
+
+
+
+          IF (@contact_label_id IS NOT NULL) THEN
+            call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
+          END IF;
+
+          IF (@contact_id IS NOT NULL) THEN
+            call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+          END IF;
+
+          IF (@replyto_contact_label_id IS NOT NULL) THEN
+            call extract_row(1, @replyto_contact_label_id, 'openeyes', 'contact_label', 'id', @replyto_contact_label_id);
+          END IF;
+
+          IF (@replyto_contact_id IS NOT NULL) THEN
+            call extract_row(1, @replyto_contact_id, 'openeyes', 'contact', 'id', @replyto_contact_id);
+          END IF;
+
+          IF(@site_id IS NOT NULL) THEN
+            call extract_row(1, @site_id, 'openeyes', 'site', 'id', @site_id);
+          END IF;
+
+        END IF;
+
+
+        IF (@table = 'et_ophtrintravitinjection_postinject') THEN
+
+          SET @right_drops_id = (SELECT right_drops_id FROM et_ophtrintravitinjection_postinject WHERE id = @current_id);
+          SET @left_drops_id = (SELECT left_drops_id FROM et_ophtrintravitinjection_postinject WHERE id = @current_id);
+
+
+          IF(@right_drops_id IS NOT NULL) THEN
+            call extract_row(1, @right_drops_id, 'openeyes', 'ophtrintravitinjection_postinjection_drops', 'id', @right_drops_id);
+          END IF;
+
+          IF(@left_drops_id IS NOT NULL) THEN
+            call extract_row(1, @left_drops_id, 'openeyes', 'ophtrintravitinjection_postinjection_drops', 'id', @left_drops_id);
+          END IF;
+
+        END IF;
+
+
+      END WHILE;
+
+    END IF;
+  END $$
 DELIMITER ;
 
 
@@ -282,10 +473,19 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses', 'event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses_version', 'event_id', @id);
 
+          SET  @count = (SELECT COUNT(*) FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophciexamination_diagnosis','element_diagnoses_id', (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
+
           SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_dilation WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_dilation WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation', 'event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation_version', 'event_id', @id);
+
+          SET  @count = (SELECT COUNT(*) FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophciexamination_dilation_treatment','element_id', (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+
 
           SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_further_findings WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_further_findings WHERE event_id=@id);
@@ -317,6 +517,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_intraocularpressure WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure', 'event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure_version', 'event_id', @id);
+
+          SET  @count = (SELECT COUNT(*) FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophciexamination_intraocularpressure_value','element_id', (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
 
 
           SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_investigation WHERE event_id = @id);
@@ -374,6 +578,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity','event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity_version','event_id', @id);
 
+          SET  @count = (SELECT COUNT(*) FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophciexamination_visualacuity_reading','element_id', (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+
           SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_visualfunction WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_visualfunction WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualfunction','event_id', @id);
@@ -417,6 +625,17 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           SET  @count = (SELECT COUNT(*) FROM et_ophdrprescription_details WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophdrprescription_details WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details','event_id', @id);
+
+
+          SET  @count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophdrprescription_item','prescription_id', (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+
+          # TODO: Tapers here!!!
+
+          #SET  @count = (SELECT COUNT(*) FROM ophdrprescription_item_taper WHERE event_id = @id);
+          #SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophdrprescription_details WHERE event_id=@id);
+          #call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details','event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details_version','event_id', @id);
 
 
@@ -510,8 +729,16 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
 
           SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
+          call extract_et_data('et_ophtrintravitinjection_postinject', @ids, @count);
+
+          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
+          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject','event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject_version','event_id', @id);
+
+          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
+          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
+          call extract_et_data('et_ophtrintravitinjection_site', @ids, @count);
 
           SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
@@ -563,6 +790,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation_version','event_id', @id);
+
+          SET  @count = (SELECT COUNT(*) FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophtroperationbooking_operation_procedures_procedures','element_id', (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
 
 
           SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
@@ -630,6 +861,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist','event_id', @id);
           #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist_version','event_id', @id);
 
+          SET  @count = (SELECT COUNT(*) FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+          SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+          call extract_row(@count, @ids,'openeyes', 'ophtroperationnote_procedurelist_procedure_assignment','procedurelist_id', (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+
 
           SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_surgeon WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_surgeon_version WHERE event_id=@id);
@@ -691,21 +926,32 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
 
     SELECT @file;
 
-    -- Set all primary keys, index and foreign keys --
+    ALTER TABLE `event` CHANGE created_user_id created_user_id int(10) unsigned not null default 1;
+    ALTER TABLE specialty CHANGE created_user_id created_user_id int(10) unsigned not null default 1;
+    ALTER TABLE specialty CHANGE last_modified_user_id last_modified_user_id int(10) unsigned not null default 1;
+
+
     SET @patient_id = (SELECT id FROM patient WHERE hos_num=hospital_number);
     SET @contact_id = (SELECT contact_id FROM patient WHERE hos_num=hospital_number);
-    SET @contact_label_id = (SELECT id FROM contact_label WHERE id = (SELECT contact_label_id FROM contact WHERE id = @contact_id));
+    SET @gp_id = (SELECT gp_id FROM patient WHERE id = @patient_id);
+    SET @gp_contact_id = (SELECT contact_id FROM gp WHERE id = @gp_id);
+    SET @gp_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @gp_contact_id);
+    SET @practice_id = (SELECT practice_id from patient where id = @patient_id);
+    SET @practice_contact_id = (SELECT contact_id from practice WHERE id = @practice_id);
+    SET @practice_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @practice_contact_id);
 
-    SELECT @contact_label_id;
 
+    -- Get all the fields that are indirectly related to the patient --
+    call extract_row(1, @practice_contact_label_id, 'openeyes', 'contact_label', 'id', @practice_contact_label_id);
+    call extract_row(1, @practice_contact_id, 'openeyes', 'contact', 'id', @practice_contact_id);
+    call extract_row(1, @practice_id, 'openeyes', 'practice', 'id', @practice_id);
 
+    call extract_row(1, @gp_contact_label_id, 'openeyes', 'contact_label', 'id', @gp_contact_label_id);
+    call extract_row(1, @gp_contact_id, 'openeyes', 'contact', 'id', @gp_contact_id);
+    call extract_row(1, @gp_id, 'openeyes', 'gp', 'id', @gp_id);
 
 
     #Start creating the inserts;
-
-    SET  @count = (SELECT COUNT(*) FROM `patient` WHERE id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM `patient` WHERE hos_num=hospital_number );
-    call extract_row(@count, @ids,'openeyes', 'patient', 'id', @patient_id);
 
     SET  @count = (SELECT COUNT(*) FROM contact WHERE id = @contact_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM contact WHERE id=@contact_id);
@@ -715,23 +961,21 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
     SET  @ids = (SELECT group_concat(id separator ',') FROM address WHERE contact_id=@contact_id);
     call extract_row(@count, @ids,'openeyes', 'address', 'contact_id', @contact_id);
 
+    SET  @count = (SELECT COUNT(*) FROM `patient` WHERE id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM `patient` WHERE hos_num=hospital_number );
+    call extract_row(@count, @ids,'openeyes', 'patient', 'id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM episode WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM episode WHERE patient_id = @patient_id);
+    call get_episode_related_rows(@ids, @count);
+
     SET  @count = (SELECT COUNT(*) FROM episode WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM episode WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'episode', 'patient_id', @patient_id);
 
-    /*SET  @count = (SELECT COUNT(*) FROM episode_version WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM episode_version WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'episode', 'patient_id', @patient_id);
-   */
-
     SET  @count = (SELECT COUNT(*) FROM family_history WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM family_history WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'family_history', 'patient_id', @patient_id);
-
-    /*SET  @count = (SELECT COUNT(*) FROM family_history_version WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM family_history_version WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'family_history_version', 'patient_id', @patient_id);
-   */
 
     SET  @count = (SELECT COUNT(*) FROM medication WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM medication WHERE patient_id = @patient_id);
@@ -741,7 +985,45 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
     SET  @ids = (SELECT group_concat(id separator ',') FROM medication_adherence WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'medication_adherence', 'patient_id', @patient_id);
 
-    /*SET  @count = (SELECT COUNT(*) FROM medication_adherence_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM patient_allergy_assignment WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_allergy_assignment WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'patient_allergy_assignment', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM patient_contact_assignment WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_contact_assignment WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'patient_contact_assignment', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM patient_measurement WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_measurement WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'patient_measurement', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM previous_operation WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM previous_operation WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'previous_operation', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM referral WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM referral WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'referral', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM secondary_diagnosis WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM secondary_diagnosis WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'secondary_diagnosis', 'patient_id', @patient_id);
+
+    SET  @count = (SELECT COUNT(*) FROM socialhistory WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM socialhistory WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'socialhistory', 'patient_id', @patient_id);
+
+    /*SET  @count = (SELECT COUNT(*) FROM episode_version WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM episode_version WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'episode', 'patient_id', @patient_id);
+
+
+    SET  @count = (SELECT COUNT(*) FROM family_history_version WHERE patient_id = @patient_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM family_history_version WHERE patient_id = @patient_id);
+    call extract_row(@count, @ids,'openeyes', 'family_history_version', 'patient_id', @patient_id);
+
+
+    SET  @count = (SELECT COUNT(*) FROM medication_adherence_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM medication_adherence_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'medication_adherence_version', 'patient_id', @patient_id);
 
@@ -749,91 +1031,51 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
     SET  @count = (SELECT COUNT(*) FROM medication_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM medication_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'medication_version', 'patient_id', @patient_id);
-    */
 
-    SET  @count = (SELECT COUNT(*) FROM patient_allergy_assignment WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_allergy_assignment WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'patient_allergy_assignment', 'patient_id', @patient_id);
 
-    /*
+
     SET  @count = (SELECT COUNT(*) FROM patient_allergy_assignment_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM patient_allergy_assignment_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'patient_allergy_assignment_version', 'patient_id', @patient_id);
-   */
-
-    SET  @count = (SELECT COUNT(*) FROM patient_contact_assignment WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_contact_assignment WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'patient_contact_assignment', 'patient_id', @patient_id);
 
 
-    /*SET  @count = (SELECT COUNT(*) FROM patient_contact_assignment_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM patient_contact_assignment_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM patient_contact_assignment_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'patient_contact_assignment_version', 'patient_id', @patient_id);
-    */
-
-    SET  @count = (SELECT COUNT(*) FROM patient_measurement WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_measurement WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'patient_measurement', 'patient_id', @patient_id);
 
 
-    /*SET  @count = (SELECT COUNT(*) FROM patient_measurement_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM patient_measurement_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM patient_measurement_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'patient_measurement_version', 'patient_id', @patient_id);
 
     SET  @count = (SELECT COUNT(*) FROM patient_oph_info_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM patient_oph_info_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'patient_oph_info_version', 'patient_id', @patient_id);
-   */
 
-    SET  @count = (SELECT COUNT(*) FROM previous_operation WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM previous_operation WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'previous_operation', 'patient_id', @patient_id);
-
-
-    /*SET  @count = (SELECT COUNT(*) FROM previous_operation_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM previous_operation_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM previous_operation_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'previous_operation_version', 'patient_id', @patient_id);
-    */
 
 
-    SET  @count = (SELECT COUNT(*) FROM referral WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM referral WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'referral', 'patient_id', @patient_id);
-
-
-    /*SET  @count = (SELECT COUNT(*) FROM referral_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM referral_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM referral_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'referral_version', 'patient_id', @patient_id);
-   */
 
-
-    SET  @count = (SELECT COUNT(*) FROM secondary_diagnosis WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM secondary_diagnosis WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'secondary_diagnosis', 'patient_id', @patient_id);
-
-    /*SET  @count = (SELECT COUNT(*) FROM secondary_diagnosis_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM secondary_diagnosis_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM secondary_diagnosis_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'secondary_diagnosis_version', 'patient_id', @patient_id);
-    */
 
-    SET  @count = (SELECT COUNT(*) FROM socialhistory WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM socialhistory WHERE patient_id = @patient_id);
-    call extract_row(@count, @ids,'openeyes', 'socialhistory', 'patient_id', @patient_id);
 
-    /*SET  @count = (SELECT COUNT(*) FROM socialhistory_version WHERE patient_id = @patient_id);
+    SET  @count = (SELECT COUNT(*) FROM socialhistory_version WHERE patient_id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM socialhistory_version WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'socialhistory_version', 'patient_id', @patient_id);
+
     */
 
     SET  @count = (SELECT COUNT(*) FROM episode WHERE patient_id = @patient_id);
     SET  @episode_ids = (SELECT group_concat(id separator ',') FROM episode WHERE patient_id = @patient_id);
 
     call extract_dependant_row(@count, @episode_ids,'openeyes', 'episode', 'patient_id', @patient_id);
-
-
-
-
-
 
     SET @count = (SELECT COUNT(*) FROM episode WHERE patient_id = @patient_id);
     call get_events(@count,@episode_ids, 'openeyes', 'episode' ,@patient_id );
@@ -845,7 +1087,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
 
     EXECUTE qry;
 
-    SELECT * FROM patient_data_extract;
+    # SELECT * FROM patient_data_extract;
 
     # Delete the temporary table
     DROP TEMPORARY TABLE IF EXISTS patient_data_extract;
@@ -857,4 +1099,7 @@ DELIMITER ;
 
 
 call run_extractor(1639922);
-call run_extractor(1485025);
+#call run_extractor(1485025);
+#call run_extractor(0846209);
+#call get_related_user_rows('openeyes','patient', 1885939);
+#call get_episode_related_rows(11464, 1);
