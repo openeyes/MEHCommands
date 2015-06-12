@@ -155,7 +155,8 @@ BEGIN
     TRUNCATE ophciexamination_diagnosis;
     TRUNCATE ophciexamination_dilation_treatment;
     TRUNCATE ophciexamination_intraocularpressure_value;
-    TRUNCATE ophciexamination_nearvisualacuity_reading;
+    TRUNCATE ophciexamination_visualacuity_reading;
+    #TRUNCATE ophciexamination_nearvisualacuity_reading;
 
     DELETE FROM user WHERE id != 1;
     ALTER TABLE user AUTO_INCREMENT = 1;
