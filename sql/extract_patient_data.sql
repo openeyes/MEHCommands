@@ -65,7 +65,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
 
         #SELECT @tmp;
 
-
         EXECUTE Inserts;
 
         IF (@tmp IS NOT NULL) THEN
@@ -399,237 +398,242 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
           SET @count = 0;
           SET @ids = NULL;
 
+          SET @event_type = (SELECT class_name FROM event_type WHERE id = (SELECT event_type_id FROM `event` WHERE id = @id));
+
           #SELECT @episode_count,@event_count,@event_ids, @id as current_id;
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_adnexalcomorbidity WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_adnexalcomorbidity WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_adnexalcomorbidity', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_adnexalcomorbidity_version WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_adnexalcomorbidity_version WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_adnexalcomorbidity_version', 'event_id', @id);
-
 
           SET  @count = (SELECT COUNT(*) FROM event_issue WHERE event_id = @id);
           SET  @ids = (SELECT group_concat(id separator ',') FROM event_issue WHERE event_id=@id);
           call extract_row(@count, @ids,'openeyes', 'event_issue', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM event_issue_version WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM event_issue_version WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'event_issue_version', 'event_id', @id);
+          IF(@event_type = 'OphCiExamination') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_adnexalcomorbidity WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_adnexalcomorbidity WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_adnexalcomorbidity', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_adnexalcomorbidity_version WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_adnexalcomorbidity_version WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_adnexalcomorbidity_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_anteriorsegment WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_anteriorsegment WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_anteriorsegment_cct WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_anteriorsegment WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment_cct', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment_cct_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_bleb_assessment WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_bleb_assessment WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_bleb_assessment', 'event_id', @id);
+
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_bleb_assessment_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_cataractsurgicalmanagement WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_cataractsurgicalmanagement WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_cataractsurgicalmanagement', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_cataractsurgicalmanagement_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_clinicoutcome WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_clinicoutcome WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_clinicoutcome', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_clinicoutcome_version', 'event_id', @id);
 
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_anteriorsegment WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_anteriorsegment WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_colourvision WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_colourvision WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_colourvision', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_colourvision_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_anteriorsegment_cct WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_anteriorsegment WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment_cct', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment_cct_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_comorbidities WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_comorbidities WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_comorbidities', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_comorbidities_version', 'event_id', @id);
 
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_conclusion WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_conclusion WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_conclusion', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_conclusion_version', 'event_id', @id);
 
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_anteriorsegment_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_currentmanagementplan WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_currentmanagementplan WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_currentmanagementplan', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_currentmanagementplan_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_bleb_assessment WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_bleb_assessment WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_bleb_assessment', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_diagnoses WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_diagnoses WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses_version', 'event_id', @id);
 
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_bleb_assessment_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
+              SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
+              call extract_row(@count, @ids,'openeyes', 'ophciexamination_diagnosis','element_diagnoses_id', (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_cataractsurgicalmanagement WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_cataractsurgicalmanagement WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_cataractsurgicalmanagement', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_cataractsurgicalmanagement_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_dilation WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_dilation WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_clinicoutcome WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_clinicoutcome WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_clinicoutcome', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_clinicoutcome_version', 'event_id', @id);
-
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_colourvision WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_colourvision WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_colourvision', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_colourvision_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_comorbidities WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_comorbidities WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_comorbidities', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_comorbidities_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_conclusion WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_conclusion WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_conclusion', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_conclusion_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_currentmanagementplan WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_currentmanagementplan WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_currentmanagementplan', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_currentmanagementplan_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_diagnoses WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_diagnoses WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_diagnoses_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_diagnosis WHERE element_diagnoses_id = (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophciexamination_diagnosis','element_diagnoses_id', (SELECT id FROM et_ophciexamination_diagnoses WHERE event_id = @id));
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_dilation WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_dilation WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_dilation_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophciexamination_dilation_treatment','element_id', (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+              SET  @count = (SELECT COUNT(*) FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+              SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_dilation_treatment WHERE element_id = (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
+              call extract_row(@count, @ids,'openeyes', 'ophciexamination_dilation_treatment','element_id', (SELECT id FROM et_ophciexamination_dilation WHERE event_id = @id));
 
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_further_findings WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_further_findings WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_further_findings', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_further_findings_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_further_findings WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_further_findings WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_further_findings', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_further_findings_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_glaucomarisk WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_glaucomarisk WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_glaucomarisk', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_glaucomarisk_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_glaucomarisk WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_glaucomarisk WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_glaucomarisk', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_glaucomarisk_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_gonioscopy WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_gonioscopy WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_gonioscopy', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_gonioscopy_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_gonioscopy WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_gonioscopy WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_gonioscopy', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_gonioscopy_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_injectionmanagement WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_injectionmanagement WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagement', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagement_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_injectionmanagement WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_injectionmanagement WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagement', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagement_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_injectionmanagementcomplex WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_injectionmanagementcomplex WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagementcomplex', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagementcomplex_version', 'event_id', @id);
-
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_intraocularpressure WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_intraocularpressure WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophciexamination_intraocularpressure_value','element_id', (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_injectionmanagementcomplex WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_injectionmanagementcomplex WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagementcomplex', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_injectionmanagementcomplex_version', 'event_id', @id);
 
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_investigation WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_investigation WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_investigation', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_investigation_version', 'event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_intraocularpressure WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_intraocularpressure WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_intraocularpressure_version', 'event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_lasermanagement WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_lasermanagement WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_lasermanagement', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_lasermanagement_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_management WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_management WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_management', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_management_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_oct WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_oct WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_oct', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_oct_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_opticdisc WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_opticdisc WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_opticdisc', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_opticdisc_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_overallmanagementplan WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_overallmanagementplan WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_overallmanagementplan', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_overallmanagementplan_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_posteriorpole WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_posteriorpole WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_posteriorpole', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_posteriorpole_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_pupillaryabnormalities WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_pupillaryabnormalities WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_pupillaryabnormalities' , 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_pupillaryabnormalities_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_refraction WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_refraction WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_refraction', 'event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_refraction_version', 'event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_risks WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_risks WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_risks','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_risks_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_visualacuity WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_visualacuity WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophciexamination_visualacuity_reading','element_id', (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_visualfunction WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_visualfunction WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualfunction','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualfunction_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophciphasing_intraocularpressure WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciphasing_intraocularpressure WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophciphasing_intraocularpressure','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophciphasing_intraocularpressure_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcocorrespondence_letter WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcocorrespondence_letter WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_exceptional WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_exceptional WHERE event_id=@id);
-          # call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_exceptional','event_id', @id);
-          # call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_exceptional_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_mrservicein WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_mrservicein WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_mrservicein','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_mrservicein_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_patientsuit WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_patientsuit WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_patientsuit','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_patientsuit_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_relativecon WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_relativecon WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_relativecon','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_relativecon_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_therapydiag WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_therapydiag WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_therapydiag','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_therapydiag_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophdrprescription_details WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophdrprescription_details WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
+              SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_intraocularpressure_value WHERE element_id = (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
+              call extract_row(@count, @ids,'openeyes', 'ophciexamination_intraocularpressure_value','element_id', (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
 
 
-          SET  @count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophdrprescription_item','prescription_id', (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_investigation WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_investigation WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_investigation', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_investigation_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_lasermanagement WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_lasermanagement WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_lasermanagement', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_lasermanagement_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_management WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_management WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_management', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_management_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_oct WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_oct WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_oct', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_oct_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_opticdisc WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_opticdisc WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_opticdisc', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_opticdisc_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_overallmanagementplan WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_overallmanagementplan WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_overallmanagementplan', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_overallmanagementplan_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_posteriorpole WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_posteriorpole WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_posteriorpole', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_posteriorpole_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_pupillaryabnormalities WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_pupillaryabnormalities WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_pupillaryabnormalities' , 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_pupillaryabnormalities_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_refraction WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_refraction WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_refraction', 'event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_refraction_version', 'event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_risks WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_risks WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_risks','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_risks_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_visualacuity WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_visualacuity WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualacuity_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+              SET  @ids = (SELECT group_concat(id separator ',') FROM ophciexamination_visualacuity_reading WHERE element_id = (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+              call extract_row(@count, @ids,'openeyes', 'ophciexamination_visualacuity_reading','element_id', (SELECT id FROM et_ophciexamination_visualacuity WHERE event_id = @id));
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophciexamination_visualfunction WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciexamination_visualfunction WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualfunction','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciexamination_visualfunction_version','event_id', @id);
+          END IF;
+
+
+          IF (@event_type = 'OphCiPhasing') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophciphasing_intraocularpressure WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophciphasing_intraocularpressure WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophciphasing_intraocularpressure','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophciphasing_intraocularpressure_version','event_id', @id);
+          END IF;
+
+          IF (@event_type = 'OphCoCorrespondence') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophcocorrespondence_letter WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcocorrespondence_letter WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter_version','event_id', @id);
+          END IF;
+
+
+          IF (@event_type = 'OphCoTherapyapplication') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_exceptional WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_exceptional WHERE event_id=@id);
+              # call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_exceptional','event_id', @id);
+              # call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_exceptional_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_mrservicein WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_mrservicein WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_mrservicein','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_mrservicein_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_patientsuit WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_patientsuit WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_patientsuit','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_patientsuit_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_relativecon WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_relativecon WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_relativecon','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_relativecon_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophcotherapya_therapydiag WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcotherapya_therapydiag WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_therapydiag','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophcotherapya_therapydiag_version','event_id', @id);
+          END IF;
+
+
+          IF (@event_type = 'OphDrPrescription') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophdrprescription_details WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophdrprescription_details WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              SET  @ids = (SELECT group_concat(id separator ',') FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              call extract_row(@count, @ids,'openeyes', 'ophdrprescription_item','prescription_id', (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+          END IF;
 
           # TODO: Tapers here!!!
 
@@ -662,235 +666,255 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
 
           */
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_anaesthetis WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_anaesthetis WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_anaesthetis','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_anaesthetis_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_notes WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_notes WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_notes','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_notes_version','event_id', @id);
+          IF(@event_type = 'OphOuAnaestheticsatisfactionaudit') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_anaesthetis WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_anaesthetis WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_anaesthetis','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_anaesthetis_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_satisfactio WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_satisfactio WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_satisfactio','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_satisfactio_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_notes WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_notes WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_notes','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_notes_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_vitalsigns WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_vitalsigns WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_vitalsigns','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_vitalsigns_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_satisfactio WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_satisfactio WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_satisfactio','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_satisfactio_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_benfitrisk WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_benfitrisk WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_benfitrisk','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_benfitrisk_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_leaflets WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_leaflets WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_leaflets','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_leaflets_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_other WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_other WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_other','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_other_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_permissions WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_permissions WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_permissions','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_permissions_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_procedure WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_procedure WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_procedure','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_procedure_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_type WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_type WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_type ','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_type_version ','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_anaesthetic WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_anaesthetic WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anaesthetic','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anaesthetic_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_anteriorseg WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_anteriorseg WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anteriorseg','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anteriorseg_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_complications WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_complications WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_complications','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_complications_version','event_id', @id)
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
-          call extract_et_data('et_ophtrintravitinjection_postinject', @ids, @count);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
-          call extract_et_data('et_ophtrintravitinjection_site', @ids, @count);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_site','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_site_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_treatment WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_treatment WHERE event_id=@id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_treatment','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_treatment_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_anteriorseg WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_anteriorseg WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_anteriorseg','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_anteriorseg_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_comments WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_comments WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_comments','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_comments_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_fundus WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_fundus WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_fundus','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_fundus_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_posteriorpo WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_posteriorpo WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_posteriorpo','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_posteriorpo_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_site WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_site WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_site','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_site_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_treatment WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_treatment WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_treatment','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_treatment_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_diagnosis WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_diagnosis WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophouanaestheticsataudit_vitalsigns WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophouanaestheticsataudit_vitalsigns WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_vitalsigns','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophouanaestheticsataudit_vitalsigns_version','event_id', @id);
+          END IF;
 
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation_version','event_id', @id);
+          IF (@event_type = 'OphTrConsent') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_benfitrisk WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_benfitrisk WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_benfitrisk','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_benfitrisk_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophtroperationbooking_operation_procedures_procedures','element_id', (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_leaflets WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_leaflets WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_leaflets','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_leaflets_version','event_id', @id);
 
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_other WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_other WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_other','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_other_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_scheduleope WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_permissions WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_permissions WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_permissions','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_permissions_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_anaesthetic WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_anaesthetic WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_anaesthetic','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_anaesthetic_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_procedure WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_procedure WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_procedure','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_procedure_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_buckle WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_buckle WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_buckle ','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_buckle_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_cataract WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_cataract WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_cataract','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_cataract_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_comments WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_comments WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_comments','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_comments_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_genericprocedure WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_genericprocedure WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_genericprocedure','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_genericprocedure_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_glaucomatube WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_glaucomatube WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_glaucomatube','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_glaucomatube_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_membrane_peel WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_membrane_peel WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_membrane_peel','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_membrane_peel_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_mmc WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_mmc WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_mmc','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_mmc_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_personnel WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_personnel WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_personnel','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_personnel_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_postop_drugs WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_postop_drugs WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_postop_drugs','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_postop_drugs_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_preparation WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_preparation WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_preparation','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_preparation_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_procedurelist WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_procedurelist WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist_version','event_id', @id);
-
-          SET  @count = (SELECT COUNT(*) FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
-          SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
-          call extract_row(@count, @ids,'openeyes', 'ophtroperationnote_procedurelist_procedure_assignment','procedurelist_id', (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrconsent_type WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrconsent_type WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_type ','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrconsent_type_version ','event_id', @id);
+          END IF;
 
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_surgeon WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_surgeon_version WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_surgeon','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_surgeon_version','event_id', @id);
+          IF (@event_type = 'OphTrIntravitrealinjection') THEN
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_anaesthetic WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_anaesthetic WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anaesthetic','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anaesthetic_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_tamponade WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_tamponade WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_tamponade','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_tamponade_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_anteriorseg WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_anteriorseg WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anteriorseg','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_anteriorseg_version','event_id', @id);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_trabectome WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_trabectome WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabectome','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabectome_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_complications WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_complications WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_complications','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_complications_version','event_id', @id)
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_trabeculectomy WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_trabeculectomy WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabeculectomy ','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabeculectomy_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
+              call extract_et_data('et_ophtrintravitinjection_postinject', @ids, @count);
 
-          SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_vitrectomy WHERE event_id = @id);
-          SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_vitrectomy WHERE event_id=@id);
-          call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_vitrectomy','event_id', @id);
-          #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_vitrectomy_version','event_id', @id);
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_postinject WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_postinject WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_postinject_version','event_id', @id);
 
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
+              call extract_et_data('et_ophtrintravitinjection_site', @ids, @count);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_site WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_site WHERE event_id=@id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_site','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_site_version','event_id', @id);
+
+              SET  @count = (SELECT COUNT(*) FROM et_ophtrintravitinjection_treatment WHERE event_id = @id);
+              SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrintravitinjection_treatment WHERE event_id=@id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_treatment','event_id', @id);
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtrintravitinjection_treatment_version','event_id', @id);
+          END IF;
+
+          IF(@event_type = 'OphTrLaser') THEN
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_anteriorseg WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_anteriorseg WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_anteriorseg','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_anteriorseg_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_comments WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_comments WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_comments','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_comments_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_fundus WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_fundus WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_fundus','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_fundus_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_posteriorpo WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_posteriorpo WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_posteriorpo','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_posteriorpo_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_site WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_site WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_site','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_site_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtrlaser_treatment WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtrlaser_treatment WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_treatment','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtrlaser_treatment_version','event_id', @id);
+          END IF;
+
+
+          IF(@event_type = 'OphTrOperationbooking') THEN
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_diagnosis WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_diagnosis WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis_version','event_id', @id);
+
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+            SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+            call extract_row(@count, @ids,'openeyes', 'ophtroperationbooking_operation_procedures_procedures','element_id', (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_scheduleope WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope_version','event_id', @id);
+
+          END IF;
+
+
+          if( @event_type = 'OphTrOperationnote') THEN
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_anaesthetic WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_anaesthetic WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_anaesthetic','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_anaesthetic_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_buckle WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_buckle WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_buckle ','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_buckle_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_cataract WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_cataract WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_cataract','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_cataract_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_comments WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_comments WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_comments','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_comments_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_genericprocedure WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_genericprocedure WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_genericprocedure','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_genericprocedure_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_glaucomatube WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_glaucomatube WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_glaucomatube','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_glaucomatube_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_membrane_peel WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_membrane_peel WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_membrane_peel','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_membrane_peel_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_mmc WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_mmc WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_mmc','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_mmc_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_personnel WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_personnel WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_personnel','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_personnel_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_postop_drugs WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_postop_drugs WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_postop_drugs','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_postop_drugs_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_preparation WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_preparation WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_preparation','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_preparation_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_procedurelist WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_procedurelist WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_procedurelist_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+            SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+            call extract_row(@count, @ids,'openeyes', 'ophtroperationnote_procedurelist_procedure_assignment','procedurelist_id', (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
+
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_surgeon WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_surgeon_version WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_surgeon','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_surgeon_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_tamponade WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_tamponade WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_tamponade','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_tamponade_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_trabectome WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_trabectome WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabectome','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabectome_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_trabeculectomy WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_trabeculectomy WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabeculectomy ','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_trabeculectomy_version','event_id', @id);
+
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_vitrectomy WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_vitrectomy WHERE event_id=@id);
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_vitrectomy','event_id', @id);
+            #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationnote_vitrectomy_version','event_id', @id);
+
+          END IF;
 
 
         END WHILE;
