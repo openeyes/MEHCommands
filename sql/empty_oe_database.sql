@@ -156,6 +156,9 @@ BEGIN
     TRUNCATE ophciexamination_dilation_treatment;
     TRUNCATE ophciexamination_intraocularpressure_value;
     TRUNCATE ophciexamination_visualacuity_reading;
+    TRUNCATE ophciphasing_reading;
+    TRUNCATE ophcotherapya_email;
+    TRUNCATE ophtrconsent_leaflets;
     #TRUNCATE ophciexamination_nearvisualacuity_reading;
 
     DELETE FROM user WHERE id != 1;
@@ -171,6 +174,9 @@ BEGIN
     UPDATE user SET last_firm_id = 1;
     UPDATE site SET name='Default Site', short_name='Default', telephone='123456789', remote_id='AAAA', contact_id=1;
     UPDATE institution SET name='Default Institution', short_name='Default', contact_id=1;
+    UPDATE user SET password='d45409ef1eaa57f5041bf3a1b510097b', salt='FbYJis0YG3';
+    # inserting firms for all subspecialty
+    INSERT INTO firm (service_subspecialty_assignment_id, name) SELECT ssa.id, concat(subspec.name, ' firm') FROM service_subspecialty_assignment ssa JOIN subspecialty subspec ON ssa.subspecialty_id=subspec.id;
 END $$
 
 CREATE PROCEDURE emptyOEDatabase()
