@@ -56,10 +56,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
 
       -- Main Select Statement for fetching comma separated table value --
 
-     /* SET @Inserts= concat("(select concat('insert into ", @current_table," (",@Columns,") values(',concat_ws(',',",@Sels,"),');')
-        as MyColumn from ", @current_table, " where ", in_ColumnName, " = " , in_ColumnValue, " AND id = " , @in_row_id," group by ",@Whrs, " INTO @tmp);");*/
-
-      SET @Inserts= concat('(select concat("insert into ', @current_table,' (',@Columns,') values(",concat_ws(",",',@Sels,'),");")
+     SET @Inserts= concat('(select concat("insert into ', @current_table,' (',@Columns,') values(",concat_ws(",",',@Sels,'),");")
         as MyColumn from ', @current_table, ' where ', in_ColumnName, ' = ' , in_ColumnValue, ' AND id = ' , @in_row_id,' group by ',@Whrs, ' INTO @tmp);');
 
       #SELECT @Inserts;
@@ -307,8 +304,14 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
         SET @current_id = TRIM(@current_id);
 
         IF (@table = 'et_ophtrintravitinjection_site') THEN
+            SET @site_id = (SELECT site_id FROM et_ophtrintravitinjection_site WHERE id = @current_id);
+        END IF;
 
-          SET @site_id = (SELECT site_id FROM et_ophtrintravitinjection_site WHERE id = @current_id);
+        IF (@table = 'et_ophtroperationbooking_operation') THEN
+          SET @site_id = (SELECT site_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
+        END IF;
+
+        IF(@site_id IS NOT NULL) THEN
           SET @contact_id = (SELECT contact_id FROM site WHERE id = @site_id);
           SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
           SET @replyto_contact_id = (SELECT replyto_contact_id FROM site WHERE id = @site_id);
@@ -837,6 +840,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
             call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis','event_id', @id);
             #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_diagnosis_version','event_id', @id);
 
+            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
+            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
+            call extract_et_data('et_ophtroperationbooking_operation', @ids, @count);
+
 
             SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
             SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
@@ -845,7 +852,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
 
             SET  @count = (SELECT COUNT(*) FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
             SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+            call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','id', (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
             call extract_row(@count, @ids,'openeyes', 'ophtroperationbooking_operation_procedures_procedures','element_id', (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
+
+
 
 
             SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
@@ -922,6 +932,16 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
             SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationnote_procedurelist_procedure_assignment WHERE procedurelist_id = (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
             call extract_row(@count, @ids,'openeyes', 'ophtroperationnote_procedurelist_procedure_assignment','procedurelist_id', (SELECT id FROM et_ophtroperationnote_procedurelist WHERE event_id = @id));
 
+            /* Add surgeon id related to et_ophtroperationnote_surgeon first */
+            SET @user_id = (SELECT surgeon_id FROM et_ophtroperationnote_surgeon WHERE event_id = @id);
+            SET @contact_id = (SELECT contact_id from user WHERE id = @user_id);
+            SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @cotntact_id);
+
+            if( @user_id IS NOT NULL) THEN
+                call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
+                call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+                call extract_row(1, @user_id, 'openeyes', 'user', 'id', @user_id);
+            END IF;
 
             SET  @count = (SELECT COUNT(*) FROM et_ophtroperationnote_surgeon WHERE event_id = @id);
             SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationnote_surgeon_version WHERE event_id=@id);
