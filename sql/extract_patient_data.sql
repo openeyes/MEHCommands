@@ -1167,7 +1167,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
     SET  @ids = (SELECT group_concat(id separator ',') FROM socialhistory WHERE patient_id = @patient_id);
     call extract_row(@count, @ids,'openeyes', 'socialhistory', 'patient_id', @patient_id);
 
-
+
     SET  @count = (SELECT COUNT(*) FROM episode WHERE patient_id = @patient_id);
     SET  @episode_ids = (SELECT group_concat(id separator ',') FROM episode WHERE patient_id = @patient_id);
 
