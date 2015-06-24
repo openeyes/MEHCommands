@@ -420,22 +420,11 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           SET @left_treatment_id = (SELECT left_treatment_id FROM et_ophcotherapya_patientsuit WHERE id = @current_id);
           SET @right_treatment_id = (SELECT right_treatment_id FROM et_ophcotherapya_patientsuit WHERE id = @current_id);
 
-          SELECT @left_treatment_id, @right_treatment_id;
-
           IF(@left_treatment_id IS NOT NULL) THEN
-            SET @decisiontree_id = (SELECT decisiontree_id FROM et_ophcotherapya_patientsuit WHERE left_treatment_id = @left_treatment_id);
-            IF(@decisiontree_id IS NOT NULL) THEN
-              call extract_row(1,@decisiontree_id, 'openeyes', 'ophcotherapya_decisiontree', 'id', @decisiontree_id);
-            END IF;
               call extract_row(1,@left_treatment_id, 'openeyes', 'ophcotherapya_treatment', 'id', @left_treatment_id );
-
           END IF;
 
           IF(@right_treatment_id IS NOT NULL) THEN
-            SET @decisiontree_id = (SELECT decisiontree_id FROM et_ophcotherapya_patientsuit WHERE right_treatment_id = @right_treatment_id);
-            IF(@decisiontree_id IS NOT NULL) THEN
-              call extract_row(1,@decisiontree_id, 'openeyes', 'ophcotherapya_decisiontree', 'id', @decisiontree_id);
-            END IF;
             call extract_row(1,@right_treatment_id, 'openeyes', 'ophcotherapya_treatment', 'id', @right_treatment_id );
           END IF;
 
