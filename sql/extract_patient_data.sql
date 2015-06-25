@@ -217,9 +217,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
           SET @location_id = (SELECT location_id FROM patient_contact_assignment WHERE id = @id);
           SET @contact_id = (SELECT contact_id from contact_location WHERE id = @location_id);
           SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
+          SET @institution_id = (SELECT institution_id FROM contact_location WHERE id = @location_id);
 
           call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
           call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+          call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
           call extract_row(1, @location_id, 'openeyes', 'contact_location', 'id', @location_id);
 
         END IF;
@@ -355,14 +357,16 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           END IF;
 
           SET @cancellation_reason_id = (SELECT cancellation_reason_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
+          SELECT @cancellation_reason_id;
           IF (@cancellation_reason_id IS NOT NULL) THEN
             call extract_row(1, @cancellation_reason_id, 'openeyes', 'ophtroperationbooking_operation_cancellation_reason', 'id', @cancellation_reason_id);
           END IF;
 
-          SET @element_id = (SELECT element_id FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
+          /*SET @element_id = (SELECT group_concat(element_id separator ',') FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
+          SELECT @element_id;
           IF(@element_id IS NOT NULL) THEN
             call extract_row(1, @element_id, 'openeyes', '', 'id', @element_id);
-          END IF;
+          END IF;*/
 
 
 
@@ -401,7 +405,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
         END IF;
 
 
-        IF (@table = 'et_ophtrintravitinjection_postinject') THEN
+       IF (@table = 'et_ophtrintravitinjection_postinject') THEN
 
           SET @right_drops_id = (SELECT right_drops_id FROM et_ophtrintravitinjection_postinject WHERE id = @current_id);
           SET @left_drops_id = (SELECT left_drops_id FROM et_ophtrintravitinjection_postinject WHERE id = @current_id);
@@ -442,7 +446,11 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
             call extract_row(1,@right_anaestheticagent_id, 'openeyes', 'anaesthetic_agent', 'id', @right_anaestheticagent_id );
           END IF;
 
+
+
         END IF;
+
+
 
 
 
@@ -818,6 +826,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
               IF ((@count > 0) AND (@ids IS NOT NULL)) THEN
                 SET @frequency_id = (SELECT frequency_id FROM ophdrprescription_item WHERE id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
                 SET @duration_id = (SELECT duration_id FROM ophdrprescription_item WHERE id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+
                 IF(@frequency_id IS NOT NULL) THEN
                   call extract_row(1, @frequency_id, 'openeyes', 'drug_frequency','id', @frequency_id);
                 END IF;
