@@ -159,6 +159,15 @@ BEGIN
     TRUNCATE ophciphasing_reading;
     TRUNCATE ophcotherapya_email;
     TRUNCATE ophtrconsent_leaflets;
+    #TRUNCATE pas_assignment;
+    TRUNCATE ophinvisualfields_field_measurement;
+    TRUNCATE contact_location;
+    #TRUNCATE mehbookinglogger_log;
+    TRUNCATE ophtroperationbooking_operation_booking;
+    TRUNCATE ophtroperationnote_postop_drugs_drug;
+    TRUNCATE ophtroperationnote_anaesthetic_anaesthetic_agent;
+    TRUNCATE ophtroperationbooking_operation_erod;
+    DROP TABLE IF EXISTS paul_table;
     #TRUNCATE ophciexamination_nearvisualacuity_reading;
 
     DELETE FROM user WHERE id != 1;

@@ -149,9 +149,9 @@ FETCH pc_cursor INTO myId;
 IF done THEN
 LEAVE pc_loop;
 END IF;
-SELECT t.firstn, t.title FROM (SELECT first_name AS firstn, title  FROM contact WHERE id = (SELECT a.id FROM contact a JOIN (SELECT id AS rand_id FROM contact ORDER BY RAND() LIMIT 1) AS r WHERE a.id>=r.rand_id LIMIT 1)) t INTO myFirstName, myTitle;
+SELECT t.firstn, t.title FROM (SELECT first_name AS firstn, title  FROM contact WHERE id = (SELECT a.id FROM contact a JOIN (SELECT (rand()*max(id)) AS rand_id FROM contact) AS r WHERE a.id>=r.rand_id AND a.first_name IS NOT NULL AND a.first_name != '' LIMIT 1)) t INTO myFirstName, myTitle;
 UPDATE contact SET first_name=myFirstName, title=myTitle WHERE id=myId;
-UPDATE contact SET last_name=(SELECT t.lastn FROM (SELECT last_name AS lastn FROM contact WHERE id = (SELECT a.id FROM contact a JOIN (SELECT id AS rand_id FROM contact ORDER BY RAND() LIMIT 1) AS r WHERE a.id>=r.rand_id LIMIT 1)) t ) WHERE id=myId;
+UPDATE contact SET last_name=(SELECT t.lastn FROM (SELECT last_name AS lastn FROM contact WHERE id = (SELECT a.id FROM contact a JOIN (SELECT (rand()*max(id)) AS rand_id FROM contact) AS r WHERE a.id>=r.rand_id AND a.last_name != '' AND a.last_name IS NOT NULL LIMIT 1)) t ) WHERE id=myId;
 #UPDATE patient SET gender=(SELECT CASE WHEN myTitle = 'Mr' THEN 'M' WHEN myTitle='Ms' OR myTitle='Mrs' OR myTitle='Miss' THEN 'F' END) WHERE contact_id=myId;
 END LOOP;
 
