@@ -357,19 +357,10 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           END IF;
 
           SET @cancellation_reason_id = (SELECT cancellation_reason_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
-          SELECT @cancellation_reason_id;
+
           IF (@cancellation_reason_id IS NOT NULL) THEN
             call extract_row(1, @cancellation_reason_id, 'openeyes', 'ophtroperationbooking_operation_cancellation_reason', 'id', @cancellation_reason_id);
           END IF;
-
-          /*SET @element_id = (SELECT group_concat(element_id separator ',') FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
-          SELECT @element_id;
-          IF(@element_id IS NOT NULL) THEN
-            call extract_row(1, @element_id, 'openeyes', '', 'id', @element_id);
-          END IF;*/
-
-
-
 
         END IF;
 
@@ -421,14 +412,23 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
         END IF;
 
         IF (@table = 'et_ophcotherapya_patientsuit') THEN
+
           SET @left_treatment_id = (SELECT left_treatment_id FROM et_ophcotherapya_patientsuit WHERE id = @current_id);
           SET @right_treatment_id = (SELECT right_treatment_id FROM et_ophcotherapya_patientsuit WHERE id = @current_id);
 
           IF(@left_treatment_id IS NOT NULL) THEN
+              SET @decisiontree_id = (SELECT decisiontree_id FROM ophcotherapya_treatment WHERE id = @left_treatment_id);
+              IF( @decisiontree_id IS NOT NULL ) THEN
+                call extract_row(1,@decisiontree_id, 'openeyes', 'ophcotherapya_decisiontree', 'id', @decisiontree_id );
+              END IF;
               call extract_row(1,@left_treatment_id, 'openeyes', 'ophcotherapya_treatment', 'id', @left_treatment_id );
           END IF;
 
           IF(@right_treatment_id IS NOT NULL) THEN
+            SET @decisiontree_id = (SELECT decisiontree_id FROM ophcotherapya_treatment WHERE id = @right_treatment_id);
+            IF( @decisiontree_id IS NOT NULL ) THEN
+              call extract_row(1,@decisiontree_id, 'openeyes', 'ophcotherapya_decisiontree', 'id', @decisiontree_id );
+            END IF;
             call extract_row(1,@right_treatment_id, 'openeyes', 'ophcotherapya_treatment', 'id', @right_treatment_id );
           END IF;
 
@@ -821,19 +821,24 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                 call extract_row(@count, @ids,'openeyes', 'et_ophdrprescription_details','event_id', @id);
               END IF;
 
-              SET  @count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
-              SET  @ids = (SELECT group_concat(id separator ',') FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
-              IF ((@count > 0) AND (@ids IS NOT NULL)) THEN
-                SET @frequency_id = (SELECT frequency_id FROM ophdrprescription_item WHERE id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
-                SET @duration_id = (SELECT duration_id FROM ophdrprescription_item WHERE id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              SET  @pr_item_count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              SET  @pr_item_ids = (SELECT concat(',',group_concat(id separator ',')) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+              IF ((@pr_item_count > 0) AND (@pr_item_ids IS NOT NULL)) THEN
+                WHILE (LOCATE(',', @pr_item_ids) > 0) DO
+                  SET @pr_item_ids = SUBSTRING(@pr_item_ids, LOCATE(',', @pr_item_ids) + 1);
+                  SET @pr_item_id = (SELECT TRIM(SUBSTRING_INDEX(@pr_item_ids, ',', 1)));
 
-                IF(@frequency_id IS NOT NULL) THEN
-                  call extract_row(1, @frequency_id, 'openeyes', 'drug_frequency','id', @frequency_id);
-                END IF;
+                  SET @frequency_id = (SELECT frequency_id FROM ophdrprescription_item WHERE id = @pr_item_id);
+                  SET @duration_id = (SELECT duration_id FROM ophdrprescription_item WHERE id = @pr_item_id);
 
-                IF(@duration_id IS NOT NULL) THEN
-                  call extract_row(1, @duration_id,'openeyes', 'drug_duration','id', @duration_id);
-                END IF;
+                  IF(@frequency_id IS NOT NULL) THEN
+                    call extract_row(1, @frequency_id, 'openeyes', 'drug_frequency','id', @frequency_id);
+                  END IF;
+
+                  IF(@duration_id IS NOT NULL) THEN
+                    call extract_row(1, @duration_id,'openeyes', 'drug_duration','id', @duration_id);
+                  END IF;
+                END WHILE;
 
                 call extract_row(@count, @ids,'openeyes', 'ophdrprescription_item','prescription_id', (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
               END IF;
@@ -1397,11 +1402,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
     SET  @ids = (SELECT group_concat(id separator ',') FROM patient_contact_assignment WHERE patient_id = @patient_id);
     IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
       call get_contact_locations(@count, @ids, 'openeyes', 'patient_contact_assignment');
-    END IF;
-
-    SET  @count = (SELECT COUNT(*) FROM patient_contact_assignment WHERE patient_id = @patient_id);
-    SET  @ids = (SELECT group_concat(id separator ',') FROM patient_contact_assignment WHERE patient_id = @patient_id);
-    IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
       call extract_row(@count, @ids,'openeyes', 'patient_contact_assignment', 'patient_id', @patient_id);
       call extract_dependant_row(@count, @ids,'openeyes', 'patient_contact_assignment', 'patient_id', @patient_id);
     END IF;
