@@ -219,14 +219,19 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
           SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
           SET @institution_id = (SELECT institution_id FROM contact_location WHERE id = @location_id);
 
+          SET @institiution_contact_id = (SELECT contact_id FROM institution WHERE id = @institution_id);
+          SET @institiution_contact_label_id = (SELECT contact_label_id FROM contact WHERE is = @@institiution_contact_id);
+
           call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
           call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+          call extract_row(1, @institiution_contact_label_id, 'openeyes', 'contact_label', 'id', @institiution_contact_label_id);
+          call extract_row(1, @institiution_contact_id, 'openeyes', 'contact', 'id', @institiution_contact_id);
           call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
           call extract_row(1, @location_id, 'openeyes', 'contact_location', 'id', @location_id);
 
         END IF;
 
-        END WHILE;
+      END WHILE;
 
     END IF;
 
