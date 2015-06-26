@@ -238,6 +238,87 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
   END $$
 DELIMITER ;
 
+-- Extract one contact --
+DELIMITER $$
+DROP PROCEDURE IF EXISTS extract_contact;
+CREATE DEFINER=`root`@`localhost` PROCEDURE extract_contact(
+  in_contact_id integer(10),
+)
+  BEGIN
+
+    SET @contact_id = in_contact_id;
+
+    SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
+    IF( @contact_label_id IS NOT NULL) THEN
+      call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
+    END IF;
+    call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
+
+  END $$
+
+DELIMITER ;
+
+-- Extract one user --
+DELIMITER $$
+DROP PROCEDURE IF EXISTS extract_user;
+CREATE DEFINER=`root`@`localhost` PROCEDURE extract_user(
+  in_user_id integer(10),
+)
+  BEGIN
+
+    SET @user_id = in_user_id;
+    IF( @user_id IS NOT NULL) THEN
+      call extract_contact((SELECT contact_id FROM user WHERE id = @user_id));
+      call extract_row(1, @user_id, 'openeyes', 'user', 'id', @user_id);
+    END IF;
+  END $$
+
+DELIMITER ;
+
+-- Extract one firm --
+DELIMITER $$
+DROP PROCEDURE IF EXISTS extract_firm;
+CREATE DEFINER=`root`@`localhost` PROCEDURE extract_firm(
+  in_firm_id integer(10),
+)
+  BEGIN
+    SET @firm_id = in_firm_id;
+    call extract_user((SELECT consultant_id FROM firm WHERE id = @firm_id));
+    SET @ssa_id = (SELECT service_subspecialty_assignment_id FROM firm WHERE id = @firm_id);
+    IF( @ssa_id IS NOT NULL) THEN
+      call extract_row(1, (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'service', 'id', (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
+      call extract_row(1, (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'subspecialty', 'id', (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
+    END IF;
+    call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+  END $$
+
+DELIMITER ;
+
+-- Extract one firm --
+DELIMITER $$
+DROP PROCEDURE IF EXISTS extract_site;
+CREATE DEFINER=`root`@`localhost` PROCEDURE extract_site(
+  in_site_id integer(10),
+)
+  BEGIN
+    SET @site_id = in_site_id;
+    call extract_contact((SELECT contact_id FROM site WHERE id = @site_id));
+    SET @institution_id = (SELECT institution_id FROM site WHERE id = @site_id)
+    IF(@institution_id IS NOT NULL) THEN
+      call extract_contact((SELECT contact_id FROM institution WHERE id = @institution_id));
+      call extract_row(1, (SELECT source_id FROM institution WHERE id = @institution_id), 'openeyes', 'import_source', 'id', (SELECT source_id FROM institution WHERE id = @institution_id));
+      call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
+    END IF;
+    --call extract_user((SELECT consultant_id FROM firm WHERE id = @firm_id));
+    --SET @ssa_id = (SELECT service_subspecialty_assignment_id FROM firm WHERE id = @firm_id);
+    --IF( @ssa_id IS NOT NULL) THEN
+     -- call extract_row(1, (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'service', 'id', (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
+    --  call extract_row(1, (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'subspecialty', 'id', (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
+    --END IF;
+   -- call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+  END $$
+
+DELIMITER ;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS get_episode_related_rows;
@@ -366,6 +447,42 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           IF (@cancellation_reason_id IS NOT NULL) THEN
             call extract_row(1, @cancellation_reason_id, 'openeyes', 'ophtroperationbooking_operation_cancellation_reason', 'id', @cancellation_reason_id);
           END IF;
+
+          SET @booking_count = (SELECT count(id) FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
+          SET @booking_ids = (SELECT concat(',',group_concat(id separator ',')) FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
+
+          IF(@booking_ids IS NOT NULL) THEN
+             WHILE (LOCATE(',', @booking_ids) > 0) DO
+                SET @booking_ids = SUBSTRING(@booking_ids, LOCATE(',', @booking_ids) + 1);
+                SET @booking_id =  (SELECT TRIM(SUBSTRING_INDEX(@booking_ids, ',', 1)));
+                SET @booking_id = TRIM(@booking_id);
+
+
+                SET @firm_id = (SELECT firm_id FROM ophtroperationbooking_operation_session WHERE id = (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                IF(@firm_id IS NOT NULL) THEN
+                  @consultant_id = (SELECT consultant_id FROM firm WHERE id = @firm_id);
+                  IF(@consultant_id IS NOT NULL) THEN
+                    SET @contact_lbl_id1 = (SELECT contact_label_id FROM contact WHERE id = (SELECT contact_id FROM user WHERE id=@consultant_id));
+                    IF(@contact_lbl_id1 IS NOT NULL) THEN
+                      call extract_row(1, @contact_lbl_id1, 'openeyes', 'contact_label', 'id', @contact_lbl_id1);
+                    END IF;
+                    call extract_row(1, (SELECT contact_id FROM user WHERE id=@consultant_id), 'openeyes', 'contact', 'id', (SELECT contact_id FROM user WHERE id=@consultant_id));
+                    call extract_row(1, @consultant_id, 'openeyes', 'user', 'id', @consultant_id);
+                  END IF;
+                  call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+                END IF;
+                call extract_row(1, (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id), 'openeyes', 'ophtroperationbooking_operation_session', 'id', (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                SET @contact_lbl_id = (SELECT contact_label_id FROM contact WHERE id = (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)));
+                IF(@contact_lbl_id IS NOT NULL) THEN
+                  call extract_row(1, @contact_lbl_id, 'openeyes', 'contact_label', 'id', @contact_lbl_id);
+                END IF;
+                call extract_row(1, (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)), 'openeyes', 'contact', 'id', (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)));
+                call extract_row(1, (SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id), 'openeyes', 'user', 'id', (SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                call extract_row(1, @booking_id, 'openeyes', 'ophtroperationbooking_operation_booking', 'id', @booking_id);
+
+            END WHILE;
+          END IF;
+
 
         END IF;
 
