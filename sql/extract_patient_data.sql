@@ -294,7 +294,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_firm(
 
 DELIMITER ;
 
--- Extract one firm --
+-- Extract one site --
 DELIMITER $$
 DROP PROCEDURE IF EXISTS extract_site;
 CREATE DEFINER=`root`@`localhost` PROCEDURE extract_site(
@@ -309,13 +309,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_site(
       call extract_row(1, (SELECT source_id FROM institution WHERE id = @institution_id), 'openeyes', 'import_source', 'id', (SELECT source_id FROM institution WHERE id = @institution_id));
       call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
     END IF;
-    --call extract_user((SELECT consultant_id FROM firm WHERE id = @firm_id));
-    --SET @ssa_id = (SELECT service_subspecialty_assignment_id FROM firm WHERE id = @firm_id);
-    --IF( @ssa_id IS NOT NULL) THEN
-     -- call extract_row(1, (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'service', 'id', (SELECT service_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
-    --  call extract_row(1, (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id), 'openeyes', 'subspecialty', 'id', (SELECT subspecialty_id FROM service_subspecialty_assignment WHERE id = @ssa_id));
-    --END IF;
-   -- call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+
+    call extract_user((SELECT replyto_contact_id FROM site WHERE id = @site_id));
+    call extract_row(1, (SELECT source_id FROM site WHERE id = @site_id), 'openeyes', 'import_source', 'id', (SELECT source_id FROM site WHERE id = @site_id));
+    call extract_row(1, @site_id, 'openeyes', 'site', 'id', @site_id);
   END $$
 
 DELIMITER ;
