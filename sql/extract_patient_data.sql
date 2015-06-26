@@ -454,21 +454,38 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
                 SET @booking_id =  (SELECT TRIM(SUBSTRING_INDEX(@booking_ids, ',', 1)));
                 SET @booking_id = TRIM(@booking_id);
 
-
+                -- ophtroperationbooking_operation_booking start
+                -- session start
                 SET @firm_id = (SELECT firm_id FROM ophtroperationbooking_operation_session WHERE id = (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
                 IF(@firm_id IS NOT NULL) THEN
-                  @consultant_id = (SELECT consultant_id FROM firm WHERE id = @firm_id);
-                  IF(@consultant_id IS NOT NULL) THEN
-                    SET @contact_lbl_id1 = (SELECT contact_label_id FROM contact WHERE id = (SELECT contact_id FROM user WHERE id=@consultant_id));
-                    IF(@contact_lbl_id1 IS NOT NULL) THEN
-                      call extract_row(1, @contact_lbl_id1, 'openeyes', 'contact_label', 'id', @contact_lbl_id1);
-                    END IF;
-                    call extract_row(1, (SELECT contact_id FROM user WHERE id=@consultant_id), 'openeyes', 'contact', 'id', (SELECT contact_id FROM user WHERE id=@consultant_id));
-                    call extract_row(1, @consultant_id, 'openeyes', 'user', 'id', @consultant_id);
-                  END IF;
-                  call extract_row(1, @firm_id, 'openeyes', 'firm', 'id', @firm_id);
+                  call extract_firm(@firm_id);
                 END IF;
+
+                -- sequence start
+                SET @sequence_id=(SELECT sequence_id FROM ophtroperationbooking_operation_session WHERE id=( SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                call extract_firm((SELECT firm_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id));
+
+                call extract_row(1, (SELECT interval_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id), 'openeyes', 'ophtroperationbooking_operation_sequence_interval', 'id', (SELECT interval_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id));
+
+                SET @theatre_id = (SELECT theatre_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id));
+                SET @ward_id = (SELECT ward_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_ward WHERE id = @ward_id));
+                call extract_row(1, @ward_id, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id);
+                call extract_row(1, @theatre_id, 'openeyes', 'ophtroperationbooking_operation_theatre', 'id', @theatre_id);
+
+                call extract_row(1, @sequence_id, 'openeyes', 'ophtroperationbooking_operation_sequence', 'id', @sequence_id);
+                -- sequence end
+
+                -- TODO: theatre for session
+                -- TODO: unavailablereason_id for session
                 call extract_row(1, (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id), 'openeyes', 'ophtroperationbooking_operation_session', 'id', (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                -- session end
+                -- TODO: session_theatre_id for booking_booking
+                -- TODO: ward_id for booking_booking
+                -- TODO: extract_row ophtroperationbooking_operation_booking
+
+                -- ophtroperationbooking_operation_booking end
                 SET @contact_lbl_id = (SELECT contact_label_id FROM contact WHERE id = (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)));
                 IF(@contact_lbl_id IS NOT NULL) THEN
                   call extract_row(1, @contact_lbl_id, 'openeyes', 'contact_label', 'id', @contact_lbl_id);
