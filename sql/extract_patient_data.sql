@@ -1603,26 +1603,43 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
   END $$
 DELIMITER ;
 
+DELIMITER $$
 
+DROP PROCEDURE IF EXISTS extract_all_patients;
+CREATE DEFINER=`root`@`localhost` PROCEDURE extract_all_patients()
+  BEGIN
+    SET @all_patients = (SELECT concat(',',group_concat(hos_num separator ',')) FROM patient);
+    WHILE (LOCATE(',', @all_patients) > 0) DO
+      SET @all_patients = SUBSTRING(@all_patients, LOCATE(',', @all_patients) + 1);
+      SET @current_patient_id =  (SELECT TRIM(SUBSTRING_INDEX(@all_patients, ',', 1)));
+      SET @current_patient_id = TRIM(@current_patient_id);
 
-call run_extractor(1639922);
-call run_extractor(1485025);
-call run_extractor(0846209);
-call run_extractor(1140873);
-call run_extractor(1882539);
-call run_extractor(1820253);
-call run_extractor(1141305);
-call run_extractor(651006);
-call run_extractor(1441450);
-call run_extractor(1835099);
-call run_extractor(1271105);
-call run_extractor(1899826);
-call run_extractor(1475558);
-call run_extractor(1194372);
-call run_extractor(1361965);
-call run_extractor(521135);
-call run_extractor(1266770);
-call run_extractor(2132397);
-call run_extractor(1912665);
-call run_extractor(2150781);
-call run_extractor(2163577);
+      call run_extractor(@current_patient_id);
+
+    END WHILE;
+  END $$
+DELIMITER ;
+
+call extract_all_patients;
+
+#call run_extractor(1639922);
+#call run_extractor(1485025);
+#call run_extractor(0846209);
+#call run_extractor(1140873);
+#call run_extractor(1882539);
+#call run_extractor(1820253);
+#call run_extractor(1141305);
+#call run_extractor(651006);
+#call run_extractor(1441450);
+#call run_extractor(1835099);
+#call run_extractor(1271105);
+#call run_extractor(1899826);
+#call run_extractor(1475558);
+#call run_extractor(1194372);
+#call run_extractor(1361965);
+#call run_extractor(521135);
+#call run_extractor(1266770);
+#call run_extractor(2132397);
+#call run_extractor(1912665);
+#call run_extractor(2150781);
+#call run_extractor(2163577);
