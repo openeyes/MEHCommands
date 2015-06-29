@@ -58,8 +58,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
      SET @Inserts= concat('(select concat("insert into ', @current_table,' (',@Columns,') values(",concat_ws(",",',@Sels,'),");")
         as MyColumn from ', @current_table, ' where ', in_ColumnName, ' = ' , in_ColumnValue, ' AND id = ' , @in_row_id,' group by ',@Whrs, ' INTO @tmp);');
 
-
-
       #SELECT @Inserts;
 
       IF ((@Inserts IS NOT NULL) AND (@Sels IS NOT NULL)) THEN
@@ -105,18 +103,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_row(
     SET @table = in_table;
     SET @column = in_ColumnName;
     SET @value = in_ColumnValue;
-    SET @count = in_count;
-    SET @ids = NULL;
-    SET @ids = concat(',',in_id_array);
+    SET @ext_row_count = in_count;
+    SET @ext_row_ids = NULL;
+    SET @ext_row_ids = concat(',',in_id_array);
 
     -- Cycle through each id to get the individual row for that id --
-    if( @count > 0 AND @ids IS NOT NULL) THEN
-      WHILE (LOCATE(',', @ids) > 0) DO
-        SET @ids = SUBSTRING(@ids, LOCATE(',', @ids) + 1);
-        SET @current_id =  (SELECT TRIM(SUBSTRING_INDEX(@ids, ',', 1)));
-        SET @current_id = TRIM(@current_id);
+    if( @ext_row_count > 0 AND @ext_row_ids IS NOT NULL) THEN
+      WHILE (LOCATE(',', @ext_row_ids) > 0) DO
+        SET @ext_row_ids = SUBSTRING(@ext_row_ids, LOCATE(',', @ext_row_ids) + 1);
+        SET @current_ext_row_id =  (SELECT TRIM(SUBSTRING_INDEX(@ext_row_ids, ',', 1)));
+        SET @current_ext_row_id = TRIM(@current_ext_row_id);
 
-        call InsGen(in_db, in_table, in_ColumnName, in_ColumnValue, @current_id);
+        call InsGen(in_db, in_table, in_ColumnName, in_ColumnValue, @current_ext_row_id);
 
       END WHILE;
 
@@ -893,6 +891,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
               SET  @count = (SELECT COUNT(*) FROM et_ophcocorrespondence_letter WHERE event_id = @id);
               SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophcocorrespondence_letter WHERE event_id=@id);
               IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
+                call extract_site((SELECT site_id FROM et_ophcocorrespondence_letter WHERE event_id = @id));
                 call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter','event_id', @id);
                 #call extract_row(@count, @ids,'openeyes', 'et_ophcocorrespondence_letter_version','event_id', @id);
               END IF;
@@ -1487,6 +1486,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
       call extract_row(@count, @ids,'openeyes', 'address', 'contact_id', @contact_id);
     END IF;
 
+    SET  @count = (SELECT COUNT(*) FROM address WHERE contact_id = @practice_contact_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM address WHERE contact_id=@practice_contact_id);
+    IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
+      call extract_row(@count, @ids,'openeyes', 'address', 'contact_id', @practice_contact_id);
+    END IF;
+
+    SET  @count = (SELECT COUNT(*) FROM address WHERE contact_id = @gp_contact_id);
+    SET  @ids = (SELECT group_concat(id separator ',') FROM address WHERE contact_id=@gp_contact_id);
+    IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
+      call extract_row(@count, @ids,'openeyes', 'address', 'contact_id', @gp_contact_id);
+    END IF;
+
     SET  @count = (SELECT COUNT(*) FROM `patient` WHERE id = @patient_id);
     SET  @ids = (SELECT group_concat(id separator ',') FROM `patient` WHERE hos_num=hospital_number );
     IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
@@ -1595,23 +1606,23 @@ DELIMITER ;
 
 
 call run_extractor(1639922);
-#call run_extractor(1485025);
-#call run_extractor(0846209);
-#call run_extractor(1140873);
-#call run_extractor(1882539);
-#call run_extractor(1820253);
-#call run_extractor(1141305);
-#call run_extractor(651006);
-#call run_extractor(1441450);
-#call run_extractor(1835099);
-#call run_extractor(1271105);
-#call run_extractor(1899826);
-#call run_extractor(1475558);
-#call run_extractor(1194372);
-#call run_extractor(1361965);
-#call run_extractor(521135);
-#call run_extractor(1266770);
-#call run_extractor(2132397);
-#call run_extractor(1912665);
-#call run_extractor(2150781);
-#call run_extractor(2163577);
+call run_extractor(1485025);
+call run_extractor(0846209);
+call run_extractor(1140873);
+call run_extractor(1882539);
+call run_extractor(1820253);
+call run_extractor(1141305);
+call run_extractor(651006);
+call run_extractor(1441450);
+call run_extractor(1835099);
+call run_extractor(1271105);
+call run_extractor(1899826);
+call run_extractor(1475558);
+call run_extractor(1194372);
+call run_extractor(1361965);
+call run_extractor(521135);
+call run_extractor(1266770);
+call run_extractor(2132397);
+call run_extractor(1912665);
+call run_extractor(2150781);
+call run_extractor(2163577);
