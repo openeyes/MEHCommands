@@ -1262,7 +1262,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                 call extract_row(1,@schedule_options_id, 'openeyes', 'ophtroperationbooking_scheduleope_schedule_options','id',@schedule_options_id);
               END IF;
 
-              call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','id', @id);
+              call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','event_id', @id);
               #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope_version','event_id', @id);
             END IF;
 
