@@ -81,11 +81,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
         END IF;
       END IF;
 
-
-
-
     END IF;
-
   END $$
 
 DELIMITER ;
@@ -125,9 +121,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_row(
       END WHILE;
 
     END IF;
-
-
-
   END $$
 
 DELIMITER ;
@@ -220,7 +213,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
           SET @institution_id = (SELECT institution_id FROM contact_location WHERE id = @location_id);
 
           SET @institiution_contact_id = (SELECT contact_id FROM institution WHERE id = @institution_id);
-          SET @institiution_contact_label_id = (SELECT contact_label_id FROM contact WHERE is = @@institiution_contact_id);
+          SET @institiution_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @institiution_contact_id);
 
           call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
           call extract_row(1, @contact_id, 'openeyes', 'contact', 'id', @contact_id);
@@ -242,10 +235,9 @@ DELIMITER ;
 DELIMITER $$
 DROP PROCEDURE IF EXISTS extract_contact;
 CREATE DEFINER=`root`@`localhost` PROCEDURE extract_contact(
-  in_contact_id integer(10),
+  in_contact_id integer(10)
 )
   BEGIN
-
     SET @contact_id = in_contact_id;
 
     SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
@@ -262,7 +254,7 @@ DELIMITER ;
 DELIMITER $$
 DROP PROCEDURE IF EXISTS extract_user;
 CREATE DEFINER=`root`@`localhost` PROCEDURE extract_user(
-  in_user_id integer(10),
+  in_user_id integer(10)
 )
   BEGIN
 
@@ -279,9 +271,10 @@ DELIMITER ;
 DELIMITER $$
 DROP PROCEDURE IF EXISTS extract_firm;
 CREATE DEFINER=`root`@`localhost` PROCEDURE extract_firm(
-  in_firm_id integer(10),
+  in_firm_id integer(10)
 )
   BEGIN
+
     SET @firm_id = in_firm_id;
     call extract_user((SELECT consultant_id FROM firm WHERE id = @firm_id));
     SET @ssa_id = (SELECT service_subspecialty_assignment_id FROM firm WHERE id = @firm_id);
@@ -298,19 +291,20 @@ DELIMITER ;
 DELIMITER $$
 DROP PROCEDURE IF EXISTS extract_site;
 CREATE DEFINER=`root`@`localhost` PROCEDURE extract_site(
-  in_site_id integer(10),
+  in_site_id integer(10)
 )
   BEGIN
+
     SET @site_id = in_site_id;
     call extract_contact((SELECT contact_id FROM site WHERE id = @site_id));
-    SET @institution_id = (SELECT institution_id FROM site WHERE id = @site_id)
+    SET @institution_id = (SELECT institution_id FROM site WHERE id = @site_id);
     IF(@institution_id IS NOT NULL) THEN
       call extract_contact((SELECT contact_id FROM institution WHERE id = @institution_id));
       call extract_row(1, (SELECT source_id FROM institution WHERE id = @institution_id), 'openeyes', 'import_source', 'id', (SELECT source_id FROM institution WHERE id = @institution_id));
       call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
     END IF;
 
-    call extract_user((SELECT replyto_contact_id FROM site WHERE id = @site_id));
+    call extract_contact((SELECT replyto_contact_id FROM site WHERE id = @site_id));
     call extract_row(1, (SELECT source_id FROM site WHERE id = @site_id), 'openeyes', 'import_source', 'id', (SELECT source_id FROM site WHERE id = @site_id));
     call extract_row(1, @site_id, 'openeyes', 'site', 'id', @site_id);
   END $$
@@ -444,6 +438,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           IF (@cancellation_reason_id IS NOT NULL) THEN
             call extract_row(1, @cancellation_reason_id, 'openeyes', 'ophtroperationbooking_operation_cancellation_reason', 'id', @cancellation_reason_id);
           END IF;
+          call extract_row(1, @current_id, 'openeyes', 'et_ophtroperationbooking_operation', 'id', @current_id);
 
           SET @booking_count = (SELECT count(id) FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
           SET @booking_ids = (SELECT concat(',',group_concat(id separator ',')) FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
@@ -455,6 +450,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
                 SET @booking_id = TRIM(@booking_id);
 
                 -- ophtroperationbooking_operation_booking start
+
                 -- session start
                 SET @firm_id = (SELECT firm_id FROM ophtroperationbooking_operation_session WHERE id = (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
                 IF(@firm_id IS NOT NULL) THEN
@@ -462,6 +458,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
                 END IF;
 
                 -- sequence start
+
                 SET @sequence_id=(SELECT sequence_id FROM ophtroperationbooking_operation_session WHERE id=( SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
                 call extract_firm((SELECT firm_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id));
 
@@ -469,7 +466,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
 
                 SET @theatre_id = (SELECT theatre_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id);
                 call extract_site((SELECT site_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id));
-                SET @ward_id = (SELECT ward_id FROM ophtroperationbooking_operation_sequence WHERE id = @sequence_id);
+                SET @ward_id = (SELECT ward_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id);
                 call extract_site((SELECT site_id FROM ophtroperationbooking_operation_ward WHERE id = @ward_id));
                 call extract_row(1, @ward_id, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id);
                 call extract_row(1, @theatre_id, 'openeyes', 'ophtroperationbooking_operation_theatre', 'id', @theatre_id);
@@ -477,22 +474,36 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
                 call extract_row(1, @sequence_id, 'openeyes', 'ophtroperationbooking_operation_sequence', 'id', @sequence_id);
                 -- sequence end
 
-                -- TODO: theatre for session
-                -- TODO: unavailablereason_id for session
+
+                SET @theatre_id2 = (SELECT theatre_id FROM ophtroperationbooking_operation_session WHERE id= @booking_id);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id2));
+                SET @ward_id2 = (SELECT ward_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id2);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_ward WHERE id = @ward_id2));
+                call extract_row(1, @ward_id2, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id2);
+
+                call extract_row(1, @theatre_id2, 'openeyes', 'ophtroperationbooking_operation_theatre', 'id', @theatre_id2);
+
+                call extract_row(1, (SELECT unavailablereason_id FROM ophtroperationbooking_operation_session WHERE id= ( SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id)), 'openeyes', 'ophtroperationbooking_operation_session_unavailreason', 'id', (SELECT unavailablereason_id FROM ophtroperationbooking_operation_session WHERE id= ( SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id)));
                 call extract_row(1, (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id), 'openeyes', 'ophtroperationbooking_operation_session', 'id', (SELECT session_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
                 -- session end
-                -- TODO: session_theatre_id for booking_booking
-                -- TODO: ward_id for booking_booking
-                -- TODO: extract_row ophtroperationbooking_operation_booking
 
-                -- ophtroperationbooking_operation_booking end
-                SET @contact_lbl_id = (SELECT contact_label_id FROM contact WHERE id = (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)));
-                IF(@contact_lbl_id IS NOT NULL) THEN
-                  call extract_row(1, @contact_lbl_id, 'openeyes', 'contact_label', 'id', @contact_lbl_id);
-                END IF;
-                call extract_row(1, (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)), 'openeyes', 'contact', 'id', (SELECT contact_id FROM user WHERE id=(SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id)));
-                call extract_row(1, (SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id), 'openeyes', 'user', 'id', (SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id= @booking_id));
+                -- session_theatre_id for booking start
+                SET @theatre_id3= (SELECT session_theatre_id FROM ophtroperationbooking_operation_booking WHERE id = @booking_id);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id3));
+                SET @ward_id3 = (SELECT ward_id FROM ophtroperationbooking_operation_theatre WHERE id = @theatre_id3);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_ward WHERE id = @ward_id3));
+                call extract_row(1, @ward_id3, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id3);
+
+                call extract_row(1, @theatre_id3, 'openeyes', 'ophtroperationbooking_operation_theatre', 'id', @theatre_id3);
+                -- session_theatre_id for booking_booking end
+
+                SET @ward_id4 = (SELECT ward_id FROM ophtroperationbooking_operation_booking WHERE id = @booking_id);
+                call extract_site((SELECT site_id FROM ophtroperationbooking_operation_ward WHERE id = @ward_id4));
+                call extract_row(1, @ward_id4, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id4);
+
+                call extract_user((SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id));
                 call extract_row(1, @booking_id, 'openeyes', 'ophtroperationbooking_operation_booking', 'id', @booking_id);
+                 -- ophtroperationbooking_operation_booking end
 
             END WHILE;
           END IF;
@@ -505,9 +516,6 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
           SET @replyto_contact_id = (SELECT replyto_contact_id FROM site WHERE id = @site_id);
           SET @replyto_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @replyto_contact_id);
-
-
-
 
           IF (@contact_label_id IS NOT NULL) THEN
             call extract_row(1, @contact_label_id, 'openeyes', 'contact_label', 'id', @contact_label_id);
@@ -581,22 +589,8 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           IF(@right_anaestheticagent_id IS NOT NULL) THEN
             call extract_row(1,@right_anaestheticagent_id, 'openeyes', 'anaesthetic_agent', 'id', @right_anaestheticagent_id );
           END IF;
-
-
-
         END IF;
-
-
-
-
-
-
-
-
-
-
       END WHILE;
-
     END IF;
   END $$
 DELIMITER ;
@@ -1244,12 +1238,12 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
             END IF;
 
 
-            SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
-            SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
-            IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
-              call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','event_id', @id);
+            #SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
+            #SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
+            #IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
+              #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation','event_id', @id);
               #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_operation_version','event_id', @id);
-            END IF;
+            #END IF;
 
             SET  @count = (SELECT COUNT(*) FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
             SET  @ids = (SELECT group_concat(id separator ',') FROM ophtroperationbooking_operation_procedures_procedures WHERE element_id = (SELECT id FROM et_ophtroperationbooking_operation WHERE event_id = @id));
@@ -1259,15 +1253,16 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
             END IF;
 
 
-
             SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
             SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_scheduleope WHERE event_id=@id);
+
             IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
               SET @schedule_options_id = (SELECT schedule_options_id FROM et_ophtroperationbooking_scheduleope WHERE event_id = @id);
               IF(@schedule_options_id IS NOT NULL) THEN
                 call extract_row(1,@schedule_options_id, 'openeyes', 'ophtroperationbooking_scheduleope_schedule_options','id',@schedule_options_id);
               END IF;
-              call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','event_id', @id);
+
+              call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope','id', @id);
               #call extract_row(@count, @ids,'openeyes', 'et_ophtroperationbooking_scheduleope_version','event_id', @id);
             END IF;
 
@@ -1600,23 +1595,23 @@ DELIMITER ;
 
 
 call run_extractor(1639922);
-call run_extractor(1485025);
-call run_extractor(0846209);
-call run_extractor(1140873);
-call run_extractor(1882539);
-call run_extractor(1820253);
-call run_extractor(1141305);
-call run_extractor(651006);
-call run_extractor(1441450);
-call run_extractor(1835099);
-call run_extractor(1271105);
-call run_extractor(1899826);
-call run_extractor(1475558);
-call run_extractor(1194372);
-call run_extractor(1361965);
-call run_extractor(521135);
-call run_extractor(1266770);
-call run_extractor(2132397);
-call run_extractor(1912665);
-call run_extractor(2150781);
-call run_extractor(2163577);
+#call run_extractor(1485025);
+#call run_extractor(0846209);
+#call run_extractor(1140873);
+#call run_extractor(1882539);
+#call run_extractor(1820253);
+#call run_extractor(1141305);
+#call run_extractor(651006);
+#call run_extractor(1441450);
+#call run_extractor(1835099);
+#call run_extractor(1271105);
+#call run_extractor(1899826);
+#call run_extractor(1475558);
+#call run_extractor(1194372);
+#call run_extractor(1361965);
+#call run_extractor(521135);
+#call run_extractor(1266770);
+#call run_extractor(2132397);
+#call run_extractor(1912665);
+#call run_extractor(2150781);
+#call run_extractor(2163577);
