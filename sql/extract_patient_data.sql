@@ -36,18 +36,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE InsGen(
 
       -- Comma separated column names - used for Select --
       select group_concat(concat("if(",column_name," IS NOT NULL, concat(\"'\",replace(",column_name,",\"'\",\"''\"),\"'\"), 'NULL')"))
-      INTO @Sels from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
+      INTO @Sels from information_schema.columns where table_schema=in_db and table_name=tablename and column_name !=  'last_modified_user_id' AND column_name!='created_user_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
 
       #SELECT @Sels;
 
       select group_concat(column_name)
-      INTO @Columns from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
+      INTO @Columns from information_schema.columns where table_schema=in_db and table_name=tablename and column_name !=  'last_modified_user_id' AND column_name!='created_user_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
 
       #SELECT @Columns;
 
       -- Comma separated column names - used for Group By --
       select group_concat('`',column_name,'`')
-      INTO @Whrs from information_schema.columns where table_schema=in_db and table_name=tablename and column_name not like '%user\_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
+      INTO @Whrs from information_schema.columns where table_schema=in_db and table_name=tablename and column_name !=  'last_modified_user_id' AND column_name!='created_user_id' AND column_name != 'last_firm_id' AND column_name != 'last_site_id' AND column_name != 'latest_booking_id';
 
       #SELECT @Whrs;
 
@@ -207,6 +207,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
         IF (in_table = 'patient_contact_assignment') THEN
           SET @location_id = (SELECT location_id FROM patient_contact_assignment WHERE id = @id);
           SET @contact_id = (SELECT contact_id from contact_location WHERE id = @location_id);
+          SET @site_id = (SELECT site_id FROM contact_location WHERE id=@location_id);
           SET @contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @contact_id);
           SET @institution_id = (SELECT institution_id FROM contact_location WHERE id = @location_id);
 
@@ -218,6 +219,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE get_contact_locations(
           call extract_row(1, @institiution_contact_label_id, 'openeyes', 'contact_label', 'id', @institiution_contact_label_id);
           call extract_row(1, @institiution_contact_id, 'openeyes', 'contact', 'id', @institiution_contact_id);
           call extract_row(1, @institution_id, 'openeyes', 'institution', 'id', @institution_id);
+
+          SET @site_contact_id = (SELECT contact_id FROM site WHERE id = @site_id);
+          SET @site_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @site_contact_id);
+          call extract_site(@site_id);
           call extract_row(1, @location_id, 'openeyes', 'contact_location', 'id', @location_id);
 
         END IF;
@@ -422,20 +427,15 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
           SET @site_id = (SELECT site_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
 
           SET @cancellation_user_id = (SELECT cancellation_user_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
-          SET @cancellation_contact_id = (SELECT contact_id FROM user WHERE id = @cancellation_user_id);
-          SET @cancellation_contact_label_id = (SELECT contact_label_id FROM contact WHERE id = @cancellation_contact_id);
 
-          IF (@cancellation_user_id IS NOT NULL) THEN
-            call extract_row(1,@cancellation_contact_label_id, 'openeyes', 'contact_label', 'id', @cancellation_contact_label_id);
-            call extract_row(1, @cancellation_contact_id, 'openeyes', 'contact', 'id', @cancellation_contact_id);
-            call extract_row(1, @cancellation_user_id, 'openeyes', 'user', 'id', @cancellation_user_id);
-          END IF;
+          call extract_user(@cancellation_user_id);
 
           SET @cancellation_reason_id = (SELECT cancellation_reason_id FROM et_ophtroperationbooking_operation WHERE id = @current_id);
 
           IF (@cancellation_reason_id IS NOT NULL) THEN
             call extract_row(1, @cancellation_reason_id, 'openeyes', 'ophtroperationbooking_operation_cancellation_reason', 'id', @cancellation_reason_id);
           END IF;
+
           call extract_row(1, @current_id, 'openeyes', 'et_ophtroperationbooking_operation', 'id', @current_id);
 
           SET @booking_count = (SELECT count(id) FROM ophtroperationbooking_operation_booking WHERE element_id = @current_id);
@@ -500,6 +500,11 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE extract_et_data(
                 call extract_row(1, @ward_id4, 'openeyes', 'ophtroperationbooking_operation_ward', 'id', @ward_id4);
 
                 call extract_user((SELECT cancellation_user_id FROM ophtroperationbooking_operation_booking WHERE id=@booking_id));
+
+                SET @element_id = (SELECT element_id from ophtroperationbooking_operation_booking WHERE id = @booking_id);
+                call extract_row(1, @element_id, 'openeyes', 'et_ophtroperationbooking_operation', 'id', @element_id);
+
+
                 call extract_row(1, @booking_id, 'openeyes', 'ophtroperationbooking_operation_booking', 'id', @booking_id);
                  -- ophtroperationbooking_operation_booking end
 
@@ -952,6 +957,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
 
               SET  @pr_item_count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
               SET  @pr_item_ids = (SELECT concat(',',group_concat(id separator ',')) FROM ophdrprescription_item WHERE prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+
               IF ((@pr_item_count > 0) AND (@pr_item_ids IS NOT NULL)) THEN
                 WHILE (LOCATE(',', @pr_item_ids) > 0) DO
                   SET @pr_item_ids = SUBSTRING(@pr_item_ids, LOCATE(',', @pr_item_ids) + 1);
@@ -959,6 +965,8 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
 
                   SET @frequency_id = (SELECT frequency_id FROM ophdrprescription_item WHERE id = @pr_item_id);
                   SET @duration_id = (SELECT duration_id FROM ophdrprescription_item WHERE id = @pr_item_id);
+
+                  SET @prescription_id = (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id);
 
                   IF(@frequency_id IS NOT NULL) THEN
                     call extract_row(1, @frequency_id, 'openeyes', 'drug_frequency','id', @frequency_id);
@@ -969,7 +977,9 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                   END IF;
                 END WHILE;
 
-                call extract_row(@count, @ids,'openeyes', 'ophdrprescription_item','prescription_id', (SELECT id FROM et_ophdrprescription_details WHERE event_id = @id));
+                SET @pr_ids_count = (SELECT COUNT(*) FROM ophdrprescription_item WHERE prescription_id = @prescription_id);
+                SET @pr_ids = (SELECT group_concat(id separator ',') FROM ophdrprescription_item WHERE prescription_id = @prescription_id);
+                call extract_row(@pr_ids_count, @pr_ids,'openeyes', 'ophdrprescription_item','prescription_id', @prescription_id);
               END IF;
           END IF;
 
@@ -1233,6 +1243,8 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
             SET  @count = (SELECT COUNT(*) FROM et_ophtroperationbooking_operation WHERE event_id = @id);
             SET  @ids = (SELECT group_concat(id separator ',') FROM et_ophtroperationbooking_operation WHERE event_id=@id);
             IF ( (@count > 0) AND (@ids IS NOT NULL)) THEN
+              SET @site_id = (SELECT site_id FROM et_ophtroperationbooking_operation WHERE event_id=@id );
+              call extract_site(@site_id);
               call extract_et_data('et_ophtroperationbooking_operation', @ids, @count);
             END IF;
 
@@ -1620,26 +1632,206 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE extract_all_patients()
   END $$
 DELIMITER ;
 
-call extract_all_patients;
+#call extract_all_patients;
 
-#call run_extractor(1639922);
-#call run_extractor(1485025);
-#call run_extractor(0846209);
-#call run_extractor(1140873);
-#call run_extractor(1882539);
-#call run_extractor(1820253);
-#call run_extractor(1141305);
-#call run_extractor(651006);
-#call run_extractor(1441450);
-#call run_extractor(1835099);
-#call run_extractor(1271105);
-#call run_extractor(1899826);
-#call run_extractor(1475558);
-#call run_extractor(1194372);
-#call run_extractor(1361965);
-#call run_extractor(521135);
-#call run_extractor(1266770);
-#call run_extractor(2132397);
-#call run_extractor(1912665);
-#call run_extractor(2150781);
-#call run_extractor(2163577);
+call run_extractor(1639922);
+call run_extractor(1485025);
+call run_extractor(0846209);
+call run_extractor(1140873);
+call run_extractor(1882539);
+call run_extractor(1820253);
+call run_extractor(1141305);
+call run_extractor(651006);
+call run_extractor(1441450);
+call run_extractor(1835099);
+call run_extractor(1271105);
+call run_extractor(1899826);
+call run_extractor(1475558);
+call run_extractor(1194372);
+call run_extractor(1361965);
+call run_extractor(521135);
+call run_extractor(1266770);
+call run_extractor(2132397);
+call run_extractor(1912665);
+call run_extractor(2150781);
+call run_extractor(2163577);
+
+
+/*call run_extractor(35937);
+call run_extractor(64156);
+call run_extractor(82453);
+call run_extractor(200990);
+call run_extractor(221476);
+call run_extractor(275507);
+call run_extractor(496621);
+call run_extractor(498842);
+call run_extractor(518407);
+call run_extractor(572059);
+call run_extractor(718086);
+call run_extractor(723175);
+call run_extractor(735430);
+call run_extractor(755231);
+call run_extractor(835634);
+call run_extractor(839528);
+call run_extractor(888911);
+call run_extractor(949319);
+call run_extractor(958227);
+call run_extractor(999162);
+call run_extractor(1010323);
+call run_extractor(1033923);
+call run_extractor(1039017);
+call run_extractor(1055319);
+call run_extractor(1069677);
+call run_extractor(1071547);
+call run_extractor(1076022);
+call run_extractor(1093073);
+call run_extractor(1117467);
+call run_extractor(1119927);
+call run_extractor(1131565);
+call run_extractor(1152572);
+call run_extractor(1155437);
+call run_extractor(1156466);
+call run_extractor(1172099);
+call run_extractor(1189584);
+call run_extractor(1265750);
+call run_extractor(1376915);
+call run_extractor(1413028);
+call run_extractor(1421335);
+call run_extractor(1448673);
+call run_extractor(1461752);
+call run_extractor(1490186);
+call run_extractor(1496780);
+call run_extractor(1519029);
+call run_extractor(1535587);
+call run_extractor(1538023);
+call run_extractor(1544543);
+call run_extractor(1597768);
+call run_extractor(1606806);
+call run_extractor(1608342);
+call run_extractor(1609707);
+call run_extractor(1625080);
+call run_extractor(1634789);
+call run_extractor(1659099);
+call run_extractor(1673316);
+call run_extractor(1684478);
+call run_extractor(1744624);
+call run_extractor(1757957);
+call run_extractor(1771975);
+call run_extractor(1840181);
+call run_extractor(1848544);
+call run_extractor(1856681);
+call run_extractor(1859510);
+call run_extractor(1859546);
+call run_extractor(1868268);
+call run_extractor(1869032);
+call run_extractor(1895223);
+call run_extractor(1897143);
+call run_extractor(1898278);
+call run_extractor(1906100);
+call run_extractor(1911438);
+call run_extractor(1915601);
+call run_extractor(1916578);
+call run_extractor(1932578);
+call run_extractor(1935649);
+call run_extractor(1935673);
+call run_extractor(1936607);
+call run_extractor(1939768);
+call run_extractor(1943500);
+call run_extractor(1950471);
+call run_extractor(1958643);
+call run_extractor(1959126);
+call run_extractor(1965221);
+call run_extractor(1965412);
+call run_extractor(1971206);
+call run_extractor(1973349);
+call run_extractor(1982799);
+call run_extractor(2018400);
+call run_extractor(2055535);
+call run_extractor(2099999);
+call run_extractor(2103267);
+call run_extractor(2112867);
+call run_extractor(2113395);
+call run_extractor(2128460);
+call run_extractor(2136051);
+call run_extractor(2153354);
+call run_extractor(22144);
+call run_extractor(28055);
+call run_extractor(65535);
+call run_extractor(76185);
+call run_extractor(524237);
+call run_extractor(764362);
+call run_extractor(821561);
+call run_extractor(822532);
+call run_extractor(826858);
+call run_extractor(864619);
+call run_extractor(882850);
+call run_extractor(897332);
+call run_extractor(936087);
+call run_extractor(955727);
+call run_extractor(969190);
+call run_extractor(977618);
+call run_extractor(983300);
+call run_extractor(1006169);
+call run_extractor(1059402);
+call run_extractor(1060900);
+call run_extractor(1073695);
+call run_extractor(1095005);
+call run_extractor(1116873);
+call run_extractor(1137220);
+call run_extractor(1304794);
+call run_extractor(1329932);
+call run_extractor(1352825);
+call run_extractor(1353845);
+call run_extractor(1402293);
+call run_extractor(1418524);
+call run_extractor(1439842);
+call run_extractor(1447065);
+call run_extractor(1475569);
+call run_extractor(1486715);
+call run_extractor(1499167);
+call run_extractor(1550719);
+call run_extractor(1554593);
+call run_extractor(1586830);
+call run_extractor(1595432);
+call run_extractor(1596581);
+call run_extractor(1606323);
+call run_extractor(1622763);
+call run_extractor(1650732);
+call run_extractor(1656153);
+call run_extractor(1661782);
+call run_extractor(1702570);
+call run_extractor(1718101);
+call run_extractor(1720531);
+call run_extractor(1742904);
+call run_extractor(1754632);
+call run_extractor(1776515);
+call run_extractor(1788661);
+call run_extractor(1790394);
+call run_extractor(1796962);
+call run_extractor(1800300);
+call run_extractor(1803462);
+call run_extractor(1804040);
+call run_extractor(1811994);
+call run_extractor(1818268);
+call run_extractor(1831360);
+call run_extractor(1837162);
+call run_extractor(1840562);
+call run_extractor(1841637);
+call run_extractor(1842954);
+call run_extractor(1847335);
+call run_extractor(1852246);
+call run_extractor(1855626);
+call run_extractor(1856548);
+call run_extractor(1856980);
+call run_extractor(1861472);
+call run_extractor(1863814);
+call run_extractor(1867267);
+call run_extractor(1868199);
+call run_extractor(1869264);
+call run_extractor(1879848);
+call run_extractor(1879909);
+call run_extractor(1894730);
+call run_extractor(1896879);
+call run_extractor(1929685);
+call run_extractor(1003415);
+*/
