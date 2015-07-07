@@ -815,7 +815,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                   SET @tmp_id = TRIM(@tmp_id);
 
                   SET @instrument_id = (SELECT instrument_id FROM ophciexamination_intraocularpressure_value WHERE id = @tmp_id);
-                  call extract_row(1,@tmp_id, 'openeyes', 'ophciexamination_instrument', 'id', @tmp_id);
+                  call extract_row(1,@instrument_id, 'openeyes', 'ophciexamination_instrument', 'id', @instrument_id);
 
                 END WHILE;
                 call extract_row(@count, @ids,'openeyes', 'ophciexamination_intraocularpressure_value','element_id', (SELECT id FROM et_ophciexamination_intraocularpressure WHERE event_id = @id));
@@ -1014,6 +1014,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                   IF(@frequency_id IS NOT NULL) THEN
                     call extract_row(1, @frequency_id, 'openeyes', 'drug_frequency','id', @frequency_id);
                   END IF;
+
                   IF(@duration_id IS NOT NULL) THEN
                     call extract_row(1, @duration_id,'openeyes', 'drug_duration','id', @duration_id);
                   END IF;
@@ -1023,7 +1024,7 @@ CREATE DEFINER =`root`@`localhost` PROCEDURE get_events(
                   END IF;
 
                   IF (@route_id IS NOT NULL) THEN
-                    call extract_row(1, @route_id, 'openeyes', 'drug','id', @route_id);
+                    call extract_row(1, @route_id, 'openeyes', 'drug_route','id', @route_id);
                   END IF;
 
                 END WHILE;
@@ -1513,10 +1514,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE run_extractor(IN hospital_number int
 
     SELECT @file AS OUTPUT_FILE;
 
-    ALTER TABLE `event` CHANGE created_user_id created_user_id int(10) unsigned not null default 1;
-    ALTER TABLE `event` MODIFY COLUMN created_user_id int(10) unsigned not null default 1;
-    ALTER TABLE specialty CHANGE created_user_id created_user_id int(10) unsigned not null default 1;
-    ALTER TABLE specialty CHANGE last_modified_user_id last_modified_user_id int(10) unsigned not null default 1;
+
+    INSERT INTO patient_data_extract VALUES ('', 'ALTER TABLE `event` CHANGE created_user_id created_user_id int(10) unsigned not null default 1;');
+    INSERT INTO patient_data_extract VALUES ('', 'ALTER TABLE `event` MODIFY COLUMN created_user_id int(10) unsigned not null default 1;');
+    INSERT INTO patient_data_extract VALUES ('', 'ALTER TABLE specialty CHANGE created_user_id created_user_id int(10) unsigned not null default 1;');
+    INSERT INTO patient_data_extract VALUES ('', 'ALTER TABLE specialty CHANGE last_modified_user_id last_modified_user_id int(10) unsigned not null default 1;');
 
 
     SET @patient_id = (SELECT id FROM patient WHERE hos_num=hospital_number);
@@ -1724,6 +1726,7 @@ DELIMITER ;
 
 #call extract_all_patients;
 
+/*
 call run_extractor(1639922);
 call run_extractor(1485025);
 call run_extractor(0846209);
@@ -1923,3 +1926,126 @@ call run_extractor(1894730);
 call run_extractor(1896879);
 call run_extractor(1929685);
 call run_extractor(1003415);
+*/
+
+call run_extractor(1583709);
+call run_extractor(1719214);
+call run_extractor(1176765);
+call run_extractor(1257614);
+call run_extractor(1513741);
+call run_extractor(1105637);
+call run_extractor(1711084);
+call run_extractor(1281980);
+call run_extractor(1297235);
+call run_extractor(760681);
+call run_extractor(1713619);
+call run_extractor(1266280);
+call run_extractor(1761924);
+call run_extractor(1307142);
+call run_extractor(554467);
+call run_extractor(693254);
+call run_extractor(1580797);
+call run_extractor(1838957);
+call run_extractor(1839887);
+call run_extractor(510281);
+call run_extractor(1140425);
+call run_extractor(1683499);
+call run_extractor(1424875);
+call run_extractor(1466617);
+call run_extractor(1102867);
+call run_extractor(432169);
+call run_extractor(1848953);
+call run_extractor(1567033);
+call run_extractor(1049774);
+call run_extractor(1616192);
+call run_extractor(1864957);
+call run_extractor(910861);
+call run_extractor(1651854);
+call run_extractor(1880389);
+call run_extractor(1489261);
+call run_extractor(1877747);
+call run_extractor(1682150);
+call run_extractor(1199271);
+call run_extractor(799446);
+call run_extractor(1439627);
+call run_extractor(1719371);
+call run_extractor(1678453);
+call run_extractor(1885407);
+call run_extractor(1238464);
+call run_extractor(1818782);
+call run_extractor(1818782);
+call run_extractor(1740854);
+call run_extractor(1895648);
+call run_extractor(1232945);
+call run_extractor(1339942);
+call run_extractor(1686972);
+call run_extractor(980840);
+call run_extractor(1451960);
+call run_extractor(1899925);
+call run_extractor(712066);
+call run_extractor(1662776);
+call run_extractor(1926053);
+call run_extractor(843437);
+call run_extractor(623777);
+call run_extractor(1957123);
+call run_extractor(1765256);
+call run_extractor(1971574);
+call run_extractor(1974250);
+call run_extractor(1989382);
+call run_extractor(1987534);
+call run_extractor(460496);
+call run_extractor(2101332);
+call run_extractor(2135210);
+call run_extractor(2132878);
+call run_extractor(994996);
+call run_extractor(1016270);
+call run_extractor(2147825);
+call run_extractor(2153504);
+call run_extractor(2161861);
+call run_extractor(1719731);
+call run_extractor(2166303);
+call run_extractor(2166293);
+call run_extractor(1487982);
+call run_extractor(1487982);
+call run_extractor(21166);
+call run_extractor(823419);
+call run_extractor(1494787);
+call run_extractor(1518864);
+call run_extractor(230148);
+call run_extractor(1718462);
+call run_extractor(1220884);
+call run_extractor(1548458);
+call run_extractor(1457075);
+call run_extractor(875853);
+call run_extractor(815988);
+call run_extractor(387410);
+call run_extractor(1826845);
+call run_extractor(547286);
+call run_extractor(133979);
+call run_extractor(1661840);
+call run_extractor(666779);
+call run_extractor(1572339);
+call run_extractor(1135475);
+call run_extractor(1648245);
+call run_extractor(1542140);
+call run_extractor(1880909);
+call run_extractor(1683680);
+call run_extractor(1878001);
+call run_extractor(1552987);
+call run_extractor(1465937);
+call run_extractor(1327045);
+call run_extractor(1641156);
+call run_extractor(1640907);
+call run_extractor(1281490);
+call run_extractor(521290);
+call run_extractor(521290);
+call run_extractor(1797802);
+call run_extractor(1917113);
+call run_extractor(1926619);
+call run_extractor(1934231);
+call run_extractor(1992520);
+call run_extractor(2105797);
+call run_extractor(1453136);
+call run_extractor(2107159);
+call run_extractor(868849);
+call run_extractor(1583709);
