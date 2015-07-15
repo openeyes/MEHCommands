@@ -131,8 +131,8 @@ BEGIN
     TRUNCATE setting_firm;
     TRUNCATE setting_institution;
     TRUNCATE setting_user;
-    TRUNCATE site_subspecialty_anaesthetic_agent;
-    TRUNCATE site_subspecialty_anaesthetic_agent_default;
+    #TRUNCATE site_subspecialty_anaesthetic_agent;
+    #TRUNCATE site_subspecialty_anaesthetic_agent_default;
     TRUNCATE site_subspecialty_drug;
     TRUNCATE site_subspecialty_operative_device;
     TRUNCATE socialhistory_accommodation;
@@ -158,7 +158,7 @@ BEGIN
     TRUNCATE ophciexamination_visualacuity_reading;
     TRUNCATE ophciphasing_reading;
     TRUNCATE ophcotherapya_email;
-    TRUNCATE ophtrconsent_leaflets;
+    #TRUNCATE ophtrconsent_leaflets;
     #TRUNCATE pas_assignment;
     TRUNCATE ophinvisualfields_field_measurement;
     TRUNCATE contact_location;
