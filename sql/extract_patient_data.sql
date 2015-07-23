@@ -1726,9 +1726,9 @@ DELIMITER ;
 
 #call extract_all_patients;
 
-/*
+
 call run_extractor(1639922);
-call run_extractor(1485025);
+/*call run_extractor(1485025);
 call run_extractor(0846209);
 call run_extractor(1140873);
 call run_extractor(1882539);
