@@ -135,13 +135,13 @@ BEGIN
     #TRUNCATE site_subspecialty_anaesthetic_agent_default;
     TRUNCATE site_subspecialty_drug;
     TRUNCATE site_subspecialty_operative_device;
-    TRUNCATE socialhistory_accommodation;
-    TRUNCATE socialhistory_carer;
-    TRUNCATE socialhistory_driving_status;
-    TRUNCATE socialhistory_driving_status_assignment;
-    TRUNCATE socialhistory_occupation;
-    TRUNCATE socialhistory_smoking_status;
-    TRUNCATE socialhistory_substance_misuse;
+    #TRUNCATE socialhistory_accommodation;
+    #TRUNCATE socialhistory_carer;
+    #TRUNCATE socialhistory_driving_status;
+    #TRUNCATE socialhistory_driving_status_assignment;
+    #TRUNCATE socialhistory_occupation;
+    #TRUNCATE socialhistory_smoking_status;
+    #TRUNCATE socialhistory_substance_misuse;
     TRUNCATE user_firm;
     TRUNCATE user_firm_preference;
     TRUNCATE user_firm_rights;
@@ -178,11 +178,11 @@ BEGIN
     ALTER TABLE site AUTO_INCREMENT = 1;
     SELECT 'Set default values for firm and site';
     INSERT INTO contact (first_name, last_name) VALUES ('John', 'Doe');
-    INSERT INTO address (address1,country_id,contact_id,address_type_id) VALUES ('Default Address', 1, 1, 2);
-    UPDATE firm SET name='Default Firm', consultant_id=1;
+    INSERT INTO address (address1,country_id,contact_id,address_type_id) VALUES ('Example Address', 1, 1, 2);
+    UPDATE firm SET name='Example Firm', consultant_id=1;
     UPDATE user SET last_firm_id = 1;
-    UPDATE site SET name='Default Site', short_name='Default', telephone='123456789', remote_id='AAAA', contact_id=1;
-    UPDATE institution SET name='Default Institution', short_name='Default', contact_id=1;
+    UPDATE site SET name='Example Site', short_name='Example', telephone='123456789', remote_id='AAAA', contact_id=1;
+    UPDATE institution SET name='Example Institution', short_name='Example', contact_id=1;
     UPDATE user SET password='d45409ef1eaa57f5041bf3a1b510097b', salt='FbYJis0YG3';
     # inserting firms for all subspecialty
     INSERT INTO firm (service_subspecialty_assignment_id, name) SELECT ssa.id, concat(subspec.name, ' firm') FROM service_subspecialty_assignment ssa JOIN subspecialty subspec ON ssa.subspecialty_id=subspec.id;
