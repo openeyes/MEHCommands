@@ -191,6 +191,8 @@ UPDATE practice SET phone=CONCAT(SUBSTRING(phone, 1, 9), '0000');
 UPDATE patient SET dob=DATE_FORMAT(dob, CONCAT('%Y-',FLOOR(1+RAND()*(12-1)),'-',FLOOR(1+RAND()*(28-1))));
 UPDATE patient SET date_of_death=DATE_FORMAT(date_of_death, '%Y-01-01');
 UPDATE et_ophcocorrespondence_letter SET body=(SELECT str_random_lipsum(500,200,1)), address=(SELECT str_random_lipsum(5,2,1)), re=(SELECT str_random_lipsum(15,5,1)), cc=concat('Patient:',(SELECT str_random_lipsum(15,5,1))), footer=concat('Yours sincerely\n\n',(SELECT str_random_lipsum(5,2,1))), direct_line=CONCAT(SUBSTRING(direct_line, 1, 9), '0000'), fax=CONCAT(SUBSTRING(fax, 1, 9), '0000');
+UPDATE user SET first_name=(SELECT first_name FROM contact WHERE id = contact_id), last_name=(SELECT last_name FROM contact WHERE id = contact_id), username=(SELECT last_name FROM contact WHERE id = contact_id),email='' WHERE username != 'admin';
+UPDATE firm SET name = concat((SELECT first_name FROM user WHERE id=consultant_id),' ',(SELECT last_name FROM user WHERE id=consultant_id)) WHERE consultant_id IS NOT NULL;
 
 END $$
 
