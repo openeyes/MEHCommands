@@ -24,12 +24,54 @@ class GeneticMigrationCommand extends CConsoleCommand {
 	public $nomatch_hosnum = 0;
 	public $matched_n = 0;
 	public $matched_n_hosnum = 0;
+
+    // File handle variables for writing out results during impor
 	public $fp_matched;
 	public $fp_matched_hosnum;
 	public $fp_nomatch;
 	public $fp_nomatch_hosnum;
 	public $fp_matched_n;
 	public $fp_matched_n_hosnum;
+
+    public function getName()
+    {
+        return 'Import Genetics Data from the IEDD';
+    }
+
+    public function getHelp()
+    {
+        return <<<EOH
+Perform the import of genetic data from the IEDD database.
+1) IEDD DB connection must be configued as db2
+2) A Diagnosis map file is required to indicate what diagnoses should be recorded for a patient based on the values in IEDD.
+3) Will output a series of logfiles to /tmp regarding the matching with patients in the OpenEyes instance you are importing to.
+EOH;
+    }
+
+    protected $diagnosis_map;
+    protected $missing_diagnoses = array();
+
+    /**
+     * @param string $file
+     * @throws Exception
+     */
+    protected function initialiseDiagnosisMap($file = "/tmp/Diagnoses.csv")
+    {
+        if (!file_exists($file)) {
+            throw new Exception("File not found: {$file}");
+        }
+        $this->diagnosis_map = array();
+
+        $fp = fopen($file,"r");
+
+        while ($data = fgetcsv($fp)) {
+            if ($data[1]) {
+                $this->diagnosis_map[$data[0]] = $data[1];
+            }
+        }
+
+        fclose($fp);
+    }
 
 	public function run($args) {
 		Yii::import('application.modules.Genetics.models.*');
@@ -41,51 +83,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$this->fp_matched_n = fopen("/tmp/.matched_n","w");
 		$this->fp_matched_n_hosnum = fopen("/tmp/.matched_n_hosnum","w");
 
-		if (!file_exists("/tmp/Diagnoses.csv")) {
-			throw new Exception("File not found: /tmp/Diagnoses.csv");
-		}
+        $this->initialiseDiagnosisMap();
 
-		$diagnosis_map = array();
-
-		$fp = fopen("/tmp/Diagnoses.csv","r");
-
-		while ($data = fgetcsv($fp)) {
-			if ($data[1]) {
-				$diagnosis_map[$data[0]] = $data[1];
-			}
-		}
-
-		fclose($fp);
-
-		$missing_diagnoses = array();
-
-		echo "Importing genes: ";
-
-		foreach (Yii::app()->db2->createCommand()->select("*")->from("genelist")->queryAll() as $gene) {
-			if (!$_gene = PedigreeGene::model()->findByPk($gene['geneid'])) {
-				$_gene = new PedigreeGene;
-				$_gene->id = $gene['geneid'];
-			}
-
-			$_gene->name = $gene['gene'];
-			$_gene->location = $gene['location'];
-			if($_gene->location == null) $_gene->location = '';
-			$_gene->priority = $gene['priority'];
-			$_gene->description = $gene['descritption'];
-			if($_gene->description == null) $_gene->description = '';
-			$_gene->details = $gene['details'];
-			if($_gene->details == null) $_gene->details = '';
-			$_gene->refs = $gene['refs'];
-			if($_gene->refs == null) $_gene->refs = '';
-
-			if (!$_gene->save(false)) {
-				throw new Exception("Unable to save gene: ".print_r($_gene->getErrors(),true));
-			}
-
-			echo ".";
-		}
-
-		echo "\n";
+        $this->importGenes();
 
 		echo "Importing pedigrees: ";
 /*
@@ -156,7 +156,9 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 		echo "\n";
 */
-		echo "\nAdding specialty\n";
+
+
+        echo "\nAdding specialty\n";
 
 		$ophthalmology = Specialty::model()->find('code=?',array(130));
 
@@ -213,50 +215,55 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 			$patient_comments = '';
 			if ($patient = $this->getPatient($subject)) {
-				if (Pedigree::model()->findByPk($subject['newgc'])) {
-					if ($subject['status'] == null) {
-						$subject['status'] = 'Unknown';
-					}
-
-					$status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
-
-					if (!$pp = PatientPedigree::model()->find('patient_id=?',array($patient->id))) {
-						$pp = new PatientPedigree;
-						$pp->patient_id = $patient->id;
-					}
-
-					$pp->status_id = $status->id;
-					$pp->pedigree_id = $subject['newgc'];
-
-					if ($subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where("SubjectID = :subjectid",array(":subjectid" => $subject['subjectid']))->queryRow()) {
-						if (trim($subject_extra['Free_text'])) {
-							$patient_comments = trim($subject_extra['Free_text']);
-						}
-					}
-
-					if (!$pp->save()) {
-						throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
-					}
-				}
 			} else {
 				$patient = $this->createPatient($subject);
 			}
+
+            $genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id));
+            if (!$genetics_patient) {
+                $genetics_patient = new GeneticsPatient();
+                $genetics_patient->patient_id = $patient->id;
+            }
+
+            if ($subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where("SubjectID = :subjectid",array(":subjectid" => $subject['subjectid']))->queryRow()) {
+                if (trim($subject_extra['Free_text'])) {
+                    $patient_comments = trim($subject_extra['Free_text']);
+                }
+            }
+
+            if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
+                $genetics_patient->comments .= $patient_comments;
+            }
+            $genetics_patient->save();
+
+            $this->mapPatientToPedigree($genetics_patient, $subject);
+
+            if (Pedigree::model()->findByPk($subject['newgc'])) {
+                if ($subject['status'] == null) {
+                    $subject['status'] = 'Unknown';
+                }
+
+                $status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
+
+                if (!$pp = PatientPedigree::model()->find('patient_id=?',array($patient->id))) {
+                    $pp = new PatientPedigree;
+                    $pp->patient_id = $patient->id;
+                }
+
+                $pp->status_id = $status->id;
+                $pp->pedigree_id = $subject['newgc'];
+
+                if (!$pp->save()) {
+                    throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
+                }
+            }
 
 
 
 			//patient comments
 			if(!empty($patient_comments)) {
 				$patient_comments= utf8_encode($patient_comments);
-				if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
-					if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
-					$genetics_patient->comments .= $patient_comments;
-					}
-				}
-				else {
-					$genetics_patient = new GeneticsPatient();
-					$genetics_patient->patient_id = $patient->id;
-					$genetics_patient->comments = $patient_comments;
-				}
+
 				echo "\nAdding comments to patient ".$patient->id." ".$patient_comments."\n";
 				if (!$genetics_patient->save()) {
 					throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
@@ -269,13 +276,13 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			}
 
 			foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll() as $diagnosis) {
-				if (isset($diagnosis_map[$diagnosis['diagnosis']])) {
-					$diagnosis['diagnosis'] = $diagnosis_map[$diagnosis['diagnosis']];
+				if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
+					$diagnosis['diagnosis'] = $this->diagnosis_map[$diagnosis['diagnosis']];
 				}
 
 				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($diagnosis['diagnosis'])))) {
-					if (!in_array($diagnosis['diagnosis'],$missing_diagnoses)) {
-						$missing_diagnoses[] = $diagnosis['diagnosis'];
+					if (!in_array($diagnosis['diagnosis'],$this->missing_diagnoses)) {
+						$this->missing_diagnoses[] = $diagnosis['diagnosis'];
 					}
 					$patient_comments= $diagnosis['diagnosis'];
 
@@ -458,7 +465,8 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		echo "Matched n (with hosnum): $this->matched_n\n";
 		echo "Matched n (without hosnum): $this->matched_n_hosnum\n";
 
-		echo var_export($missing_diagnoses);
+        echo "Missing Diagnoses:\n";
+		echo var_export($this->missing_diagnoses);
 
 		echo "\n";
 	}
@@ -556,26 +564,40 @@ class GeneticMigrationCommand extends CConsoleCommand {
 			throw new Exception("Unable to save patient: ".print_r($patient->getErrors(),true));
 		}
 
-		if ($subject['status'] === null) {
-			$subject['status'] = 'Unknown';
-		}
-
-		$status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
-
-		if (Pedigree::model()->findByPk($subject['newgc'])) {
-			$pp = new PatientPedigree;
-			$pp->patient_id = $patient->id;
-			$pp->pedigree_id = $subject['newgc'];
-			$pp->status_id = $status->id;
-
-			if (!$pp->save()) {
-				throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
-			}
-		}
-
 		return $patient;
 	}
 
+    /**
+     * @param GeneticsPatient $patient
+     * @param $subject associative array of IEDD data for genetic subject
+     * @throws Exception
+     */
+	public function mapPatientToPedigree($patient, $subject)
+    {
+        if ($subject['status'] === null) {
+            $subject['status'] = 'Unknown';
+        }
+
+        $status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
+
+        if (Pedigree::model()->findByPk($subject['newgc'])) {
+            $pp = new PatientPedigree;
+            $pp->patient_id = $patient->id;
+            $pp->pedigree_id = $subject['newgc'];
+            $pp->status_id = $status->id;
+
+            if (!$pp->save()) {
+                throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
+            }
+        }
+
+    }
+    /**
+     * Performs the matching for Patient against the given subject data
+     *
+     * @param $subject
+     * @return array|mixed|null
+     */
 	public function getPatient($subject) {
 		$_GET['sort_by'] = 'HOS_NUM*1';
 
@@ -691,4 +713,40 @@ class GeneticMigrationCommand extends CConsoleCommand {
 
 		return Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and length(hos_num) = ?',array(strtolower($subject['forename']),strtolower($subject['surname']),0));
 	}
+
+    /**
+     * @throws Exception
+     */
+	protected function importGenes()
+    {
+        echo "Importing genes: ";
+
+        foreach (Yii::app()->db2->createCommand()->select("*")->from("genelist")->queryAll() as $gene) {
+            if (!$_gene = PedigreeGene::model()->findByPk($gene['geneid'])) {
+                $_gene = new PedigreeGene;
+                $_gene->id = $gene['geneid'];
+            }
+
+            $_gene->name = $gene['gene'];
+            $_gene->location = $gene['location'];
+            if($_gene->location == null) $_gene->location = '';
+            $_gene->priority = $gene['priority'];
+            $_gene->description = $gene['descritption'];
+            if($_gene->description == null) $_gene->description = '';
+            $_gene->details = $gene['details'];
+            if($_gene->details == null) $_gene->details = '';
+            $_gene->refs = $gene['refs'];
+            if($_gene->refs == null) $_gene->refs = '';
+
+            if (!$_gene->save(false)) {
+                throw new Exception("Unable to save gene: ".print_r($_gene->getErrors(),true));
+            }
+
+            echo ".";
+        }
+
+        echo "\n";
+        echo "Gene Import Done.";
+    }
+
 }
