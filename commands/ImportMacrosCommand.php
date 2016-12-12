@@ -24,7 +24,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 		$data = $this->loadData('Correspondence Macros', array('letter_macro', 'firm_letter_macro', 'subspecialty_letter_macro'));
 		$this->importData($data, array(
 				'letter_macro' => array(
-					'table' => 'et_ophcocorrespondence_letter_macro',
+					'table' => 'ophcocorrespondence_letter_macro',
 					'match_fields' => array('name', 'site_id'),
 					'column_mappings' => array(
 						'name',
@@ -41,7 +41,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 					),
 				),
 				'firm_letter_macro' => array(
-						'table' => 'et_ophcocorrespondence_firm_letter_macro',
+						'table' => 'ophcocorrespondence_firm_letter_macro',
 						'match_fields' => array('name', 'firm_id'),
 						'column_mappings' => array(
 								'name',
@@ -58,7 +58,7 @@ class ImportMacrosCommand extends ImportGdataCommand
 						),
 				),
 				'subspecialty_letter_macro' => array(
-						'table' => 'et_ophcocorrespondence_subspecialty_letter_macro',
+						'table' => 'ophcocorrespondence_subspecialty_letter_macro',
 						'match_fields' => array('name', 'subspecialty_id'),
 						'column_mappings' => array(
 								'name',
