@@ -73,6 +73,100 @@ EOH;
         fclose($fp);
     }
 
+    /**
+     * Returns the firm under which all imported records should be stored.
+     *
+     * @return \Firm
+     * @throws Exception
+     */
+    protected function initialiseFirm()
+    {
+        echo "\nAdding specialty\n";
+
+        $ophthalmology = Specialty::model()->find('code=?',array(130));
+
+        if (!$genetics = Subspecialty::model()->find('specialty_id=? and name=?',array($ophthalmology->id,'Genetics'))) {
+            $genetics = new Subspecialty;
+            $genetics->specialty_id = $ophthalmology->id;
+            $genetics->name = 'Genetics';
+            $genetics->ref_spec = 'GE';
+
+            if (!$genetics->save()) {
+                throw new Exception("Unable to save subspecialty: ".print_r($genetics->getErrors(),true));
+            }
+        }
+
+        if (!$service = Service::model()->find('name=?',array('Genetics Service'))) {
+            $service = new Service;
+            $service->name = 'Genetics Service';
+
+            if (!$service->save()) {
+                throw new Exception("Unable to save service: ".print_r($service->getErrors(),true));
+            }
+        }
+
+        if (!$ssa = ServiceSubspecialtyAssignment::model()->find('service_id=? and subspecialty_id=?',array($service->id,$genetics->id))) {
+            $ssa = new ServiceSubspecialtyAssignment;
+            $ssa->service_id = $service->id;
+            $ssa->subspecialty_id = $genetics->id;
+
+            if (!$ssa->save()) {
+                throw new Exception("Unable to save ssa: ".print_r($ssa->getErrors(),true));
+            }
+        }
+
+        if (!$firm = Firm::model()->find('service_subspecialty_assignment_id=? and name=?',array($ssa->id,'Webster Andrew'))) {
+            $firm = new Firm;
+            $firm->service_subspecialty_assignment_id = $ssa->id;
+            $firm->name = 'Webster Andrew';
+
+            if (!$firm->save()) {
+                throw new Exception("Unable to save firm: ".print_r($firm->getErrors(),true));
+            }
+        }
+
+        return $firm;
+    }
+
+    /**
+     * @var EventType
+     */
+    protected $sample_event_type;
+
+    public function getSampleEventType()
+    {
+        if (!$this->sample_event_type) {
+            $this->sample_event_type = EventType::model()->find('class_name=?',array('OphInBloodsample'));
+        }
+        return $this->sample_event_type;
+    }
+
+    /**
+     * @var EventType
+     */
+    protected $extraction_event_type;
+
+    public function getExtractionEventType()
+    {
+        if (!$this->extraction_event_type) {
+            $this->extraction_event_type = EventType::model()->find('class_name=?',array('OphInDnaextraction'));
+        }
+        return $this->extraction_event_type;
+    }
+
+    /**
+     * @var EventType
+     */
+    protected $genetic_test_event_type;
+
+    public function getGeneticTestEventType()
+    {
+        if (!$this->genetic_test_event_type) {
+            $this->genetic_test_event_type = EventType::model()->find('class_name=?',array('OphInGenetictest'));
+        }
+        return $this->genetic_test_event_type;
+    }
+
 	public function run($args) {
 		Yii::import('application.modules.Genetics.models.*');
 
@@ -84,127 +178,11 @@ EOH;
 		$this->fp_matched_n_hosnum = fopen("/tmp/.matched_n_hosnum","w");
 
         $this->initialiseDiagnosisMap();
-
         $this->importGenes();
+        $this->importPedigrees();
 
-		echo "Importing pedigrees: ";
-/*
-		foreach (Yii::app()->db2->createCommand()->select("*")->from("pedigree")->queryAll() as $pedigree) {
-			if (!$_pedigree = Pedigree::model()->findByPk($pedigree['newgc'])) {
-				$_pedigree = new Pedigree;
-				$_pedigree->id = $pedigree['newgc'];
-			}
+        $firm = $this->initialiseFirm();
 
-			if ($pedigree['Inheritance']) {
-				if (!$inheritance = PedigreeInheritance::model()->find('name=?',array($pedigree['Inheritance']))) {
-					$inheritance = new PedigreeInheritance;
-					$inheritance->name = $pedigree['Inheritance'];
-
-					if (!$inheritance->save()) {
-						throw new Exception("Unable to save inheritance: ".print_r($inheritance->getErrors(),true));
-					}
-				}
-				$inheritance_id = $inheritance->id;
-			} else {
-				$inheritance_id = null;
-			}
-
-			if (!$pedigree['lastupdatedby'] || !$user = User::model()->find('lower(concat(first_name," ",last_name)) = ?',array($pedigree['lastupdatedby']))) {
-				$user = User::model()->findByPk(1);
-			}
-
-			if ($pedigree['diagnosis'] == 'Not known') {
-				$disorder_id = null;
-			} else {
-				if (isset($diagnosis_map[$pedigree['diagnosis']])) {
-					$pedigree['diagnosis'] = $diagnosis_map[$pedigree['diagnosis']];
-				}
-
-				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($pedigree['diagnosis'])))) {
-					if (!in_array($pedigree['diagnosis'],$missing_diagnoses)) {
-						$missing_diagnoses[] = $pedigree['diagnosis'];
-					}
-					echo " missing ".$pedigree['diagnosis'];
-					echo var_export($missing_diagnoses);
-					continue;
-				}
-
-				$disorder_id = $disorder->id;
-			}
-
-			$_pedigree->inheritance_id = $inheritance_id;
-			$_pedigree->comments = utf8_encode($pedigree['FreeText']);
-			if($_pedigree->comments == null) $_pedigree->comments = '';
-			$_pedigree->consanguinity = $pedigree['consanguinity'] == 'Y' ? 1 : 0;
-			$_pedigree->gene_id = $pedigree['geneid'];
-			$_pedigree->base_change = $pedigree['basechange'];
-			if($_pedigree->base_change == null) $_pedigree->base_change = '';
-			$_pedigree->amino_acid_change = $pedigree['aminoacidchange'];
-			if($_pedigree->amino_acid_change==null)  $_pedigree->amino_acid_change='';
-			$_pedigree->last_modified_user_id = $user->id;
-			$_pedigree->last_modified_date = $pedigree['timestamp'];
-			$_pedigree->created_user_id = $user->id;
-			$_pedigree->created_date = $pedigree['timestamp'];
-			$_pedigree->disorder_id = $disorder_id;
-
-			if (!$_pedigree->save()) {
-				throw new Exception("Unable to save pedigree: ".print_r($_pedigree->getErrors(),true));
-			}
-
-			echo ".";
-		}
-
-		echo "\n";
-*/
-
-
-        echo "\nAdding specialty\n";
-
-		$ophthalmology = Specialty::model()->find('code=?',array(130));
-
-		if (!$genetics = Subspecialty::model()->find('specialty_id=? and name=?',array($ophthalmology->id,'Genetics'))) {
-			$genetics = new Subspecialty;
-			$genetics->specialty_id = $ophthalmology->id;
-			$genetics->name = 'Genetics';
-			$genetics->ref_spec = 'GE';
-
-			if (!$genetics->save()) {
-				throw new Exception("Unable to save subspecialty: ".print_r($genetics->getErrors(),true));
-			}
-		}
-
-		if (!$service = Service::model()->find('name=?',array('Genetics Service'))) {
-			$service = new Service;
-			$service->name = 'Genetics Service';
-
-			if (!$service->save()) {
-				throw new Exception("Unable to save service: ".print_r($service->getErrors(),true));
-			}
-		}
-
-		if (!$ssa = ServiceSubspecialtyAssignment::model()->find('service_id=? and subspecialty_id=?',array($service->id,$genetics->id))) {
-			$ssa = new ServiceSubspecialtyAssignment;
-			$ssa->service_id = $service->id;
-			$ssa->subspecialty_id = $genetics->id;
-
-			if (!$ssa->save()) {
-				throw new Exception("Unable to save ssa: ".print_r($ssa->getErrors(),true));
-			}
-		}
-
-		if (!$firm = Firm::model()->find('service_subspecialty_assignment_id=? and name=?',array($ssa->id,'Webster Andrew'))) {
-			$firm = new Firm;
-			$firm->service_subspecialty_assignment_id = $ssa->id;
-			$firm->name = 'Webster Andrew';
-
-			if (!$firm->save()) {
-				throw new Exception("Unable to save firm: ".print_r($firm->getErrors(),true));
-			}
-		}
-
-		$et_sample = EventType::model()->find('class_name=?',array('OphInBloodsample'));
-		$et_dna = EventType::model()->find('class_name=?',array('OphInDnaextraction'));
-		$et_genetictest = EventType::model()->find('class_name=?',array('OphInGenetictest'));
 
 		echo "Importing subjects and samples: ";
 
@@ -214,8 +192,8 @@ EOH;
 			}
 
 			$patient_comments = '';
-			if ($patient = $this->getPatient($subject)) {
-			} else {
+			$patient = $this->getPatient($subject);
+			if (!$patient) {
 				$patient = $this->createPatient($subject);
 			}
 
@@ -231,228 +209,22 @@ EOH;
                 }
             }
 
+            // Ensure the subject comments are only added to the genetics patient if they are not already present
             if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
                 $genetics_patient->comments .= $patient_comments;
             }
             $genetics_patient->save();
 
-            $this->mapPatientToPedigree($genetics_patient, $subject);
+            $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
-            if (Pedigree::model()->findByPk($subject['newgc'])) {
-                if ($subject['status'] == null) {
-                    $subject['status'] = 'Unknown';
-                }
-
-                $status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
-
-                if (!$pp = PatientPedigree::model()->find('patient_id=?',array($patient->id))) {
-                    $pp = new PatientPedigree;
-                    $pp->patient_id = $patient->id;
-                }
-
-                $pp->status_id = $status->id;
-                $pp->pedigree_id = $subject['newgc'];
-
-                if (!$pp->save()) {
-                    throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
-                }
-            }
-
-
-
-			//patient comments
-			if(!empty($patient_comments)) {
-				$patient_comments= utf8_encode($patient_comments);
-
-				echo "\nAdding comments to patient ".$patient->id." ".$patient_comments."\n";
-				if (!$genetics_patient->save()) {
-					throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
-				}
-			}
-
-
+            // progress indicator.
 			if ($i %10 == 0) {
 				echo ".";
 			}
 
-			foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll() as $diagnosis) {
-				if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
-					$diagnosis['diagnosis'] = $this->diagnosis_map[$diagnosis['diagnosis']];
-				}
-
-				if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($diagnosis['diagnosis'])))) {
-					if (!in_array($diagnosis['diagnosis'],$this->missing_diagnoses)) {
-						$this->missing_diagnoses[] = $diagnosis['diagnosis'];
-					}
-					$patient_comments= $diagnosis['diagnosis'];
-
-					//add comments to patient with missing diagnosis
-					if ($genetics_patient = GeneticsPatient::model()->find('patient_id=?',array($patient->id))) {
-						if (strpos($genetics_patient->comments, $patient_comments) == FALSE)
-							$genetics_patient->comments .= "\n".$patient_comments."\n";
-					}
-					else {
-						$genetics_patient = new GeneticsPatient();
-						$genetics_patient->patient_id = $patient->id;
-						$genetics_patient->comments = $patient_comments;
-					}
-					echo "\nAdding missing diagnosis comments to patient ".$patient->id." ".$patient_comments."\n";
-					if (!$genetics_patient->save()) {
-						throw new Exception("Unable to save genetics patient comments: ".print_r($pp->getErrors(),true));
-					}
-					echo "\nMissing diagnosis for patient ".$patient->id." comments saved\n";
-					continue;
-				}
-
-				if (!$sd = SecondaryDiagnosis::model()->find('patient_id=? and disorder_id=?',array($patient->id,$disorder->id))) {
-					$sd = new SecondaryDiagnosis;
-					$sd->patient_id = $patient->id;
-					$sd->disorder_id = $disorder->id;
-					$sd->date='';
-
-					if (!$sd->save()) {
-						throw new Exception("Unable to save SecondaryDiagnosis: ".print_r($sd->getErrors(),true));
-					}
-				}
-			}
-
-			$samples = Yii::app()->db2->createCommand()->select("*")->from("sample")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll();
-
-			if (!empty($samples)) {
-				$date = date('Y-m-d');
-
-				foreach ($samples as $sample) {
-					if (in_array(strtolower($sample['type']),array('dna','rna'))) {
-						$type = strtoupper($sample['type']);
-					} else {
-						$type = ucfirst(strtolower($sample['type']));
-					}
-
-					if (!$_type = OphInBloodsample_Sample_Type::model()->find('name=?',array($type))) {
-						throw new Exception("Unknown sample type: $type");
-					}
-
-					$user_id = $this->findUserIDForString($sample['loggedby']);
-
-					if (!$_sample = Element_OphInBloodsample_Sample::model()->findByPk($sample['dnano'])) {
-						$_sample = new Element_OphInBloodsample_Sample;
-						$_sample->id = $sample['dnano'];
-
-						$event = $this->createEvent($et_sample, $patient, $firm, $sample, $user_id, 'timelogged');
-
-						$_sample->event_id = $event->id;
-					}
-
-					$_sample->old_dna_no = $sample['OldDNANo'];
-					$_sample->blood_date = $sample['bloodtaken'];
-					$_sample->blood_location = $sample['bloodlocation'];
-					$_sample->comments = $sample['comment'];
-					if($_sample->comments == null) $_sample->comments = '';
-					$_sample->type_id = $_type->id;
-					$_sample->volume = 10;
-					$_sample->created_date = $sample['timelogged'];
-					$_sample->last_modified_date = $sample['timelogged'];
-					$_sample->created_user_id = $user_id;
-					$_sample->last_modified_user_id = $user_id;
-
-					if (!$_sample->save(true,null,true)) {
-						throw new Exception("Unable to save sample: ".print_r($_sample->getErrors(),true));
-					}
-
-					foreach (Yii::app()->db2->createCommand()->select("*")->from("address")->where("dnano = :dnano",array(":dnano" => $sample['dnano']))->queryAll() as $address) {
-						$box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?',array($address['box']));
-						$letter = OphInDnaextraction_DnaExtraction_Letter::model()->find('value=?',array($address['letter']));
-						$number = OphInDnaextraction_DnaExtraction_Number::model()->find('value=?',array($address['number']));
-
-						$user_id = $this->findUserIDForString($address['extractedby']);
-
-						if (!$dna = Element_OphInDnaextraction_DnaExtraction::model()->find('box_id=? and letter_id=? and number_id=?',array($box->id,$letter->id,$number->id))) {
-							$dna = new Element_OphInDnaextraction_DnaExtraction;
-							$dna->box_id = $box->id;
-							$dna->letter_id = $letter->id;
-							$dna->number_id = $number->id;
-
-							$event = $this->createEvent($et_dna, $patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
-
-							$dna->event_id = $event->id;
-						}
-
-						$dna->extracted_date = $address['extracted'];
-						$dna->extracted_by = $address['extractedby'];
-						$dna->comments = $address['comment'];
-
-						if (!$dna->save()) {
-							throw new Exception("Unable to save dna extraction: ".print_r($dna->getErrors(),true));
-						}
-
-						$dna_tests = new Element_OphInDnaextraction_DnaTests;
-						$dna_tests ->event_id = $event->id;
-
-						if (!$dna_tests->save()) {
-							throw new Exception("Unable to save dna tests element: ".print_r($dna->getErrors(),true));
-						}
-
-
-						echo "-";
-					}
-				}
-
-				echo ".";
-			}
-
-			$assays = Yii::app()->db2->createCommand()->select("*")->from("assay")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll();
-
-			if (!empty($assays)) {
-				foreach ($assays as $assay) {
-					if (!$test = Element_OphInGenetictest_Test::model()->findByPk($assay['testid'])) {
-						if ($assay['method'] === null) {
-							$method_id = null;
-						} else {
-							$method_id = OphInGenetictest_Test_Method::model()->find('name=?',array($assay['method']))->id;
-						}
-
-						if ($assay['effect'] === null) {
-							$effect_id = null;
-						} else {
-							$effect_id = OphInGenetictest_Test_Effect::model()->find('name=?',array($assay['effect']))->id;
-						}
-
-						if ($gene = PedigreeGene::model()->findByPk($assay['geneid'])) {
-							$gene_id = $gene->id;
-						} else {
-							$gene_id = new CDbExpression('NULL');
-						}
-
-						$user_id = $this->findUserIDForString($assay['enteredby']);
-
-						$event = $this->createEvent($et_genetictest, $patient, $firm, $assay, $user_id, 'timestamp');
-
-						$test = new Element_OphInGenetictest_Test;
-						$test->id = $assay['testid'];
-						$test->event_id = $event->id;
-						$test->gene_id = $gene_id;
-						$test->method_id = $method_id;
-						$test->result = $assay['result'];
-						$test->result_date = $assay['resultdate'];
-						$test->comments = $assay['comment'];
-						$test->exon = $assay['exon'];
-						$test->prime_rf = $assay['primerf'];
-						$test->prime_rr = $assay['primerr'];
-						$test->base_change = $assay['basechange'];
-						$test->amino_acid_change = $assay['aminoacidchange'];
-						$test->assay = $assay['assay'];
-						$test->homo = $assay['homo'] == 'Y' ? 1 : 0;
-						$test->created_user_id = $user_id;
-						$test->last_modified_user_id = $user_id;
-						$test->created_date = $assay['timestamp'];
-						$test->last_modified_date = $assay['timestamp'];
-
-						if (!$test->save(true,null,true)) {
-							throw new Exception("Unable to save Element_OphInGenetictest_Test: ".print_r($test->getErrors(),true));
-						}
-					}
-				}
-			}
+			$this->mapGeneticsPatientDiagnoses($genetics_patient, $subject['subjectid']);
+            $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
+            $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
 		}
 
 		echo "\n";
@@ -486,24 +258,27 @@ EOH;
 		return $user_id;
 	}
 
+    /**
+     * @param $event_type
+     * @param $patient
+     * @param $firm
+     * @param $object
+     * @param $user_id
+     * @param bool $timeField
+     * @param null $parent_id
+     * @return Event
+     * @throws Exception
+     */
 	public function createEvent($event_type, $patient, $firm, $object, $user_id, $timeField=false, $parent_id=null)
 	{
-		if ($timeField) {
-			$date = date('Y-m-d');
+        // drive the event date from the object if possible, otherwise default to today
+        $event_date = date('Y-m-d');
 
-			if (strtotime($object[$timeField]) < strtotime($date)) {
-				$date = substr($object[$timeField],0,10);
-				$created_date = $object[$timeField];
+        if ($timeField) {
+            $obj_date = substr($object[$timeField],0,10);
+            if ($obj_date != '0000-00-00' && strtotime($object[$timeField]) < strtotime($event_date)) {
+				$event_date = $obj_date;
 			}
-
-			if ($date=='0000-00-00' || $date == date('Y-m-d')) {
-				$date = '1970-01-01';
-				$created_date = '1970-01-01';
-			}
-
-		} else {
-			$date = date('Y-m-d');
-			$created_date = date('Y-m-d');
 		}
 
 		if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null',array($patient->id,$firm->id))) {
@@ -523,11 +298,8 @@ EOH;
 		$event->event_type_id = $event_type->id;
 		$event->episode_id = $episode->id;
 		$event->parent_id = $parent_id;
-		if (isset($created_date)) {
-			$event->created_date = $created_date;
-			$event->event_date = $created_date;
-			$event->last_modified_date = $created_date;
-		}
+        $event->event_date = $event_date;
+
 		$event->created_user_id = $user_id;
 		$event->last_modified_user_id = $user_id;
 		$event->delete_pending = 0;
@@ -542,6 +314,13 @@ EOH;
 		return $event;
 	}
 
+    /**
+     * Create a patient record for the given subject record
+     *
+     * @param $subject
+     * @return Patient
+     * @throws Exception
+     */
 	public function createPatient($subject) {
 		$contact = new Contact;
 		$contact->first_name = $subject['forename'];
@@ -558,7 +337,8 @@ EOH;
 		$patient->dob = $subject['dob'];
 		$patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
 		$patient->contact_id = $contact->id;
-		$patient->yob = $subject['yob'];
+		// TODO: implement storage of YOB
+        //$patient->yob = $subject['yob'];
 
 		if (!$patient->save()) {
 			throw new Exception("Unable to save patient: ".print_r($patient->getErrors(),true));
@@ -572,7 +352,7 @@ EOH;
      * @param $subject associative array of IEDD data for genetic subject
      * @throws Exception
      */
-	public function mapPatientToPedigree($patient, $subject)
+	public function mapGeneticsPatientToPedigree($patient, $subject)
     {
         if ($subject['status'] === null) {
             $subject['status'] = 'Unknown';
@@ -590,15 +370,61 @@ EOH;
                 throw new Exception("Unable to save PatientPedigree: ".print_r($pp->getErrors(),true));
             }
         }
-
     }
+
+    /**
+     * Create genetics diagnosis entries for each diagnosis on the given subject id
+     *
+     * @param $genetics_patient
+     * @param $subject_id
+     * @throws Exception
+     */
+    protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
+    {
+        foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid",array(":subjectid" => $subject_id))->queryAll() as $diagnosis) {
+            if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
+                $diagnosis['diagnosis'] = $this->diagnosis_map[$diagnosis['diagnosis']];
+            }
+
+            if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
+                if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
+                    $this->missing_diagnoses[] = $diagnosis['diagnosis'];
+                }
+                $patient_comments = $diagnosis['diagnosis'];
+
+                //add comments to patient with missing diagnosis
+                if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
+                    $genetics_patient->comments .= "\n" . $patient_comments . "\n";
+                }
+
+                echo "\nAdding missing diagnosis comments to patient " . $genetics_patient->patient_id . " " . $patient_comments . "\n";
+                if (!$genetics_patient->save()) {
+                    throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
+                }
+                echo " ... comments saved\n";
+                continue;
+            }
+
+            if (!$d = GeneticsPatientDiagnosis::model()->find('patient_id=? and disorder_id=?', array($genetics_patient->id, $disorder->id))) {
+                $d = new GeneticsPatientDiagnosis;
+                $d->patient_id = $genetics_patient->id;
+                $d->disorder_id = $disorder->id;
+
+                if (!$d->save()) {
+                    throw new Exception("Unable to save GeneticsPatientDiagnosis: " . print_r($d->getErrors(), true));
+                }
+            }
+        }
+    }
+
     /**
      * Performs the matching for Patient against the given subject data
      *
      * @param $subject
      * @return array|mixed|null
      */
-	public function getPatient($subject) {
+	public function getPatient($subject)
+    {
 		$_GET['sort_by'] = 'HOS_NUM*1';
 
 		if ($subject['mehno']) {
@@ -749,4 +575,223 @@ EOH;
         echo "Gene Import Done.";
     }
 
+    public function importPedigrees()
+    {
+        echo "Importing pedigrees: ";
+        /*
+        foreach (Yii::app()->db2->createCommand()->select("*")->from("pedigree")->queryAll() as $pedigree) {
+            if (!$_pedigree = Pedigree::model()->findByPk($pedigree['newgc'])) {
+                $_pedigree = new Pedigree;
+                $_pedigree->id = $pedigree['newgc'];
+            }
+
+            if ($pedigree['Inheritance']) {
+                if (!$inheritance = PedigreeInheritance::model()->find('name=?',array($pedigree['Inheritance']))) {
+                    $inheritance = new PedigreeInheritance;
+                    $inheritance->name = $pedigree['Inheritance'];
+
+                    if (!$inheritance->save()) {
+                        throw new Exception("Unable to save inheritance: ".print_r($inheritance->getErrors(),true));
+                    }
+                }
+                $inheritance_id = $inheritance->id;
+            } else {
+                $inheritance_id = null;
+            }
+
+            if (!$pedigree['lastupdatedby'] || !$user = User::model()->find('lower(concat(first_name," ",last_name)) = ?',array($pedigree['lastupdatedby']))) {
+                $user = User::model()->findByPk(1);
+            }
+
+            if ($pedigree['diagnosis'] == 'Not known') {
+                $disorder_id = null;
+            } else {
+                if (isset($diagnosis_map[$pedigree['diagnosis']])) {
+                    $pedigree['diagnosis'] = $diagnosis_map[$pedigree['diagnosis']];
+                }
+
+                if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($pedigree['diagnosis'])))) {
+                    if (!in_array($pedigree['diagnosis'],$missing_diagnoses)) {
+                        $missing_diagnoses[] = $pedigree['diagnosis'];
+                    }
+                    echo " missing ".$pedigree['diagnosis'];
+                    echo var_export($missing_diagnoses);
+                    continue;
+                }
+
+                $disorder_id = $disorder->id;
+            }
+
+            $_pedigree->inheritance_id = $inheritance_id;
+            $_pedigree->comments = utf8_encode($pedigree['FreeText']);
+            if($_pedigree->comments == null) $_pedigree->comments = '';
+            $_pedigree->consanguinity = $pedigree['consanguinity'] == 'Y' ? 1 : 0;
+            $_pedigree->gene_id = $pedigree['geneid'];
+            $_pedigree->base_change = $pedigree['basechange'];
+            if($_pedigree->base_change == null) $_pedigree->base_change = '';
+            $_pedigree->amino_acid_change = $pedigree['aminoacidchange'];
+            if($_pedigree->amino_acid_change==null)  $_pedigree->amino_acid_change='';
+            $_pedigree->last_modified_user_id = $user->id;
+            $_pedigree->last_modified_date = $pedigree['timestamp'];
+            $_pedigree->created_user_id = $user->id;
+            $_pedigree->created_date = $pedigree['timestamp'];
+            $_pedigree->disorder_id = $disorder_id;
+
+            if (!$_pedigree->save()) {
+                throw new Exception("Unable to save pedigree: ".print_r($_pedigree->getErrors(),true));
+            }
+
+            echo ".";
+        }
+
+        echo "\n";
+        */
+    }
+
+    protected function mapGeneticsPatientSamples($genetics_patient, $subject_id, $firm)
+    {
+        $samples = Yii::app()->db2->createCommand()->select("*")->from("sample")->where("subjectid = :subjectid",array(":subjectid" => $subject_id))->queryAll();
+
+        if (!empty($samples)) {
+            foreach ($samples as $sample) {
+                if (in_array(strtolower($sample['type']),array('dna','rna'))) {
+                    $type = strtoupper($sample['type']);
+                } else {
+                    $type = ucfirst(strtolower($sample['type']));
+                }
+
+                if (!$_type = OphInBloodsample_Sample_Type::model()->find('name=?',array($type))) {
+                    throw new Exception("Unknown sample type: $type");
+                }
+
+                $user_id = $this->findUserIDForString($sample['loggedby']);
+
+                if (!$_sample = Element_OphInBloodsample_Sample::model()->findByPk($sample['dnano'])) {
+                    $_sample = new Element_OphInBloodsample_Sample;
+                    $_sample->id = $sample['dnano'];
+
+                    $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged');
+                    $_sample->event_id = $event->id;
+                }
+
+                $_sample->old_dna_no = $sample['OldDNANo'];
+                $_sample->blood_date = $sample['bloodtaken'];
+                $_sample->blood_location = $sample['bloodlocation'];
+                $_sample->comments = $sample['comment'];
+                if($_sample->comments == null) $_sample->comments = '';
+                $_sample->type_id = $_type->id;
+                $_sample->volume = 10;
+                $_sample->created_date = $sample['timelogged'];
+                $_sample->last_modified_date = $sample['timelogged'];
+                $_sample->created_user_id = $user_id;
+                $_sample->last_modified_user_id = $user_id;
+
+                if (!$_sample->save(true,null,true)) {
+                    throw new Exception("Unable to save sample: ".print_r($_sample->getErrors(),true));
+                }
+
+                foreach (Yii::app()->db2->createCommand()->select("*")->from("address")->where("dnano = :dnano",array(":dnano" => $sample['dnano']))->queryAll() as $address) {
+                    $box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?',array($address['box']));
+                    $letter = OphInDnaextraction_DnaExtraction_Letter::model()->find('value=?',array($address['letter']));
+                    $number = OphInDnaextraction_DnaExtraction_Number::model()->find('value=?',array($address['number']));
+
+                    $user_id = $this->findUserIDForString($address['extractedby']);
+
+                    if (!$dna = Element_OphInDnaextraction_DnaExtraction::model()->find('box_id=? and letter_id=? and number_id=?',array($box->id,$letter->id,$number->id))) {
+                        $dna = new Element_OphInDnaextraction_DnaExtraction;
+                        $dna->box_id = $box->id;
+                        $dna->letter_id = $letter->id;
+                        $dna->number_id = $number->id;
+
+                        $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
+
+                        $dna->event_id = $event->id;
+                    }
+
+                    $dna->extracted_date = $address['extracted'];
+                    $dna->extracted_by = $address['extractedby'];
+                    $dna->comments = $address['comment'];
+
+                    if (!$dna->save()) {
+                        throw new Exception("Unable to save dna extraction: ".print_r($dna->getErrors(),true));
+                    }
+
+                    $dna_tests = new Element_OphInDnaextraction_DnaTests;
+                    $dna_tests ->event_id = $event->id;
+
+                    if (!$dna_tests->save()) {
+                        throw new Exception("Unable to save dna tests element: ".print_r($dna->getErrors(),true));
+                    }
+
+
+                    echo "-";
+                }
+            }
+
+            echo ".";
+        }
+    }
+
+    /**
+     * @param $genetics_patient
+     * @param $subject_id
+     * @param $firm
+     * @throws Exception
+     */
+    protected function mapGeneticsPatientTests($genetics_patient, $subject_id, $firm)
+    {
+        $assays = Yii::app()->db2->createCommand()->select("*")->from("assay")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll();
+
+        if (!empty($assays)) {
+            foreach ($assays as $assay) {
+                if (!$test = Element_OphInGenetictest_Test::model()->findByPk($assay['testid'])) {
+                    if ($assay['method'] === null) {
+                        $method_id = null;
+                    } else {
+                        $method_id = OphInGenetictest_Test_Method::model()->find('name=?',array($assay['method']))->id;
+                    }
+
+                    if ($assay['effect'] === null) {
+                        $effect_id = null;
+                    } else {
+                        $effect_id = OphInGenetictest_Test_Effect::model()->find('name=?',array($assay['effect']))->id;
+                    }
+
+                    if ($gene = PedigreeGene::model()->findByPk($assay['geneid'])) {
+                        $gene_id = $gene->id;
+                    } else {
+                        $gene_id = new CDbExpression('NULL');
+                    }
+
+                    $user_id = $this->findUserIDForString($assay['enteredby']);
+
+                    $event = $this->createEvent($et_genetictest, $genetics_patient->patient, $firm, $assay, $user_id, 'timestamp');
+
+                    $test = new Element_OphInGenetictest_Test;
+                    $test->id = $assay['testid'];
+                    $test->event_id = $event->id;
+                    $test->gene_id = $gene_id;
+                    $test->method_id = $method_id;
+                    $test->result = $assay['result'];
+                    $test->result_date = $assay['resultdate'];
+                    $test->comments = $assay['comment'];
+                    $test->exon = $assay['exon'];
+                    $test->prime_rf = $assay['primerf'];
+                    $test->prime_rr = $assay['primerr'];
+                    $test->base_change = $assay['basechange'];
+                    $test->amino_acid_change = $assay['aminoacidchange'];
+                    $test->assay = $assay['assay'];
+                    $test->homo = $assay['homo'] == 'Y' ? 1 : 0;
+                    $test->created_user_id = $user_id;
+                    $test->last_modified_user_id = $user_id;
+                    $test->created_date = $assay['timestamp'];
+                    $test->last_modified_date = $assay['timestamp'];
+
+                    if (!$test->save(true,null,true)) {
+                        throw new Exception("Unable to save Element_OphInGenetictest_Test: ".print_r($test->getErrors(),true));
+                    }
+                }
+            }
+        }
+    }
 }
