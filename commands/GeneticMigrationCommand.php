@@ -66,7 +66,13 @@ EOH;
 
         while ($data = fgetcsv($fp)) {
             if ($data[1]) {
-                $this->diagnosis_map[$data[0]] = $data[1];
+                if ($disorder = Disorder::model()->findByPk($data[1])) {
+                    $this->diagnosis_map[$data[0]] = $disorder;
+                }
+                else {
+                    throw new Exception('Mapped diagnosis not found for ' . print_r($data, true));
+                }
+
             }
         }
 
@@ -361,7 +367,7 @@ EOH;
         $status = PedigreeStatus::model()->find('lower(name) = ?',array(strtolower($subject['status'])));
 
         if (Pedigree::model()->findByPk($subject['newgc'])) {
-            $pp = new PatientPedigree;
+            $pp = new GeneticsPatientPedigree;
             $pp->patient_id = $patient->id;
             $pp->pedigree_id = $subject['newgc'];
             $pp->status_id = $status->id;
@@ -382,27 +388,29 @@ EOH;
     protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
     {
         foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid",array(":subjectid" => $subject_id))->queryAll() as $diagnosis) {
+            $disorder = null;
             if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
-                $diagnosis['diagnosis'] = $this->diagnosis_map[$diagnosis['diagnosis']];
+                $disorder = $this->diagnosis_map[$diagnosis['diagnosis']];
             }
+            else {
+                if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
+                    if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
+                        $this->missing_diagnoses[] = $diagnosis['diagnosis'];
+                    }
+                    $patient_comments = $diagnosis['diagnosis'];
 
-            if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
-                if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
-                    $this->missing_diagnoses[] = $diagnosis['diagnosis'];
-                }
-                $patient_comments = $diagnosis['diagnosis'];
+                    //add comments to patient with missing diagnosis
+                    if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == FALSE)) {
+                        $genetics_patient->comments .= "\n" . $patient_comments . "\n";
+                    }
 
-                //add comments to patient with missing diagnosis
-                if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
-                    $genetics_patient->comments .= "\n" . $patient_comments . "\n";
+                    echo "\nAdding missing diagnosis comments to patient " . $genetics_patient->patient_id . " " . $patient_comments . "\n";
+                    if (!$genetics_patient->save()) {
+                        throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
+                    }
+                    echo " ... comments saved\n";
+                    continue;
                 }
-
-                echo "\nAdding missing diagnosis comments to patient " . $genetics_patient->patient_id . " " . $patient_comments . "\n";
-                if (!$genetics_patient->save()) {
-                    throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
-                }
-                echo " ... comments saved\n";
-                continue;
             }
 
             if (!$d = GeneticsPatientDiagnosis::model()->find('patient_id=? and disorder_id=?', array($genetics_patient->id, $disorder->id))) {
@@ -578,7 +586,7 @@ EOH;
     public function importPedigrees()
     {
         echo "Importing pedigrees: ";
-        /*
+
         foreach (Yii::app()->db2->createCommand()->select("*")->from("pedigree")->queryAll() as $pedigree) {
             if (!$_pedigree = Pedigree::model()->findByPk($pedigree['newgc'])) {
                 $_pedigree = new Pedigree;
@@ -603,20 +611,21 @@ EOH;
                 $user = User::model()->findByPk(1);
             }
 
-            if ($pedigree['diagnosis'] == 'Not known') {
-                $disorder_id = null;
-            } else {
-                if (isset($diagnosis_map[$pedigree['diagnosis']])) {
-                    $pedigree['diagnosis'] = $diagnosis_map[$pedigree['diagnosis']];
-                }
+            $disorder_id = null;
 
-                if (!$disorder = Disorder::model()->find('lower(term) = ?',array(strtolower($pedigree['diagnosis'])))) {
-                    if (!in_array($pedigree['diagnosis'],$missing_diagnoses)) {
-                        $missing_diagnoses[] = $pedigree['diagnosis'];
+            if ($pedigree['diagnosis'] != 'Not known') {
+                if (isset($this->diagnosis_map[$pedigree['diagnosis']])) {
+                    $disorder = $this->diagnosis_map[$pedigree['diagnosis']];
+                }
+                else {
+
+                    if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($pedigree['diagnosis'])))) {
+                        if (!in_array($pedigree['diagnosis'], $this->missing_diagnoses)) {
+                            $this->missing_diagnoses[] = $pedigree['diagnosis'];
+                        }
+                        echo " missing " . $pedigree['diagnosis'];
+                        continue;
                     }
-                    echo " missing ".$pedigree['diagnosis'];
-                    echo var_export($missing_diagnoses);
-                    continue;
                 }
 
                 $disorder_id = $disorder->id;
@@ -645,7 +654,6 @@ EOH;
         }
 
         echo "\n";
-        */
     }
 
     protected function mapGeneticsPatientSamples($genetics_patient, $subject_id, $firm)
