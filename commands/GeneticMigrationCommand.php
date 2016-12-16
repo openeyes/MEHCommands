@@ -210,7 +210,7 @@ EOH;
             }
 
             // Ensure the subject comments are only added to the genetics patient if they are not already present
-            if (strpos($genetics_patient->comments, $patient_comments) == FALSE) {
+            if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == FALSE)) {
                 $genetics_patient->comments .= $patient_comments;
             }
             $genetics_patient->save();
@@ -740,7 +740,7 @@ EOH;
      */
     protected function mapGeneticsPatientTests($genetics_patient, $subject_id, $firm)
     {
-        $assays = Yii::app()->db2->createCommand()->select("*")->from("assay")->where("subjectid = :subjectid",array(":subjectid" => $subject['subjectid']))->queryAll();
+        $assays = Yii::app()->db2->createCommand()->select("*")->from("assay")->where("subjectid = :subjectid",array(":subjectid" => $subject_id))->queryAll();
 
         if (!empty($assays)) {
             foreach ($assays as $assay) {
