@@ -336,14 +336,14 @@ EOH;
      */
     public function createPatient($subject)
     {
-        $contact = new Contact;
+        $contact = new Contact();
         $contact->first_name = $subject['forename'];
         if ($contact->first_name == null) {
-            $contact->first_name = '';
+            $contact->first_name = '-';
         }
         $contact->last_name = $subject['surname'];
         if ($contact->last_name == null) {
-            $contact->last_name = '';
+            $contact->last_name = '-';
         }
         $contact->maiden_name = $subject['maiden'];
 
@@ -351,10 +351,11 @@ EOH;
             throw new Exception("Unable to save contact: " . print_r($contact->getErrors(), true));
         }
 
-        $patient = new Patient;
+        $patient = new Patient();
         $patient->dob = $subject['dob'];
         $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
         $patient->contact_id = $contact->id;
+        $patient->use_pas = false;
         // TODO: implement storage of YOB
         //$patient->yob = $subject['yob'];
 
