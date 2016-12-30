@@ -215,8 +215,8 @@ EOH;
             if ($subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where("SubjectID = :subjectid",
                 array(":subjectid" => $subject['subjectid']))->queryRow()
             ) {
-                if (trim($subject_extra['Free_text'])) {
-                    $patient_comments = trim($subject_extra['Free_text']);
+                if (trim($subject_extra['free_text'])) {
+                    $patient_comments = trim($subject_extra['free_text']);
                 }
             }
 
