@@ -90,12 +90,12 @@ EOH;
      */
     protected function initialiseFirm()
     {
-        echo "Adding specialty".PHP_EOL;
+        echo "Adding specialty" . PHP_EOL;
 
         $ophthalmology = Specialty::model()->find('code=?', array(130));
 
         if (!$genetics = Subspecialty::model()->find('specialty_id=? and name=?', array($ophthalmology->id, 'Genetics'))) {
-            $genetics = new Subspecialty;
+            $genetics = new Subspecialty();
             $genetics->specialty_id = $ophthalmology->id;
             $genetics->name = 'Genetics';
             $genetics->ref_spec = 'GE';
@@ -106,7 +106,7 @@ EOH;
         }
 
         if (!$service = Service::model()->find('name=?', array('Genetics Service'))) {
-            $service = new Service;
+            $service = new Service();
             $service->name = 'Genetics Service';
 
             if (!$service->save()) {
@@ -115,7 +115,7 @@ EOH;
         }
 
         if (!$ssa = ServiceSubspecialtyAssignment::model()->find('service_id=? and subspecialty_id=?', array($service->id, $genetics->id))) {
-            $ssa = new ServiceSubspecialtyAssignment;
+            $ssa = new ServiceSubspecialtyAssignment();
             $ssa->service_id = $service->id;
             $ssa->subspecialty_id = $genetics->id;
 
@@ -125,7 +125,7 @@ EOH;
         }
 
         if (!$firm = Firm::model()->find('service_subspecialty_assignment_id=? and name=?', array($ssa->id, 'Webster Andrew'))) {
-            $firm = new Firm;
+            $firm = new Firm();
             $firm->service_subspecialty_assignment_id = $ssa->id;
             $firm->name = 'Webster Andrew';
 
@@ -145,7 +145,7 @@ EOH;
     public function getSampleEventType()
     {
         if (!$this->sample_event_type) {
-            $this->sample_event_type = EventType::model()->find('class_name=?', array('OphInBloodsample'));
+            $this->sample_event_type = EventType::model()->find('class_name=?', array('OphInDnasample'));
         }
 
         return $this->sample_event_type;
@@ -173,7 +173,7 @@ EOH;
     public function getGeneticTestEventType()
     {
         if (!$this->genetic_test_event_type) {
-            $this->genetic_test_event_type = EventType::model()->find('class_name=?', array('OphInGenetictest'));
+            $this->genetic_test_event_type = EventType::model()->find('class_name=?', array('OphInGeneticresults'));
         }
 
         return $this->genetic_test_event_type;
@@ -194,8 +194,8 @@ EOH;
         $this->importGenes();
         $this->importPedigrees();
         $this->source = $this->externalSource();
-        $this->unknown_effect = $this->unknown(new OphInGenetictest_Test_Effect());
-        $this->unknown_method = $this->unknown(new OphInGenetictest_Test_Method());
+        $this->unknown_effect = $this->unknown(new OphInGeneticresults_Test_Effect());
+        $this->unknown_method = $this->unknown(new OphInGeneticresults_Test_Method());
 
         $firm = $this->initialiseFirm();
 
@@ -243,21 +243,21 @@ EOH;
             }
 
             $this->mapGeneticsPatientDiagnoses($genetics_patient, $subject['subjectid']);
-            //$this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
+            $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
             $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
         }
 
         echo PHP_EOL;
 
         echo "Total: " . ($this->matched + $this->matched_hosnum + $this->nomatch + $this->nomatch_hosnum + $this->matched_n) . PHP_EOL;
-        echo "Matched (with hosnum): $this->matched_hosnum".PHP_EOL;
-        echo "Matched (without hosnum): $this->matched".PHP_EOL;
-        echo "No-match (with hosnum): $this->nomatch_hosnum".PHP_EOL;
-        echo "No-match (without hosnum): $this->nomatch".PHP_EOL;
-        echo "Matched n (with hosnum): $this->matched_n".PHP_EOL;
-        echo "Matched n (without hosnum): $this->matched_n_hosnum".PHP_EOL;
+        echo "Matched (with hosnum): $this->matched_hosnum" . PHP_EOL;
+        echo "Matched (without hosnum): $this->matched" . PHP_EOL;
+        echo "No-match (with hosnum): $this->nomatch_hosnum" . PHP_EOL;
+        echo "No-match (without hosnum): $this->nomatch" . PHP_EOL;
+        echo "Matched n (with hosnum): $this->matched_n" . PHP_EOL;
+        echo "Matched n (without hosnum): $this->matched_n_hosnum" . PHP_EOL;
 
-        echo "Missing Diagnoses:".PHP_EOL;
+        echo "Missing Diagnoses:" . PHP_EOL;
         echo var_export($this->missing_diagnoses);
 
         echo PHP_EOL;
@@ -304,7 +304,7 @@ EOH;
         }
 
         if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null', array($patient->id, $firm->id))) {
-            $episode = new Episode;
+            $episode = new Episode();
             $episode->patient_id = $patient->id;
             $episode->firm_id = $firm->id;
             $episode->start_date = $event_date;
@@ -422,14 +422,14 @@ EOH;
 
                     //add comments to patient with missing diagnosis
                     if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
-                        $genetics_patient->comments .= PHP_EOL . $patient_comments .PHP_EOL;
+                        $genetics_patient->comments .= PHP_EOL . $patient_comments . PHP_EOL;
                     }
 
                     echo "Adding missing diagnosis comments to patient " . $genetics_patient->id . " " . $patient_comments . PHP_EOL;
                     if (!$genetics_patient->save()) {
                         throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
                     }
-                    echo " ... comments saved".PHP_EOL;
+                    echo " ... comments saved" . PHP_EOL;
                     continue;
                 }
             }
@@ -457,12 +457,12 @@ EOH;
         if ($subject['mehno']) {
             if ($patient = Patient::model()->with('contact')->find('hos_num = ? and length(hos_num) > ?', array($subject['mehno'], 0))) {
                 if ($patient->dob == $subject['dob'] || (strtolower($patient->first_name) == strtolower($subject['forename']) && strtolower($patient->last_name) == strtolower($subject['surname']))) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched_hosnum++;
 
                     return $patient;
                 }
-                fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->nomatch_hosnum++;
 
                 return false;
@@ -474,10 +474,10 @@ EOH;
                 array(strtolower($subject['forename']), strtolower($subject['surname']), $subject['dob'], 0))
             ) {
                 if ($subject['mehno']) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched_hosnum++;
                 } else {
-                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched++;
                 }
 
@@ -505,10 +505,10 @@ EOH;
 
             if (count($results) == 1) {
                 if ($subject['mehno']) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched_hosnum++;
                 } else {
-                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched++;
                 }
 
@@ -516,18 +516,18 @@ EOH;
             } else {
                 if (count($results) > 1) {
                     if ($subject['mehno']) {
-                        fwrite($this->fp_matched_n_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                        fwrite($this->fp_matched_n_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                         $this->matched_n_hosnum++;
                     } else {
-                        fwrite($this->fp_matched_n, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                        fwrite($this->fp_matched_n, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                         $this->matched_n++;
                     }
                 } else {
                     if ($subject['mehno']) {
-                        fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                        fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                         $this->nomatch_hosnum++;
                     } else {
-                        fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                        fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                         $this->nomatch++;
                     }
                 }
@@ -556,10 +556,10 @@ EOH;
 
         if (count($results) == 1) {
             if ($subject['mehno']) {
-                fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->matched_hosnum++;
             } else {
-                fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+                fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->matched++;
             }
 
@@ -567,10 +567,10 @@ EOH;
         }
 
         if ($subject['mehno']) {
-            fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+            fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
             $this->nomatch_hosnum++;
         } else {
-            fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}".PHP_EOL);
+            fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
             $this->nomatch++;
         }
 
@@ -711,14 +711,14 @@ EOH;
                     $type = ucfirst(strtolower($sample['type']));
                 }
 
-                if (!$_type = OphInBloodsample_Sample_Type::model()->find('name=?', array($type))) {
+                if (!$_type = OphInDnasample_Sample_Type::model()->find('name=?', array($type))) {
                     throw new Exception("Unknown sample type: $type");
                 }
 
                 $user_id = $this->findUserIDForString($sample['loggedby']);
 
-                if (!$_sample = Element_OphInBloodsample_Sample::model()->findByPk($sample['dnano'])) {
-                    $_sample = new Element_OphInBloodsample_Sample;
+                if (!$_sample = Element_OphInDnasample_Sample::model()->findByPk($sample['dnano'])) {
+                    $_sample = new Element_OphInDnasample_Sample;
                     $_sample->id = $sample['dnano'];
 
                     $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged');
@@ -727,7 +727,6 @@ EOH;
 
                 $_sample->old_dna_no = $sample['OldDNANo'];
                 $_sample->blood_date = $sample['bloodtaken'];
-                $_sample->blood_location = $sample['bloodlocation'];
                 $_sample->comments = $sample['comment'];
                 if ($_sample->comments == null) {
                     $_sample->comments = '';
@@ -738,8 +737,10 @@ EOH;
                 $_sample->last_modified_date = $sample['timelogged'];
                 $_sample->created_user_id = $user_id;
                 $_sample->last_modified_user_id = $user_id;
+                $_sample->consented_by = $user_id;
+                $_sample->is_local = 1;
 
-                if (!$_sample->save(true, null, true)) {
+                if (!$_sample->save(false, null, true)) {
                     throw new Exception("Unable to save sample: " . print_r($_sample->getErrors(), true));
                 }
 
@@ -751,7 +752,7 @@ EOH;
                     $user_id = $this->findUserIDForString($address['extractedby']);
 
                     if (!$dna = Element_OphInDnaextraction_DnaExtraction::model()->find('box_id=? and letter_id=? and number_id=?', array($box->id, $letter->id, $number->id))) {
-                        $dna = new Element_OphInDnaextraction_DnaExtraction;
+                        $dna = new Element_OphInDnaextraction_DnaExtraction();
                         $dna->box_id = $box->id;
                         $dna->letter_id = $letter->id;
                         $dna->number_id = $number->id;
@@ -769,8 +770,8 @@ EOH;
                         throw new Exception("Unable to save dna extraction: " . print_r($dna->getErrors(), true));
                     }
 
-                    $dna_tests = new Element_OphInDnaextraction_DnaTests;
-                    $dna_tests->event_id = $event->id;
+                    $dna_tests = new Element_OphInDnaextraction_DnaTests();
+                    $dna_tests->event_id = $dna->event_id;
 
                     if (!$dna_tests->save()) {
                         throw new Exception("Unable to save dna tests element: " . print_r($dna->getErrors(), true));
@@ -797,20 +798,20 @@ EOH;
 
         if (!empty($assays)) {
             foreach ($assays as $assay) {
-                $test = Element_OphInGenetictest_Test::model()->findByPk($assay['testid']);
+                $test = Element_OphInGeneticresults_Test::model()->findByPk($assay['testid']);
                 if (!$test) {
                     $method_id = $this->unknown_method->id;
-                    if($assay['method']){
-                        $method = OphInGenetictest_Test_Method::model()->find('name=?', array($assay['method']));
+                    if ($assay['method']) {
+                        $method = OphInGeneticresults_Test_Method::model()->find('name=?', array($assay['method']));
                         if ($method) {
                             $method_id = $method->id;
                         }
                     }
 
 
-                    $effect_id =  $this->unknown_effect->id;
-                    if($assay['effect']){
-                        $effect = OphInGenetictest_Test_Effect::model()->find('name=?', array($assay['effect']));
+                    $effect_id = $this->unknown_effect->id;
+                    if ($assay['effect']) {
+                        $effect = OphInGeneticresults_Test_Effect::model()->find('name=?', array($assay['effect']));
                         if ($effect) {
                             $effect_id = $effect->id;
                         }
@@ -828,7 +829,7 @@ EOH;
 
                     $event = $this->createEvent($this->getGeneticTestEventType(), $genetics_patient->patient, $firm, $assay, $user_id, 'timestamp');
 
-                    $test = new Element_OphInGenetictest_Test();
+                    $test = new Element_OphInGeneticresults_Test();
                     $test->id = $assay['testid'];
                     $test->event_id = $event->id;
                     $test->gene_id = $gene_id;
@@ -855,16 +856,16 @@ EOH;
                         $test->result = 'Unknown on import';
                     }
 
-                    if(strtolower($assay['method']) === 'sanger') {
-                        if(!$test->exon) {
+                    if (strtolower($assay['method']) === 'sanger') {
+                        if (!$test->exon) {
                             $test->exon = 'Unknown on import';
                         }
 
-                        if(!$test->prime_rf) {
+                        if (!$test->prime_rf) {
                             $test->prime_rf = 'Unknown on import';
                         }
 
-                        if(!$test->prime_rr) {
+                        if (!$test->prime_rr) {
                             $test->prime_rr = 'Unknown on import';
                         }
                     }
@@ -878,13 +879,13 @@ EOH;
     }
 
     /**
-     * @return CActiveRecord|OphInGenetictest_External_Source
+     * @return CActiveRecord|OphInGeneticresults_External_Source
      */
     protected function externalSource()
     {
-        $externalSource = OphInGenetictest_External_Source::model()->findByAttributes(array('name' => 'Import Source'));
-        if(!$externalSource) {
-            $externalSource = new OphInGenetictest_External_Source();
+        $externalSource = OphInGeneticresults_External_Source::model()->findByAttributes(array('name' => 'Import Source'));
+        if (!$externalSource) {
+            $externalSource = new OphInGeneticresults_External_Source();
             $externalSource->name = 'Import Source';
             $externalSource->save();
         }
@@ -899,7 +900,7 @@ EOH;
     protected function unknown($model)
     {
         $unknown = $model->findByAttributes(array('name' => 'Unknown'));
-        if(!$unknown) {
+        if (!$unknown) {
             $unknown = $model;
             $unknown->name = 'Unknown';
             $unknown->save();
