@@ -757,7 +757,7 @@ EOH;
                         $dna->letter_id = $letter->id;
                         $dna->number_id = $number->id;
 
-                        $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
+                        $event = $this->createEvent($this->getExtractionEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
 
                         $dna->event_id = $event->id;
                     }
