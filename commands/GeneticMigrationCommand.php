@@ -763,7 +763,7 @@ EOH;
                     }
 
                     $dna->extracted_date = $address['extracted'];
-                    $dna->extracted_by = $address['extractedby'];
+                    $dna->extracted_by_text = $address['extractedby'];
                     $dna->comments = $address['comment'];
 
                     if (!$dna->save()) {
