@@ -480,7 +480,7 @@ class GeneticMigrationCommand extends CConsoleCommand {
 		$patient->dob = $subject['dob'];
 		$patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
 		$patient->contact_id = $contact->id;
-		$patient->yob = $subject['yob'];
+		$patient->is_local = 1;
 
 		if (!$patient->save()) {
 			throw new Exception("Unable to save patient: ".print_r($patient->getErrors(),true));
