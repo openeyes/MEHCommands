@@ -365,6 +365,10 @@ EOH;
         $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
         $patient->contact_id = $contact->id;
         $patient->use_pas = false;
+        
+        // not to use pas
+        $patient->is_local = 1;
+        
         // TODO: implement storage of YOB
         //$patient->yob = $subject['yob'];
 
