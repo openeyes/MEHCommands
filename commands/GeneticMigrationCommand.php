@@ -415,7 +415,7 @@ EOH;
     {
         foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll() as $diagnosis) {
             $disorder = null;
-            if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
+            if (isset($this->diagnosis_map[$diagnosis['subjectid']])) {
                 $disorder = $this->diagnosis_map[$diagnosis['diagnosis']];
             } else {
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
