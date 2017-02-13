@@ -206,16 +206,25 @@ EOH;
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
             }
-
+            
             $patient_comments = '';
-            $patient = $this->getPatient($subject);
-            if (!$patient) {
-                $patient = $this->createPatient($subject);
+            $genetics_patient = GeneticsPatient::model()->findByPk($subject['subjectid']);
+
+            if($genetics_patient){
+                $patient = Patient::model()->findByPk($genetics_patient->patient_id);
+            } else {
+                $patient = $this->getPatient($subject);
+                if (!$patient) {
+                    $patient = $this->createPatient($subject);
+                }
+                
+                $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
             }
 
-            $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
             if (!$genetics_patient) {
                 $genetics_patient = new GeneticsPatient();
+
+                $genetics_patient->id = $subject['subjectid'];
                 $genetics_patient->patient_id = $patient->id;
             }
             $subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where(
@@ -233,10 +242,10 @@ EOH;
             if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
                 $genetics_patient->comments .= $patient_comments;
             }
-            $genetics_patient->save();
-
+                $genetics_patient->save();
+                
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
-
+            
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
