@@ -422,11 +422,17 @@ EOH;
      */
     protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
     {
-        foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll() as $diagnosis) {
+        $diagnoses = Yii::app()->db2->createCommand()
+            ->select("*")->from("diagnosis")
+            ->join('diagnosislist l', 'diagnosis.diagnosis = l.diagnosis')
+            ->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
+
+
+        foreach ($diagnoses as $diagnosis) {
             $disorder = null;
 
-            if (isset($this->diagnosis_map[$diagnosis['subjectid']])) {
-                $disorder = $this->diagnosis_map[$diagnosis['subjectid']];
+            if (isset($this->diagnosis_map[$diagnosis['diagnosisid']])) {
+                $disorder = $this->diagnosis_map[$diagnosis['diagnosisid']];
             } else {
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
                     if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
