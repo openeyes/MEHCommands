@@ -243,7 +243,7 @@ EOH;
                 $genetics_patient->comments .= $patient_comments;
             }
                 $genetics_patient->save();
-                
+
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
             
             // progress indicator.
@@ -371,7 +371,7 @@ EOH;
 
         $patient = new Patient();
         $patient->dob = $subject['dob'];
-        $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
+        $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : 'U'; // U - Unknown
         $patient->contact_id = $contact->id;
         $patient->use_pas = false;
         
@@ -381,7 +381,8 @@ EOH;
         // TODO: implement storage of YOB
         //$patient->yob = $subject['yob'];
 
-        if (!$patient->save()) {
+        // skipping the validation because of the patient.dob cannot be blank (in the model), but here we don't always have
+        if (!$patient->save(false)) {
             throw new Exception("Unable to save patient: " . print_r($patient->getErrors(), true));
         }
 
@@ -899,8 +900,6 @@ EOH;
                     $test->result_date = $assay['resultdate'];
                     $test->comments = $assay['comment'];
                     $test->exon = $assay['exon'];
-                    $test->prime_rf = $assay['primerf'];
-                    $test->prime_rr = $assay['primerr'];
                     $test->base_change = $assay['basechange'];
                     $test->amino_acid_change = $assay['aminoacidchange'];
                     $test->assay = $assay['assay'];
@@ -919,14 +918,6 @@ EOH;
                     if (strtolower($assay['method']) === 'sanger') {
                         if (!$test->exon) {
                             $test->exon = 'Unknown on import';
-                        }
-
-                        if (!$test->prime_rf) {
-                            $test->prime_rf = 'Unknown on import';
-                        }
-
-                        if (!$test->prime_rr) {
-                            $test->prime_rr = 'Unknown on import';
                         }
                     }
 
