@@ -206,16 +206,25 @@ EOH;
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
             }
-
+            
             $patient_comments = '';
-            $patient = $this->getPatient($subject);
-            if (!$patient) {
-                $patient = $this->createPatient($subject);
+            $genetics_patient = GeneticsPatient::model()->findByPk($subject['subjectid']);
+
+            if($genetics_patient){
+                $patient = Patient::model()->findByPk($genetics_patient->patient_id);
+            } else {
+                $patient = $this->getPatient($subject);
+                if (!$patient) {
+                    $patient = $this->createPatient($subject);
+                }
+                
+                $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
             }
 
-            $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
             if (!$genetics_patient) {
                 $genetics_patient = new GeneticsPatient();
+
+                $genetics_patient->id = $subject['subjectid'];
                 $genetics_patient->patient_id = $patient->id;
             }
             $subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where(
@@ -233,10 +242,10 @@ EOH;
             if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
                 $genetics_patient->comments .= $patient_comments;
             }
-            $genetics_patient->save();
+                $genetics_patient->save();
 
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
-
+            
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
@@ -362,13 +371,18 @@ EOH;
 
         $patient = new Patient();
         $patient->dob = $subject['dob'];
-        $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : '';
+        $patient->gender = !empty($subject['gender']) ? $subject['gender'][0] : 'U'; // U - Unknown
         $patient->contact_id = $contact->id;
         $patient->use_pas = false;
+        
+        // not to use pas
+        $patient->is_local = 1;
+        
         // TODO: implement storage of YOB
         //$patient->yob = $subject['yob'];
 
-        if (!$patient->save()) {
+        // skipping the validation because of the patient.dob cannot be blank (in the model), but here we don't always have
+        if (!$patient->save(false)) {
             throw new Exception("Unable to save patient: " . print_r($patient->getErrors(), true));
         }
 
@@ -409,10 +423,17 @@ EOH;
      */
     protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
     {
-        foreach (Yii::app()->db2->createCommand()->select("*")->from("diagnosis")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll() as $diagnosis) {
+        $diagnoses = Yii::app()->db2->createCommand()
+            ->select("*")->from("diagnosis")
+            ->join('diagnosislist l', 'diagnosis.diagnosis = l.diagnosis')
+            ->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
+
+
+        foreach ($diagnoses as $diagnosis) {
             $disorder = null;
-            if (isset($this->diagnosis_map[$diagnosis['diagnosis']])) {
-                $disorder = $this->diagnosis_map[$diagnosis['diagnosis']];
+
+            if (isset($this->diagnosis_map[$diagnosis['diagnosisid']])) {
+                $disorder = $this->diagnosis_map[$diagnosis['diagnosisid']];
             } else {
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
                     if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
@@ -746,19 +767,60 @@ EOH;
 
                 foreach (Yii::app()->db2->createCommand()->select("*")->from("address")->where("dnano = :dnano", array(":dnano" => $sample['dnano']))->queryAll() as $address) {
                     $box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?', array($address['box']));
-                    $letter = OphInDnaextraction_DnaExtraction_Letter::model()->find('value=?', array($address['letter']));
-                    $number = OphInDnaextraction_DnaExtraction_Number::model()->find('value=?', array($address['number']));
+
+                    //update maxletter and maxnumber as it wasn't provided
+                    $letter = strtoupper($address['letter']);
+                    if( $box->maxletter == null || (strcmp(strtoupper($box->maxletter), $letter) < 0) ){
+                        $box->maxletter = $letter;
+                    }
+
+                    if( $box->maxnumber == null || $box->maxnumber < $address['number']){
+                        $box->maxnumber = $address['number'];
+                    }
+
+                    if(!$box->save()){
+                        throw new Exception("Unable to save DnaExtraction Box: " . print_r($storage->getErrors(), true));
+                    }
 
                     $user_id = $this->findUserIDForString($address['extractedby']);
 
-                    if (!$dna = Element_OphInDnaextraction_DnaExtraction::model()->find('box_id=? and letter_id=? and number_id=?', array($box->id, $letter->id, $number->id))) {
+                    $storage = OphInDnaextraction_DnaExtraction_Storage::model()->find('box_id=? and letter=? and number=?', array($box->id, $address['letter'], $address['number']));
+
+                    $was_storage_exist = $storage ? true :false;
+
+                    if(!$storage){
+                        $storage = new OphInDnaextraction_DnaExtraction_Storage();
+                        $storage->box_id = $box->id;
+                        $storage->letter = $address['letter'];
+                        $storage->number = $address['number'];
+
+                        if(!$storage->save()){
+                            throw new Exception("Unable to save DnaExtraction Storage: " . print_r($storage->getErrors(), true));
+                        }
+
+                    }
+
+                    // if the storage did not exist before, the DnaExtraction did not exist either, so we do not need to check
+                    //if the storage was already saved in the DB we check if an element belongs to it
+                    $dna = null;
+                    if($was_storage_exist){
+                        //check if the Episode/event/element are already exist for the patient
+                        $criteria = new CDbCriteria();
+                        $criteria->join = "JOIN event ON t.event_id = event.id";
+                        $criteria->join .= " JOIN episode ON event.episode_id = episode.id";
+
+                        $criteria->compare('episode.patient_id', $genetics_patient->patient->id);
+                        $criteria->compare('event.event_type_id', $this->getExtractionEventType()->id);
+                        $criteria->compare('t.storage_id', $storage->id);
+
+                        $dna = Element_OphInDnaextraction_DnaExtraction::model()->find($criteria);
+                    }
+
+                    if(!$dna){
                         $dna = new Element_OphInDnaextraction_DnaExtraction();
-                        $dna->box_id = $box->id;
-                        $dna->letter_id = $letter->id;
-                        $dna->number_id = $number->id;
+                        $dna->storage_id = $storage->id;
 
                         $event = $this->createEvent($this->getExtractionEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged', $_sample->event_id);
-
                         $dna->event_id = $event->id;
                     }
 
@@ -776,7 +838,6 @@ EOH;
                     if (!$dna_tests->save()) {
                         throw new Exception("Unable to save dna tests element: " . print_r($dna->getErrors(), true));
                     }
-
 
                     echo "-";
                 }
@@ -839,8 +900,6 @@ EOH;
                     $test->result_date = $assay['resultdate'];
                     $test->comments = $assay['comment'];
                     $test->exon = $assay['exon'];
-                    $test->prime_rf = $assay['primerf'];
-                    $test->prime_rr = $assay['primerr'];
                     $test->base_change = $assay['basechange'];
                     $test->amino_acid_change = $assay['aminoacidchange'];
                     $test->assay = $assay['assay'];
@@ -859,14 +918,6 @@ EOH;
                     if (strtolower($assay['method']) === 'sanger') {
                         if (!$test->exon) {
                             $test->exon = 'Unknown on import';
-                        }
-
-                        if (!$test->prime_rf) {
-                            $test->prime_rf = 'Unknown on import';
-                        }
-
-                        if (!$test->prime_rr) {
-                            $test->prime_rr = 'Unknown on import';
                         }
                     }
 
