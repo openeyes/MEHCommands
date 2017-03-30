@@ -195,7 +195,6 @@ EOH;
         $this->initialiseDiagnosisMap();
         $this->importGenes();
         $this->importPedigrees();
-        $this->source = $this->externalSource();
         $this->unknown_effect = $this->unknown(new OphInGeneticresults_Test_Effect());
         $this->unknown_method = $this->unknown(new OphInGeneticresults_Test_Method());
 
