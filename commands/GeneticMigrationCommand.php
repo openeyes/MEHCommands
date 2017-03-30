@@ -38,6 +38,8 @@ class GeneticMigrationCommand extends CConsoleCommand
     protected $unknown_effect;
     protected $unknown_method;
 
+    public $subject_limit;
+
     public function getName()
     {
         return 'Import Genetics Data from the IEDD';
@@ -179,7 +181,7 @@ EOH;
         return $this->genetic_test_event_type;
     }
 
-    public function run($args)
+    public function actionIndex()
     {
         Yii::import('application.modules.Genetics.models.*');
 
@@ -202,7 +204,13 @@ EOH;
 
         echo "Importing subjects and samples: ";
 
-        foreach (Yii::app()->db2->createCommand()->select("*")->from("subject")->queryAll() as $i => $subject) {
+        $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
+
+        if($this->subject_limit){
+            $command->limit($this->subject_limit);
+        }
+
+        foreach ($command->queryAll() as $i => $subject) {
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
             }
@@ -226,7 +234,12 @@ EOH;
 
                 $genetics_patient->id = $subject['subjectid'];
                 $genetics_patient->patient_id = $patient->id;
+
+                //saving without validation because genetics_patient cannot be saved with empty pedigree
+                // and pedigree will be mapped later
+                $genetics_patient->save(false);
             }
+
             $subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where(
                 "SubjectID = :subjectid",
                 array(":subjectid" => $subject['subjectid'])
@@ -242,10 +255,11 @@ EOH;
             if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
                 $genetics_patient->comments .= $patient_comments;
             }
-                $genetics_patient->save();
 
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
-            
+
+            $genetics_patient->save();
+
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
@@ -447,7 +461,8 @@ EOH;
                     }
 
                     echo "Adding missing diagnosis comments to patient " . $genetics_patient->id . " " . $patient_comments . PHP_EOL;
-                    if (!$genetics_patient->save()) {
+                    //no validation because of the genetics result's Withdrawal source
+                    if (!$genetics_patient->save(false)) {
                         throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
                     }
                     echo " ... comments saved" . PHP_EOL;
@@ -909,7 +924,6 @@ EOH;
                     $test->created_date = $assay['timestamp'];
                     $test->last_modified_date = $assay['timestamp'];
                     $test->result = $assay['result'];
-                    $test->external_source_id = $this->source->id;
 
                     if (!$test->result) {
                         $test->result = 'Unknown on import';
@@ -921,27 +935,12 @@ EOH;
                         }
                     }
 
-                    if (!$test->save(true, null, true)) {
+                    if (!$test->save(false, null, true)) {
                         throw new Exception("Unable to save Element_OphInGenetictest_Test: " . print_r($test->getErrors(), true));
                     }
                 }
             }
         }
-    }
-
-    /**
-     * @return CActiveRecord|OphInGeneticresults_External_Source
-     */
-    protected function externalSource()
-    {
-        $externalSource = OphInGeneticresults_External_Source::model()->findByAttributes(array('name' => 'Import Source'));
-        if (!$externalSource) {
-            $externalSource = new OphInGeneticresults_External_Source();
-            $externalSource->name = 'Import Source';
-            $externalSource->save();
-        }
-
-        return $externalSource;
     }
 
     /**
