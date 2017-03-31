@@ -195,6 +195,7 @@ EOH;
         $this->initialiseDiagnosisMap();
         $this->importGenes();
         $this->importPedigrees();
+        $this->importDnaExtractionBoxes();
         $this->unknown_effect = $this->unknown(new OphInGeneticresults_Test_Effect());
         $this->unknown_method = $this->unknown(new OphInGeneticresults_Test_Method());
 
@@ -747,6 +748,19 @@ EOH;
         echo PHP_EOL;
     }
 
+    protected function importDnaExtractionBoxes()
+    {
+        $command = Yii::app()->db->createCommand("DELETE FROM ophindnaextraction_dnaextraction_box WHERE 1=1;");
+        $command->execute();
+
+        $sql = "INSERT INTO `ophindnaextraction_dnaextraction_box` (`value`, maxletter, maxnumber)
+                SELECT box, letter, number
+                FROM iedd.`address`";
+
+        $command = Yii::app()->db->createCommand($sql);
+        $command->execute();
+    }
+
     protected function mapGeneticsPatientSamples($genetics_patient, $subject_id, $firm)
     {
         $samples = Yii::app()->db2->createCommand()->select("*")->from("sample")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
@@ -806,7 +820,7 @@ EOH;
                     }
 
                     if(!$box->save()){
-                        throw new Exception("Unable to save DnaExtraction Box: " . print_r($storage->getErrors(), true));
+                        throw new Exception("Unable to save DnaExtraction Box: " . print_r($box->getErrors(), true));
                     }
 
                     $user_id = $this->findUserIDForString($address['extractedby']);
