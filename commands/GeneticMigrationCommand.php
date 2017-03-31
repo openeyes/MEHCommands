@@ -750,15 +750,24 @@ EOH;
 
     protected function importDnaExtractionBoxes()
     {
-        $command = Yii::app()->db->createCommand("DELETE FROM ophindnaextraction_dnaextraction_box WHERE 1=1;");
-        $command->execute();
+        $addresses = Yii::app()->db2->createCommand()->select("*")->from("address")->queryAll();
 
-        $sql = "INSERT INTO `ophindnaextraction_dnaextraction_box` (`value`, maxletter, maxnumber)
-                SELECT box, letter, number
-                FROM iedd.`address`";
+        if (!empty($addresses)) {
+            foreach ($addresses as $address) {
+                $box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?', array($address['box']));
 
-        $command = Yii::app()->db->createCommand($sql);
-        $command->execute();
+                if(!$box){
+                    $box = new OphInDnaextraction_DnaExtraction_Box();
+                    $box->value = $address['box'];
+                    $box->maxletter = $address['letter'];
+                    $box->maxnumber = $address['number'];
+
+                    $box->save();
+                }
+            }
+
+        }
+
     }
 
     protected function mapGeneticsPatientSamples($genetics_patient, $subject_id, $firm)
