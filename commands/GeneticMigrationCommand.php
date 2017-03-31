@@ -209,11 +209,14 @@ EOH;
             $command->limit($this->subject_limit);
         }
 
-        foreach ($command->queryAll() as $i => $subject) {
+        $subjects = $command->queryAll();
+        $total = count($subjects);
+        foreach ($subjects as $i => $subject) {
+            echo PHP_EOL . "******************************************************* Processed: " . round($i/$total, 2) . '% ('.$i . "/" . $total.')' . PHP_EOL;
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
             }
-            
+
             $patient_comments = '';
             $genetics_patient = GeneticsPatient::model()->findByPk($subject['subjectid']);
 
@@ -224,7 +227,7 @@ EOH;
                 if (!$patient) {
                     $patient = $this->createPatient($subject);
                 }
-                
+
                 $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
             }
 
@@ -262,9 +265,12 @@ EOH;
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
+                echo PHP_EOL . "*********************************************************** gc_collect_cycles : " . gc_collect_cycles() . PHP_EOL;
+                echo PHP_EOL . "*********************************************************** ";
+                echo "Memory Usage:" . round(CLogger::getMemoryUsage()/1048576,2) . "mb" . PHP_EOL;
             }
 
-            $this->mapGeneticsPatientDiagnoses($genetics_patient, $subject['subjectid']);
+            $this->mapGeneticsPatientDiagnoses($genetics_patient->id, $subject['subjectid']);
             $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
             $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
         }
@@ -349,7 +355,6 @@ EOH;
         $event->delete_pending = 0;
 
         if (!$event->save(true, null, true)) {
-            echo var_export($created_date);
             echo var_export($event);
             echo var_export($object);
             throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
@@ -434,13 +439,14 @@ EOH;
      * @param $subject_id
      * @throws Exception
      */
-    protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
+    protected function mapGeneticsPatientDiagnoses($genetics_patient_id, $subject_id)
     {
+        $genetics_patient = GeneticsPatient::model()->findByPk($genetics_patient_id);
+
         $diagnoses = Yii::app()->db2->createCommand()
             ->select("*")->from("diagnosis")
             ->join('diagnosislist l', 'diagnosis.diagnosis = l.diagnosis')
             ->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
-
 
         foreach ($diagnoses as $diagnosis) {
             $disorder = null;
@@ -465,6 +471,8 @@ EOH;
                         throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
                     }
                     echo " ... comments saved" . PHP_EOL;
+                    $patient_comments = null;
+                    $disorder = null;
                     continue;
                 }
             }
@@ -479,6 +487,12 @@ EOH;
                 }
             }
         }
+        $diagnoses = null;
+        $disorder = null;
+        $patient_comments = null;
+        $genetics_patient = null;
+        $d = null;
+        $genetics_patient = null;
     }
 
     /**
@@ -494,7 +508,6 @@ EOH;
                 if ($patient->dob == $subject['dob'] || (strtolower($patient->first_name) == strtolower($subject['forename']) && strtolower($patient->last_name) == strtolower($subject['surname']))) {
                     fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                     $this->matched_hosnum++;
-
                     return $patient;
                 }
                 fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
