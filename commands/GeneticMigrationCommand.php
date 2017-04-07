@@ -788,9 +788,9 @@ EOH;
 
                 $user_id = $this->findUserIDForString($sample['loggedby']);
 
-                if (!$_sample = Element_OphInDnasample_Sample::model()->findByPk($sample['dnano'])) {
+                if (!$_sample = Element_OphInDnasample_Sample::model()->findByPk($sample['id'])) {
                     $_sample = new Element_OphInDnasample_Sample;
-                    $_sample->id = $sample['dnano'];
+                    $_sample->id = $sample['id'];
 
                     $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged');
                     $_sample->event_id = $event->id;
