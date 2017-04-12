@@ -25,8 +25,13 @@ class GeneticMigrationCommand extends CConsoleCommand
     public $nomatch_hosnum = 0;
     public $matched_n = 0;
     public $matched_n_hosnum = 0;
+    /**
+     * Number of patient found by genetics_patient PK (which is same as iedd.sample.subjectid)
+     * @var int
+     */
+    public $found_by_pk = 0;
 
-    // File handle variables for writing out results during impor
+    // File handle variables for writing out results during import
     public $fp_matched;
     public $fp_matched_hosnum;
     public $fp_nomatch;
@@ -34,11 +39,26 @@ class GeneticMigrationCommand extends CConsoleCommand
     public $fp_matched_n;
     public $fp_matched_n_hosnum;
 
+    /**
+     *
+     * @var
+     */
+    public $fp_found_by_pk;
+
+    /**
+     * General log
+     * @var
+     */
+    public $fp_general_logfile;
+
+    public $fp_verbose_log_file;
+
     protected $source;
     protected $unknown_effect;
     protected $unknown_method;
 
     public $subject_limit;
+    public $subject_offset;
 
     public function getName()
     {
@@ -185,12 +205,21 @@ EOH;
     {
         Yii::import('application.modules.Genetics.models.*');
 
-        $this->fp_matched = fopen("/tmp/.matched", "w");
-        $this->fp_matched_hosnum = fopen("/tmp/.matched_hosnum", "w");
-        $this->fp_nomatch = fopen("/tmp/.nomatch", "w");
-        $this->fp_nomatch_hosnum = fopen("/tmp/.nomatch_hosnum", "w");
-        $this->fp_matched_n = fopen("/tmp/.matched_n", "w");
-        $this->fp_matched_n_hosnum = fopen("/tmp/.matched_n_hosnum", "w");
+        // check if directory exists
+        if (!is_dir('/tmp/genetics_import_logs')) {
+            mkdir('/tmp/genetics_import_logs');
+            echo "ALERT! Directory /tmp/genetics_import_logs has been created!";
+        }
+
+        $this->fp_general_logfile = fopen("/tmp/genetics_import_logs/.general_genetics_log", "w");
+        $this->fp_matched = fopen("/tmp/genetics_import_logs/.matched", "w");
+        $this->fp_matched_hosnum = fopen("/tmp/genetics_import_logs/.matched_hosnum", "w");
+        $this->fp_nomatch = fopen("/tmp/genetics_import_logs/.nomatch", "w");
+        $this->fp_nomatch_hosnum = fopen("/tmp/genetics_import_logs/.nomatch_hosnum", "w");
+        $this->fp_matched_n = fopen("/tmp/genetics_import_logs/.matched_n", "w");
+        $this->fp_matched_n_hosnum = fopen("/tmp/genetics_import_logs/.matched_n_hosnum", "w");
+        $this->fp_found_by_pk = fopen("/tmp/genetics_import_logs/.found_by_pk", "w");
+        $this->fp_verbose_log_file = fopen("/tmp/genetics_import_logs/.verbose_log", "w");
 
         $this->initialiseDiagnosisMap();
         $this->importGenes();
@@ -201,7 +230,6 @@ EOH;
 
         $firm = $this->initialiseFirm();
 
-
         echo "Importing subjects and samples: ";
 
         $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
@@ -210,10 +238,18 @@ EOH;
             $command->limit($this->subject_limit);
         }
 
+        if($this->subject_offset){
+            $command->offset($this->subject_offset);
+        }
+
+
         $subjects = $command->queryAll();
         $total = count($subjects);
+        $this->log("Importing $total subjects and samples");
+
         foreach ($subjects as $i => $subject) {
-            echo PHP_EOL . "******************************************************* Processed: " . round($i/$total, 2) . '% ('.$i . "/" . $total.')' . PHP_EOL;
+            $this->verboseLog("Import subject id: " . $subject['subjectid']);
+
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
             }
@@ -222,10 +258,17 @@ EOH;
             $genetics_patient = GeneticsPatient::model()->findByPk($subject['subjectid']);
 
             if($genetics_patient){
+                fwrite($this->fp_found_by_pk, "Genetics Patient ID:{$subject['subjectid']}|{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
+                $this->found_by_pk++;
                 $patient = Patient::model()->findByPk($genetics_patient->patient_id);
+
+                $this->verboseLog("Genetics patient found : " . $genetics_patient->id);
+                $this->verboseLog("Patient hos_num: " . $patient->hos_num);
             } else {
+                $this->verboseLog("Genetics patient not found.");
                 $patient = $this->getPatient($subject);
                 if (!$patient) {
+                    $this->verboseLog("Patient not found, creating patient.");
                     $patient = $this->createPatient($subject);
                 }
 
@@ -241,6 +284,7 @@ EOH;
                 //saving without validation because genetics_patient cannot be saved with empty pedigree
                 // and pedigree will be mapped later
                 $genetics_patient->save(false);
+                $this->verboseLog("Creating Genetics patient. ID: " . $genetics_patient->id);
             }
 
             $subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where(
@@ -257,8 +301,10 @@ EOH;
             // Ensure the subject comments are only added to the genetics patient if they are not already present
             if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
                 $genetics_patient->comments .= $patient_comments;
+                $this->verboseLog("Comment added : " . $genetics_patient->comments);
             }
 
+            //creating GeneticsPatientPedigree
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
             $genetics_patient->save();
@@ -266,34 +312,38 @@ EOH;
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
-                echo PHP_EOL . "*********************************************************** gc_collect_cycles : " . gc_collect_cycles() . PHP_EOL;
-                echo PHP_EOL . "*********************************************************** ";
-                echo "Memory Usage:" . round(CLogger::getMemoryUsage()/1048576,2) . "mb" . PHP_EOL;
             }
 
             $this->mapGeneticsPatientDiagnoses($genetics_patient->id, $subject['subjectid']);
             $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
             $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
+
+            $this->verboseLog("Subject imported." . PHP_EOL . PHP_EOL);
         }
 
-        echo PHP_EOL;
-
-        echo "Total: " . ($this->matched + $this->matched_hosnum + $this->nomatch + $this->nomatch_hosnum + $this->matched_n) . PHP_EOL;
-        echo "Matched (with hosnum): $this->matched_hosnum" . PHP_EOL;
-        echo "Matched (without hosnum): $this->matched" . PHP_EOL;
-        echo "No-match (with hosnum): $this->nomatch_hosnum" . PHP_EOL;
-        echo "No-match (without hosnum): $this->nomatch" . PHP_EOL;
-        echo "Matched n (with hosnum): $this->matched_n" . PHP_EOL;
-        echo "Matched n (without hosnum): $this->matched_n_hosnum" . PHP_EOL;
+        echo $stat = PHP_EOL .
+            "Total: " . ($this->matched + $this->matched_hosnum + $this->nomatch + $this->nomatch_hosnum + $this->matched_n + $this->found_by_pk) . PHP_EOL .
+            "Matched (with hosnum): $this->matched_hosnum" . PHP_EOL .
+            "Matched (without hosnum): $this->matched" . PHP_EOL .
+            "No-match (with hosnum): $this->nomatch_hosnum" . PHP_EOL .
+            "No-match (without hosnum): $this->nomatch" . PHP_EOL .
+            "Matched n (with hosnum): $this->matched_n" . PHP_EOL .
+            "Matched n (without hosnum): $this->matched_n_hosnum" . PHP_EOL .
+            "Matched PK (genetics_patient.id which is same as iedd.sample.sampleid): $this->found_by_pk" . PHP_EOL;
 
         echo "Missing Diagnoses:" . PHP_EOL;
         echo var_export($this->missing_diagnoses);
+
+        $this->log($stat);
+        $this->log("Missing Diagnoses:" . PHP_EOL . (var_export($this->missing_diagnoses)));
 
         echo PHP_EOL;
     }
 
     public function findUserIDForString($user_name)
     {
+        $this->verboseLog("Finding user...");
+
         $user_id = 1;
 
         if ($user_name) {
@@ -305,6 +355,8 @@ EOH;
                 }
             }
         }
+
+        $this->verboseLog("User ID:" . $user_id);
 
         return $user_id;
     }
@@ -361,6 +413,7 @@ EOH;
             throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
         }
 
+        $this->verboseLog("Event created: " . $event->id . " | type: " . $event->eventType->name);
         return $event;
     }
 
@@ -387,6 +440,7 @@ EOH;
         if (!$contact->save()) {
             throw new Exception("Unable to save contact: " . print_r($contact->getErrors(), true));
         }
+        $this->verboseLog("Contact saved. ID : " . $contact->id);
 
         $patient = new Patient();
         $patient->dob = $subject['dob'];
@@ -404,6 +458,7 @@ EOH;
         if (!$patient->save(false)) {
             throw new Exception("Unable to save patient: " . print_r($patient->getErrors(), true));
         }
+        $this->verboseLog("Patient saved. ID : " . $patient->id);
 
         return $patient;
     }
@@ -415,6 +470,7 @@ EOH;
      */
     public function mapGeneticsPatientToPedigree($patient, $subject)
     {
+        $this->verboseLog("Map Genetics Patietn To Pedigree");
         if ($subject['status'] === null) {
             $subject['status'] = 'Unknown';
         }
@@ -430,6 +486,7 @@ EOH;
             if (!$pedigree->save()) {
                 throw new Exception("Unable to save PatientPedigree: " . print_r($pedigree->getErrors(), true));
             }
+            $this->verboseLog("Genetics Patient Pedigree saved");
         }
     }
 
@@ -449,15 +506,22 @@ EOH;
             ->join('diagnosislist l', 'diagnosis.diagnosis = l.diagnosis')
             ->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
 
+        $this->verboseLog("Diagnoses for subject id in iedd:" . PHP_EOL . print_r($diagnoses, true));
         foreach ($diagnoses as $diagnosis) {
             $disorder = null;
 
             if (isset($this->diagnosis_map[$diagnosis['diagnosisid']])) {
                 $disorder = $this->diagnosis_map[$diagnosis['diagnosisid']];
+                $this->verboseLog( $diagnosis['diagnosisid'] . ' is NOT set in diagnosis_map');
             } else {
+                $this->verboseLog( $diagnosis['diagnosisid'] . ' IS SET in diagnosis_map');
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
+
+                    $this->verboseLog( $diagnosis['diagnosis'] . ' NOT found in disorder table');
+
                     if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
                         $this->missing_diagnoses[] = $diagnosis['diagnosis'];
+                        $this->verboseLog( $diagnosis['diagnosis'] . ' added to missing diagnoses');
                     }
                     $patient_comments = $diagnosis['diagnosis'];
 
@@ -471,6 +535,8 @@ EOH;
                     if (!$genetics_patient->save(false)) {
                         throw new Exception("Unable to save genetics patient comments: " . print_r($genetics_patient->getErrors(), true));
                     }
+
+                    $this->verboseLog( $diagnosis['diagnosis'] . ' added genetics_patient.comments');
                     echo " ... comments saved" . PHP_EOL;
                     $patient_comments = null;
                     $disorder = null;
@@ -486,6 +552,7 @@ EOH;
                 if (!$d->save()) {
                     throw new Exception("Unable to save GeneticsPatientDiagnosis: " . print_r($d->getErrors(), true));
                 }
+                $this->verboseLog('Diagnoses added - GeneticsPatientDiagnosis saved.');
             }
         }
         $diagnoses = null;
@@ -504,127 +571,63 @@ EOH;
      */
     public function getPatient($subject)
     {
+        $this->verboseLog("Trying to get patient from other details");
+
+        if ($subject['mehno'] && $subject['dob']) {
+            $patient = Patient::model()->with('contact')->find('hos_num = ? and dob = ?', array($subject['mehno'], $subject['dob']) );
+
+            if($patient){
+                $this->verboseLog("Patient found by hos_num AND dob");
+            }
+            return $patient;
+        }
+
+
+        // if only $subject['mehno']
         if ($subject['mehno']) {
-            if ($patient = Patient::model()->with('contact')->find('hos_num = ? and length(hos_num) > ?', array($subject['mehno'], 0))) {
-                if ($patient->dob == $subject['dob'] || (strtolower($patient->first_name) == strtolower($subject['forename']) && strtolower($patient->last_name) == strtolower($subject['surname']))) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                    $this->matched_hosnum++;
-                    return $patient;
-                }
+            if ($patient = Patient::model()->with('contact')->find('hos_num = ? and length(hos_num) > 0', array($subject['mehno']))) {
+
+                fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
+                $this->verboseLog("Patient matched with hos_num");
+                $this->matched_hosnum++;
+
+                return $patient;
+
+            } else {
                 fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->nomatch_hosnum++;
+
+                $this->verboseLog("No match for Patient with hos_num : " . $subject['mehno']);
 
                 return false;
             }
         }
 
+        // if only $subject['dob'] we check the name as well
         if ($subject['dob']) {
-            if ($patient = Patient::model()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and dob = ? and length(hos_num) > ?',
-                array(strtolower($subject['forename']), strtolower($subject['surname']), $subject['dob'], 0))
+            if ($patient = Patient::model()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and dob = ? and length(hos_num) > 0',
+                array(strtolower($subject['forename']), strtolower($subject['surname']), $subject['dob']))
             ) {
-                if ($subject['mehno']) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                    $this->matched_hosnum++;
-                } else {
-                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                    $this->matched++;
-                }
+                $this->verboseLog("Patient found by first_name AND last_name AND dob AND length(hos_num) > 0");
+
+                fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
+                $this->matched++;
 
                 return $patient;
             }
-
-            $patient = new Patient;
-
-            $dataProvider = $patient->search(array(
-                'currentPage' => 1,
-                'pageSize' => 30,
-                'sortBy' => 'HOS_NUM*1',
-                'sortDir' => 'asc',
-                'first_name' => CHtml::decode($subject['forename']),
-                'last_name' => CHtml::decode($subject['surname']),
-            ));
-
-            $results = array();
-
-            foreach ($dataProvider->getData() as $patient) {
-                if ($patient->dob == $subject['dob']) {
-                    $results[] = $patient;
-                }
-            }
-
-            if (count($results) == 1) {
-                if ($subject['mehno']) {
-                    fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                    $this->matched_hosnum++;
-                } else {
-                    fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                    $this->matched++;
-                }
-
-                return $results[0];
-            } else {
-                if (count($results) > 1) {
-                    if ($subject['mehno']) {
-                        fwrite($this->fp_matched_n_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                        $this->matched_n_hosnum++;
-                    } else {
-                        fwrite($this->fp_matched_n, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                        $this->matched_n++;
-                    }
-                } else {
-                    if ($subject['mehno']) {
-                        fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                        $this->nomatch_hosnum++;
-                    } else {
-                        fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                        $this->nomatch++;
-                    }
-                }
-            }
-
-            return Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and length(hos_num) = ?',
-                array(strtolower($subject['forename']), strtolower($subject['surname']), 0));
         }
 
-        $patient = new Patient;
+        $this->verboseLog("Trying to find patient by forename and surname.");
 
-        $dataProvider = $patient->search(array(
-            'currentPage' => 1,
-            'pageSize' => 30,
-            'sortBy' => 'HOS_NUM*1',
-            'sortDir' => 'asc',
-            'first_name' => CHtml::decode($subject['forename']),
-            'last_name' => CHtml::decode($subject['surname']),
-        ));
+        $patient = Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? AND lower(last_name) = ? AND hos_num IS NULL AND dob is NULL',
+            array(strtolower($subject['forename']), strtolower($subject['surname'])));
 
-        $results = array();
-
-        foreach ($dataProvider->getData() as $patient) {
-            $results[] = $patient;
+        if(!$patient){
+            $this->verboseLog("Patient not found by name - WHERE lower(first_name) = ? AND lower(last_name) = ? AND hos_num IS NULL AND dob is NULL");
         }
 
-        if (count($results) == 1) {
-            if ($subject['mehno']) {
-                fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                $this->matched_hosnum++;
-            } else {
-                fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                $this->matched++;
-            }
+        return $patient;
 
-            return $results[0];
-        }
-
-        if ($subject['mehno']) {
-            fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-            $this->nomatch_hosnum++;
-        } else {
-            fwrite($this->fp_nomatch, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-            $this->nomatch++;
-        }
-
-        return Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and length(hos_num) = ?',
-            array(strtolower($subject['forename']), strtolower($subject['surname']), 0));
     }
 
     /**
@@ -765,9 +768,7 @@ EOH;
                     $box->save();
                 }
             }
-
         }
-
     }
 
     protected function mapGeneticsPatientSamples($genetics_patient, $subject_id, $firm)
@@ -775,6 +776,8 @@ EOH;
         $samples = Yii::app()->db2->createCommand()->select("*")->from("sample")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
 
         if (!empty($samples)) {
+            $this->verboseLog("Map GeneticsPatient Samples");
+
             foreach ($samples as $sample) {
                 if (in_array(strtolower($sample['type']), array('dna', 'rna'))) {
                     $type = strtoupper($sample['type']);
@@ -785,15 +788,18 @@ EOH;
                 if (!$_type = OphInDnasample_Sample_Type::model()->find('name=?', array($type))) {
                     throw new Exception("Unknown sample type: $type");
                 }
+                $this->verboseLog("Sample type: " . $_type->name);
 
                 $user_id = $this->findUserIDForString($sample['loggedby']);
 
                 if (!$_sample = Element_OphInDnasample_Sample::model()->findByPk($sample['dnano'])) {
+                    $this->verboseLog("Creating Element_OphInDnasample_Sample");
                     $_sample = new Element_OphInDnasample_Sample;
                     $_sample->id = $sample['dnano'];
 
                     $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged');
                     $_sample->event_id = $event->id;
+
                 }
 
                 $_sample->old_dna_no = $sample['OldDNANo'];
@@ -814,6 +820,7 @@ EOH;
                 if (!$_sample->save(false, null, true)) {
                     throw new Exception("Unable to save sample: " . print_r($_sample->getErrors(), true));
                 }
+                $this->verboseLog("Element_OphInDnasample_Sample saved");
 
                 foreach (Yii::app()->db2->createCommand()->select("*")->from("address")->where("dnano = :dnano", array(":dnano" => $sample['dnano']))->queryAll() as $address) {
                     $box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?', array($address['box']));
@@ -831,6 +838,7 @@ EOH;
                     if(!$box->save()){
                         throw new Exception("Unable to save DnaExtraction Box: " . print_r($box->getErrors(), true));
                     }
+                    $this->verboseLog("OphInDnaextraction_DnaExtraction_Box saved");
 
                     $user_id = $this->findUserIDForString($address['extractedby']);
 
@@ -847,6 +855,7 @@ EOH;
                         if(!$storage->save()){
                             throw new Exception("Unable to save DnaExtraction Storage: " . print_r($storage->getErrors(), true));
                         }
+                        $this->verboseLog("OphInDnaextraction_DnaExtraction_Storage saved");
 
                     }
 
@@ -881,6 +890,7 @@ EOH;
                     if (!$dna->save()) {
                         throw new Exception("Unable to save dna extraction: " . print_r($dna->getErrors(), true));
                     }
+                    $this->verboseLog("Element_OphInDnaextraction_DnaExtraction saved");
 
                     $dna_tests = new Element_OphInDnaextraction_DnaTests();
                     $dna_tests->event_id = $dna->event_id;
@@ -908,6 +918,8 @@ EOH;
         $assays = Yii::app()->db2->createCommand()->select("*")->from("assay")->where("subjectid = :subjectid", array(":subjectid" => $subject_id))->queryAll();
 
         if (!empty($assays)) {
+            $this->verboseLog("Map GeneticsPatient Tests");
+
             foreach ($assays as $assay) {
                 $test = Element_OphInGeneticresults_Test::model()->findByPk($assay['testid']);
                 if (!$test) {
@@ -915,25 +927,31 @@ EOH;
                     if ($assay['method']) {
                         $method = OphInGeneticresults_Test_Method::model()->find('name=?', array($assay['method']));
                         if ($method) {
+                            $this->verboseLog("Method name: " . $method->name);
                             $method_id = $method->id;
+                        } else {
+                            $this->verboseLog("Method name: unknown");
                         }
                     }
-
 
                     $effect_id = $this->unknown_effect->id;
                     if ($assay['effect']) {
                         $effect = OphInGeneticresults_Test_Effect::model()->find('name=?', array($assay['effect']));
                         if ($effect) {
+                            $this->verboseLog("Effect name: " . $effect->name);
                             $effect_id = $effect->id;
+                        } else{
+                            $this->verboseLog("Effect name: unknown");
                         }
                     }
-
 
                     $gene = PedigreeGene::model()->findByPk($assay['geneid']);
                     if ($gene) {
                         $gene_id = $gene->id;
+                        $this->verboseLog("Gene ID:" . $gene->id);
                     } else {
                         $gene_id = new CDbExpression('NULL');
+                        $this->verboseLog("Gene ID: null");
                     }
 
                     $user_id = $this->findUserIDForString($assay['enteredby']);
@@ -973,6 +991,7 @@ EOH;
                     if (!$test->save(false, null, true)) {
                         throw new Exception("Unable to save Element_OphInGenetictest_Test: " . print_r($test->getErrors(), true));
                     }
+                    $this->verboseLog("Element_OphInGeneticresults_Test saved.");
                 }
             }
         }
@@ -992,5 +1011,24 @@ EOH;
         }
 
         return $unknown;
+    }
+
+    /**
+     * Writes into the General log file
+     * @param $message
+     */
+    protected function log($message)
+    {
+        $datetime = new DateTime();
+        fwrite($this->fp_general_logfile, "[". $datetime->format('Y-m-d H:i:s') . "] : " . $message . PHP_EOL);
+    }
+
+    /**
+     * Much more detailed log
+     */
+    protected function verboseLog($message)
+    {
+        $datetime = new DateTime();
+        fwrite($this->fp_verbose_log_file, "[". $datetime->format('Y-m-d H:i:s') . "] : " . $message . PHP_EOL);
     }
 }
