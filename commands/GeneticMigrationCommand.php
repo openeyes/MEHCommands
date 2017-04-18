@@ -25,6 +25,7 @@ class GeneticMigrationCommand extends CConsoleCommand
     public $nomatch_hosnum = 0;
     public $matched_n = 0;
     public $matched_n_hosnum = 0;
+    public $created_patients = 0;
     /**
      * Number of patient found by genetics_patient PK (which is same as iedd.sample.subjectid)
      * @var int
@@ -322,14 +323,15 @@ EOH;
         }
 
         echo $stat = PHP_EOL .
-            "Total: " . ($this->matched + $this->matched_hosnum + $this->nomatch + $this->nomatch_hosnum + $this->matched_n + $this->found_by_pk) . PHP_EOL .
+            "Total matched: " . ($this->matched + $this->matched_hosnum + $this->nomatch + $this->nomatch_hosnum + $this->matched_n + $this->found_by_pk) . PHP_EOL .
             "Matched (with hosnum): $this->matched_hosnum" . PHP_EOL .
             "Matched (without hosnum): $this->matched" . PHP_EOL .
             "No-match (with hosnum): $this->nomatch_hosnum" . PHP_EOL .
             "No-match (without hosnum): $this->nomatch" . PHP_EOL .
             "Matched n (with hosnum): $this->matched_n" . PHP_EOL .
             "Matched n (without hosnum): $this->matched_n_hosnum" . PHP_EOL .
-            "Matched PK (genetics_patient.id which is same as iedd.sample.sampleid): $this->found_by_pk" . PHP_EOL;
+            "Matched PK (genetics_patient.id which is same as iedd.sample.sampleid): $this->found_by_pk" . PHP_EOL . PHP_EOL .
+            "Total created patients: " . $this->created_patients;
 
         echo "Missing Diagnoses:" . PHP_EOL;
         echo var_export($this->missing_diagnoses);
@@ -342,8 +344,6 @@ EOH;
 
     public function findUserIDForString($user_name)
     {
-        $this->verboseLog("Finding user...");
-
         $user_id = 1;
 
         if ($user_name) {
@@ -356,7 +356,7 @@ EOH;
             }
         }
 
-        $this->verboseLog("User ID:" . $user_id);
+        $this->verboseLog("User ID to create model/event (created_user_id):" . $user_id);
 
         return $user_id;
     }
@@ -459,6 +459,7 @@ EOH;
             throw new Exception("Unable to save patient: " . print_r($patient->getErrors(), true));
         }
         $this->verboseLog("Patient saved. ID : " . $patient->id);
+        $this->created_patients++;
 
         return $patient;
     }
@@ -793,7 +794,7 @@ EOH;
                 $user_id = $this->findUserIDForString($sample['loggedby']);
 
                 if (!$_sample = Element_OphInDnasample_Sample::model()->findByPk($sample['dnano'])) {
-                    $this->verboseLog("Creating Element_OphInDnasample_Sample");
+
                     $_sample = new Element_OphInDnasample_Sample;
                     $_sample->id = $sample['dnano'];
 
@@ -820,7 +821,7 @@ EOH;
                 if (!$_sample->save(false, null, true)) {
                     throw new Exception("Unable to save sample: " . print_r($_sample->getErrors(), true));
                 }
-                $this->verboseLog("Element_OphInDnasample_Sample saved");
+                $this->verboseLog("Element_OphInDnasample_Sample saved | ID : " . $_sample->id);
 
                 foreach (Yii::app()->db2->createCommand()->select("*")->from("address")->where("dnano = :dnano", array(":dnano" => $sample['dnano']))->queryAll() as $address) {
                     $box = OphInDnaextraction_DnaExtraction_Box::model()->find('value=?', array($address['box']));
