@@ -308,14 +308,15 @@ EOH;
             //creating GeneticsPatientPedigree
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
-            $genetics_patient->save();
+            //no validation as without pedigree we wouldn't be able
+            $genetics_patient->save(false);
 
             // progress indicator.
             if ($i % 10 == 0) {
                 echo ".";
             }
 
-            $this->mapGeneticsPatientDiagnoses($genetics_patient->id, $subject['subjectid']);
+            $this->mapGeneticsPatientDiagnoses($genetics_patient, $subject['subjectid']);
             $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
             $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
 
@@ -498,10 +499,8 @@ EOH;
      * @param $subject_id
      * @throws Exception
      */
-    protected function mapGeneticsPatientDiagnoses($genetics_patient_id, $subject_id)
+    protected function mapGeneticsPatientDiagnoses($genetics_patient, $subject_id)
     {
-        $genetics_patient = GeneticsPatient::model()->findByPk($genetics_patient_id);
-
         $diagnoses = Yii::app()->db2->createCommand()
             ->select("*")->from("diagnosis")
             ->join('diagnosislist l', 'diagnosis.diagnosis = l.diagnosis')
