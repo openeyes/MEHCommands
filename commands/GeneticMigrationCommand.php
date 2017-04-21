@@ -309,7 +309,9 @@ EOH;
             $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
             //no validation as without pedigree we wouldn't be able
-            $genetics_patient->save(false);
+            if( !$genetics_patient->save()) {
+                throw new Exception("Cannot save GeneticsPatient: " . print_r($genetics_patient->getErrors(), true));
+            }
 
             // progress indicator.
             if ($i % 10 == 0) {
@@ -512,16 +514,16 @@ EOH;
 
             if (isset($this->diagnosis_map[$diagnosis['diagnosisid']])) {
                 $disorder = $this->diagnosis_map[$diagnosis['diagnosisid']];
-                $this->verboseLog( $diagnosis['diagnosisid'] . ' is NOT set in diagnosis_map');
+                $this->verboseLog( $diagnosis['diagnosisid'] . ' is NOT set in diagnosis_map iedd.diagnosisid: ' . $diagnosis['diagnosisid']);
             } else {
                 $this->verboseLog( $diagnosis['diagnosisid'] . ' IS SET in diagnosis_map');
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
 
-                    $this->verboseLog( $diagnosis['diagnosis'] . ' NOT found in disorder table');
+                    $this->verboseLog( $diagnosis['diagnosis'] . ' NOT found in disorder table: ' . strtolower($diagnosis['diagnosis']));
 
                     if (!in_array($diagnosis['diagnosis'], $this->missing_diagnoses)) {
                         $this->missing_diagnoses[] = $diagnosis['diagnosis'];
-                        $this->verboseLog( $diagnosis['diagnosis'] . ' added to missing diagnoses');
+                        $this->verboseLog( $diagnosis['diagnosis'] . ' - added to missing diagnoses');
                     }
                     $patient_comments = $diagnosis['diagnosis'];
 
@@ -552,7 +554,7 @@ EOH;
                 if (!$d->save()) {
                     throw new Exception("Unable to save GeneticsPatientDiagnosis: " . print_r($d->getErrors(), true));
                 }
-                $this->verboseLog('Diagnoses added - GeneticsPatientDiagnosis saved.');
+                $this->verboseLog('Diagnoses added - GeneticsPatientDiagnosis saved | id: ' . $d->id);
             }
         }
         $diagnoses = null;
@@ -605,9 +607,12 @@ EOH;
 
         // if only $subject['dob'] we check the name as well
         if ($subject['dob']) {
-            if ($patient = Patient::model()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and dob = ? and length(hos_num) > 0',
-                array(strtolower($subject['forename']), strtolower($subject['surname']), $subject['dob']))
-            ) {
+
+            $patient = Patient::model()->with('contact')->find('lower(first_name) = ? and lower(last_name) = ? and dob = ? and length(hos_num) > 0',
+                array(strtolower($subject['forename']), strtolower($subject['surname']), $subject['dob']));
+
+            if ($patient) {
+
                 $this->verboseLog("Patient found by first_name AND last_name AND dob AND length(hos_num) > 0");
 
                 fwrite($this->fp_matched, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
