@@ -935,7 +935,16 @@ EOH;
                             $this->verboseLog("Method name: " . $method->name);
                             $method_id = $method->id;
                         } else {
-                            $this->verboseLog("Method name: unknown");
+                            $this->verboseLog("Method name not found in the ophingeneticresults_test_method table : " . $assay['method']);
+
+                            $method = new OphInGeneticresults_Test_Method();
+                            $method->name = $assay['method'];
+
+                            if($method->save()){
+                                $this->verboseLog($assay['method'] . " added to ophingeneticresults_test_method table");
+                            } else {
+                                $this->verboseLog("WARNING - method " . $assay['method'] . " could not added to ophingeneticresults_test_method table");
+                            }
                         }
                     }
 
