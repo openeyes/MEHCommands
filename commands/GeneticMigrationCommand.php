@@ -300,7 +300,7 @@ EOH;
             }
 
             // Ensure the subject comments are only added to the genetics patient if they are not already present
-            if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
+            if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) === false)) {
                 $genetics_patient->comments .= $patient_comments;
                 $this->verboseLog("Comment added : " . $genetics_patient->comments);
             }
@@ -514,9 +514,9 @@ EOH;
 
             if (isset($this->diagnosis_map[$diagnosis['diagnosisid']])) {
                 $disorder = $this->diagnosis_map[$diagnosis['diagnosisid']];
-                $this->verboseLog( $diagnosis['diagnosisid'] . ' is NOT set in diagnosis_map iedd.diagnosisid: ' . $diagnosis['diagnosisid']);
+                $this->verboseLog( $diagnosis['diagnosisid'] . ' is set in diagnosis_map iedd.diagnosisid: ' . $diagnosis['diagnosisid'] . ' | OE id: ' . $this->diagnosis_map[$diagnosis['diagnosisid']] );
             } else {
-                $this->verboseLog( $diagnosis['diagnosisid'] . ' IS SET in diagnosis_map');
+                $this->verboseLog( $diagnosis['diagnosisid'] . ' IS NOT SET in diagnosis_map');
                 if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($diagnosis['diagnosis'])))) {
 
                     $this->verboseLog( $diagnosis['diagnosis'] . ' NOT found in disorder table: ' . strtolower($diagnosis['diagnosis']));
