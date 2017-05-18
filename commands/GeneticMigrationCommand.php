@@ -285,8 +285,10 @@ EOH;
                 //saving without validation because genetics_patient cannot be saved with empty pedigree
                 // and pedigree will be mapped later
                 $genetics_patient->save(false);
-                $this->verboseLog("Creating Genetics patient. ID: " . $genetics_patient->id);
+                $this->verboseLog("Creating Genetics patient.");
             }
+
+            $this->verboseLog("Genetics patient. ID: " . $genetics_patient->id);
 
             $subject_extra = Yii::app()->db2->createCommand()->select("*")->from("subjectextra")->where(
                 "SubjectID = :subjectid",
@@ -305,9 +307,6 @@ EOH;
                 $this->verboseLog("Comment added : " . $genetics_patient->comments);
             }
 
-            //creating GeneticsPatientPedigree
-            $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
-
             //no validation as without pedigree we wouldn't be able
             if( !$genetics_patient->save()) {
                 throw new Exception("Cannot save GeneticsPatient: " . print_r($genetics_patient->getErrors(), true));
@@ -321,6 +320,9 @@ EOH;
             $this->mapGeneticsPatientDiagnoses($genetics_patient, $subject['subjectid']);
             $this->mapGeneticsPatientSamples($genetics_patient, $subject['subjectid'], $firm);
             $this->mapGeneticsPatientTests($genetics_patient, $subject['subjectid'], $firm);
+
+            //creating GeneticsPatientPedigree
+            $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
             $this->verboseLog("Subject imported." . PHP_EOL . PHP_EOL);
         }
@@ -482,10 +484,15 @@ EOH;
         $status = PedigreeStatus::model()->find('lower(name) = ?', array(strtolower($subject['status'])));
 
         if (Pedigree::model()->findByPk($subject['newgc'])) {
-            $pedigree = new GeneticsPatientPedigree();
+            if( !$pedigree = GeneticsPatientPedigree::model()->findByAttributes(array('pedigree_id' => $subject['newgc'], 'patient_id' => $patient->id)) ){
+                $pedigree = new GeneticsPatientPedigree();
+            }
+
             $pedigree->patient_id = $patient->id;
             $pedigree->pedigree_id = $subject['newgc'];
             $pedigree->status_id = $status->id;
+
+            $this->verboseLog("Genetics Patient Pedigree status ID: " . $status->name  . '(' . $status->id . ')');
 
             if (!$pedigree->save()) {
                 throw new Exception("Unable to save PatientPedigree: " . print_r($pedigree->getErrors(), true));
