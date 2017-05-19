@@ -580,10 +580,13 @@ EOH;
      */
     public function getPatient($subject)
     {
+        //get rid of the leading zeros
+        $subject['mehno']  = ltrim($subject['mehno'], '0');
+
         $this->verboseLog("Trying to get patient from other details");
 
         if ($subject['mehno'] && $subject['dob']) {
-            $patient = Patient::model()->with('contact')->find('hos_num = ? and dob = ?', array($subject['mehno'], $subject['dob']) );
+            $patient = Patient::model()->with('contact')->find('TRIM(LEADING "0" FROM hos_num) = ? and dob = ?', array($subject['mehno'], $subject['dob']) );
 
             if($patient){
                 $this->verboseLog("Patient found by hos_num AND dob");
@@ -594,7 +597,7 @@ EOH;
 
         // if only $subject['mehno']
         if ($subject['mehno']) {
-            if ($patient = Patient::model()->with('contact')->find('hos_num = ? and length(hos_num) > 0', array($subject['mehno']))) {
+            if ($patient = Patient::model()->with('contact')->find('TRIM(LEADING "0" FROM hos_num) = ? and length(hos_num) > 0', array($subject['mehno']))) {
 
                 fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->verboseLog("Patient matched with hos_num");
