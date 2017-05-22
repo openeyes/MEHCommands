@@ -52,6 +52,10 @@ class GeneticMigrationCommand extends CConsoleCommand
      */
     public $fp_general_logfile;
 
+    /**
+     * Verbose log
+     * @var
+     */
     public $fp_verbose_log_file;
 
     protected $source;
@@ -60,6 +64,20 @@ class GeneticMigrationCommand extends CConsoleCommand
 
     public $subject_limit;
     public $subject_offset;
+
+    /**
+     * CSV file containing the subject IDs are safe to import
+     * actually no comma required, only subject ids separated by new lines
+     * @var string
+     */
+    public $path_to_allowed_subject_ids = '/tmp/iedd_allowed_subject_ids.csv';
+
+    /**
+     * Array containing subject IDS are safe to import
+     * if empty all subject IDs will be imported form IEDD
+     * @var array
+     */
+    public $allowed_subject_ids = array();
 
     public function getName()
     {
@@ -223,15 +241,22 @@ EOH;
         $this->fp_verbose_log_file = fopen("/tmp/genetics_import_logs/.verbose_log", "w");
 
         $this->initialiseDiagnosisMap();
-        $this->importGenes();
-        $this->importPedigrees();
-        $this->importDnaExtractionBoxes();
+//        $this->importGenes();
+//        $this->importPedigrees();
+//        $this->importDnaExtractionBoxes();
         $this->unknown_effect = $this->unknown(new OphInGeneticresults_Test_Effect());
         $this->unknown_method = $this->unknown(new OphInGeneticresults_Test_Method());
 
         $firm = $this->initialiseFirm();
 
         echo "Importing subjects and samples: ";
+
+        // Check if there is a file for allowed subject IDS
+        if ( is_file($this->path_to_allowed_subject_ids) ){
+            $this->allowed_subject_ids = file($this->path_to_allowed_subject_ids, FILE_IGNORE_NEW_LINES);
+
+            $this->verboseLog("File found to cherry-pick the subject IDs. (count " . count($this->allowed_subject_ids) . "): " . $this->path_to_allowed_subject_ids);
+        }
 
         $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
 
@@ -249,7 +274,19 @@ EOH;
         $this->log("Importing $total subjects and samples");
 
         foreach ($subjects as $i => $subject) {
-            $this->verboseLog("Import subject id: " . $subject['subjectid']);
+
+            $this->verboseLog("Importing subject id: " . $subject['subjectid']);
+
+            if($this->allowed_subject_ids){
+                if(in_array($subject['subjectid'], $this->allowed_subject_ids) ){
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is safe to import, continue...");
+                } else {
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is NOT safe to import, not in the file: " . $this->path_to_allowed_subject_ids . ". Skipping..." . PHP_EOL);
+
+                    continue;
+                }
+            }
+
 
             if (!$subject['forename']) {
                 $subject['forename'] = $subject['initial'];
@@ -336,7 +373,7 @@ EOH;
             "Matched n (with hosnum): $this->matched_n" . PHP_EOL .
             "Matched n (without hosnum): $this->matched_n_hosnum" . PHP_EOL .
             "Matched PK (genetics_patient.id which is same as iedd.sample.sampleid): $this->found_by_pk" . PHP_EOL . PHP_EOL .
-            "Total created patients: " . $this->created_patients;
+            "Total created patients: " . $this->created_patients . PHP_EOL;
 
         echo "Missing Diagnoses:" . PHP_EOL;
         echo var_export($this->missing_diagnoses);
@@ -443,6 +480,7 @@ EOH;
         $contact->maiden_name = $subject['maiden'];
 
         if (!$contact->save()) {
+            $this->verboseLog("Unable to save contact: " . print_r($contact->getErrors(), true));
             throw new Exception("Unable to save contact: " . print_r($contact->getErrors(), true));
         }
         $this->verboseLog("Contact saved. ID : " . $contact->id);
@@ -461,6 +499,7 @@ EOH;
 
         // skipping the validation because of the patient.dob cannot be blank (in the model), but here we don't always have
         if (!$patient->save(false)) {
+            $this->verboseLog("Unable to save patient: " . print_r($patient->getErrors(), true));
             throw new Exception("Unable to save patient: " . print_r($patient->getErrors(), true));
         }
         $this->verboseLog("Patient saved. ID : " . $patient->id);
@@ -589,7 +628,7 @@ EOH;
             $patient = Patient::model()->with('contact')->find('TRIM(LEADING "0" FROM hos_num) = ? and dob = ?', array($subject['mehno'], $subject['dob']) );
 
             if($patient){
-                $this->verboseLog("Patient found by hos_num AND dob");
+                $this->verboseLog("Patient matched by hos_num AND dob");
             }
             return $patient;
         }
@@ -600,7 +639,7 @@ EOH;
             if ($patient = Patient::model()->with('contact')->find('TRIM(LEADING "0" FROM hos_num) = ? and length(hos_num) > 0', array($subject['mehno']))) {
 
                 fwrite($this->fp_matched_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
-                $this->verboseLog("Patient matched with hos_num");
+                $this->verboseLog("Patient matched by hos_num");
                 $this->matched_hosnum++;
 
                 return $patient;
@@ -609,7 +648,7 @@ EOH;
                 fwrite($this->fp_nomatch_hosnum, "{$subject['mehno']}|{$subject['forename']}|{$subject['surname']}" . PHP_EOL);
                 $this->nomatch_hosnum++;
 
-                $this->verboseLog("No match for Patient with hos_num : " . $subject['mehno']);
+                $this->verboseLog("No match for Patient by hos_num : " . $subject['mehno']);
 
                 return false;
             }
