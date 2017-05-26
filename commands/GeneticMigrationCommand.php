@@ -241,9 +241,9 @@ EOH;
         $this->fp_verbose_log_file = fopen("/tmp/genetics_import_logs/.verbose_log", "w");
 
         $this->initialiseDiagnosisMap();
-//        $this->importGenes();
-//        $this->importPedigrees();
-//        $this->importDnaExtractionBoxes();
+        $this->importGenes();
+        $this->importPedigrees();
+        $this->importDnaExtractionBoxes();
         $this->unknown_effect = $this->unknown(new OphInGeneticresults_Test_Effect());
         $this->unknown_method = $this->unknown(new OphInGeneticresults_Test_Method());
 
@@ -629,6 +629,7 @@ EOH;
 
             if($patient){
                 $this->verboseLog("Patient matched by hos_num AND dob");
+                $this->matched_hosnum++;
             }
             return $patient;
         }
