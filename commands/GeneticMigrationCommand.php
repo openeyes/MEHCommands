@@ -220,6 +220,11 @@ EOH;
         return $this->genetic_test_event_type;
     }
 
+    public function actionImportPedigrees(){
+        $this->initialiseDiagnosisMap();
+        $this->importPedigrees();
+    }
+
     public function actionIndex()
     {
         Yii::import('application.modules.Genetics.models.*');
@@ -761,6 +766,7 @@ EOH;
             if ($pedigree['diagnosis'] !== 'Not known') {
                 if (isset($this->diagnosis_map[$pedigree['diagnosis']])) {
                     $disorder = $this->diagnosis_map[$pedigree['diagnosis']];
+                    $disorder_id = $disorder->id;
                 } else {
 
                     if (!$disorder = Disorder::model()->find('lower(term) = ?', array(strtolower($pedigree['diagnosis'])))) {
@@ -768,11 +774,12 @@ EOH;
                             $this->missing_diagnoses[] = $pedigree['diagnosis'];
                         }
                         echo " missing " . $pedigree['diagnosis'] . PHP_EOL;
-                        continue;
+
+                        //not sure why this "continue" was implemented here but because of this pedigrees were not imported
+                        //so live patient have missing pedigrees/families
+                        //continue;
                     }
                 }
-
-                $disorder_id = $disorder->id;
             }
 
             $_pedigree->inheritance_id = $inheritance_id;
