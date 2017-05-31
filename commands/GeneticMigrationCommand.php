@@ -235,6 +235,15 @@ EOH;
     public function actionMapGeneticspatientTopedigree()
     {
 
+        $this->fp_general_logfile = fopen("/tmp/genetics_import_logs/.general_genetics_log", "w");
+        $this->fp_matched = fopen("/tmp/genetics_import_logs/.matched", "w");
+        $this->fp_matched_hosnum = fopen("/tmp/genetics_import_logs/.matched_hosnum", "w");
+        $this->fp_nomatch = fopen("/tmp/genetics_import_logs/.nomatch", "w");
+        $this->fp_nomatch_hosnum = fopen("/tmp/genetics_import_logs/.nomatch_hosnum", "w");
+        $this->fp_matched_n = fopen("/tmp/genetics_import_logs/.matched_n", "w");
+        $this->fp_matched_n_hosnum = fopen("/tmp/genetics_import_logs/.matched_n_hosnum", "w");
+        $this->fp_found_by_pk = fopen("/tmp/genetics_import_logs/.found_by_pk", "w");
+
         $this->fp_verbose_log_file = fopen("/tmp/genetics_import_logs/.map_genetics_patient_pedigree_log", "w");
 
         $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
