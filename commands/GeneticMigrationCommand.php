@@ -225,6 +225,92 @@ EOH;
         $this->importPedigrees();
     }
 
+    /**
+     * This function was created because during the original(first) import some pedigrees were not imported therefore
+     * genetics patients have missing families/pedigrees
+     *
+     * This function intends to fix this as loop over all the subject IDs in IEDD, find the genetics patient belongs to it
+     * and check if there is a (missing) pedigree
+     */
+    public function actionMapGeneticspatientTopedigree()
+    {
+
+        $this->fp_verbose_log_file = fopen("/tmp/genetics_import_logs/.map_genetics_patient_pedigree_log", "w");
+
+        $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
+
+        if($this->subject_limit){
+            $command->limit($this->subject_limit);
+        }
+
+        if($this->subject_offset){
+            $command->offset($this->subject_offset);
+        }
+
+        // Check if there is a file for allowed subject IDS
+        if ( is_file($this->path_to_allowed_subject_ids) ){
+            $this->allowed_subject_ids = file($this->path_to_allowed_subject_ids, FILE_IGNORE_NEW_LINES);
+
+            $this->verboseLog("File found to cherry-pick the subject IDs. (count " . count($this->allowed_subject_ids) . "): " . $this->path_to_allowed_subject_ids);
+        }
+
+        $subjects = $command->queryAll();
+
+        foreach ($subjects as $i => $subject) {
+
+            if($this->allowed_subject_ids){
+                if(in_array($subject['subjectid'], $this->allowed_subject_ids) ){
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is safe to import, continue...");
+                } else {
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is NOT safe to import, not in the file: " . $this->path_to_allowed_subject_ids . ". Skipping...");
+
+                    continue;
+                }
+            }
+
+            //get the patient
+            $genetics_patient = GeneticsPatient::model()->findByPk($subject['subjectid']);
+
+            if($genetics_patient){
+                $patient = Patient::model()->findByPk($genetics_patient->patient_id);
+
+                $this->verboseLog("Genetics patient found : " . $genetics_patient->id);
+                $this->verboseLog("Patient hos_num: " . $patient->hos_num);
+
+            } else {
+                $this->verboseLog("Genetics patient not found by subject id. Subject id: " . $subject['subjectid']);
+                $patient = $this->getPatient($subject);
+                if (!$patient) {
+                    $this->verboseLog("Patient not found by any other details : " . $subject['subjectid']);
+                } else {
+                    $this->verboseLog("Patient found, subject id :" . $subject['subjectid']);
+
+                    $genetics_patient = GeneticsPatient::model()->find('patient_id=?', array($patient->id));
+                    if(!$genetics_patient){
+                        $this->verboseLog("Patient found " . $patient->id . ", but NO genetics patient");
+                    }
+                }
+            }
+
+            //only proceed when the genetics patient found
+            if($genetics_patient){
+
+                //we only update genetics patient if it has no family/pedigree
+                if ($genetics_patient->pedigrees == null){
+
+                    $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
+                } else {
+                    $this->verboseLog("Genetics patient has pedigree: " . $subject['subjectid']);
+                }
+
+            } else {
+                $this->verboseLog("No Genetics patient found for subjectid:" . $subject['subjectid']);
+            }
+        }
+
+
+    }
+
     public function actionIndex()
     {
         Yii::import('application.modules.Genetics.models.*');
