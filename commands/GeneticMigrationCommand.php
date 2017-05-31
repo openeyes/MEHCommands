@@ -303,14 +303,7 @@ EOH;
 
             //only proceed when the genetics patient found
             if($genetics_patient){
-
-                //we only update genetics patient if it has no family/pedigree
-                if ($genetics_patient->pedigrees == null){
-
-                    $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
-                } else {
-                    $this->verboseLog("Genetics patient has pedigree: " . $subject['subjectid']);
-                }
+                $this->mapGeneticsPatientToPedigree($genetics_patient, $subject);
 
             } else {
                 $this->verboseLog("No Genetics patient found for subjectid:" . $subject['subjectid']);
