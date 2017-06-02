@@ -765,10 +765,10 @@ EOH;
             }
         }
 
-        $this->verboseLog("Trying to find patient by forename and surname.");
+      //  $this->verboseLog("Trying to find patient by forename and surname.");
 
-        $patient = Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? AND lower(last_name) = ? AND hos_num IS NULL AND dob is NULL',
-            array(strtolower($subject['forename']), strtolower($subject['surname'])));
+//        $patient = Patient::model()->noPas()->with('contact')->find('lower(first_name) = ? AND lower(last_name) = ? AND hos_num IS NULL AND dob is NULL',
+//            array(strtolower($subject['forename']), strtolower($subject['surname'])));
 
         if(!$patient){
             $this->verboseLog("Patient not found by name - WHERE lower(first_name) = ? AND lower(last_name) = ? AND hos_num IS NULL AND dob is NULL");
