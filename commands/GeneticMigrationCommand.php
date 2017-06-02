@@ -712,6 +712,8 @@ EOH;
      */
     public function getPatient($subject)
     {
+        $patient = null;
+        
         //get rid of the leading zeros
         $subject['mehno']  = ltrim($subject['mehno'], '0');
 
