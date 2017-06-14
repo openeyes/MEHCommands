@@ -667,7 +667,7 @@ EOH;
                     $patient_comments = $diagnosis['diagnosis'];
 
                     //add comments to patient with missing diagnosis
-                    if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) == false)) {
+                    if ($patient_comments && (strpos($genetics_patient->comments, $patient_comments) === false)) {
                         $genetics_patient->comments .= PHP_EOL . $patient_comments . PHP_EOL;
                     }
 
