@@ -682,6 +682,8 @@ EOH;
                     $patient_comments = null;
                     $disorder = null;
                     continue;
+                } else {
+                    $this->verboseLog($diagnosis['diagnosis'] . 'found in disorder table | disorder.id: ' . $disorder->id);
                 }
             }
 
@@ -691,6 +693,7 @@ EOH;
                 $d->disorder_id = $disorder->id;
 
                 if (!$d->save()) {
+                    $this->verboseLog( print_r($d->getErrors()) );
                     throw new Exception("Unable to save GeneticsPatientDiagnosis: " . print_r($d->getErrors(), true));
                 }
                 $this->verboseLog('Diagnoses added - GeneticsPatientDiagnosis saved | id: ' . $d->id);
@@ -713,7 +716,7 @@ EOH;
     public function getPatient($subject)
     {
         $patient = null;
-        
+
         //get rid of the leading zeros
         $subject['mehno']  = ltrim($subject['mehno'], '0');
 
