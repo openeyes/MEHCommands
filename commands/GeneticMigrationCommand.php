@@ -351,7 +351,7 @@ EOH;
             $this->verboseLog("File found to cherry-pick the subject IDs. (count " . count($this->allowed_subject_ids) . "): " . $this->path_to_allowed_subject_ids);
         }
 
-        $command = Yii::app()->db2->createCommand()->select("*")->from("subject")->where('subjectid IN (17342,12076,17341,11965,11192,11193,13575,9437,9438,1680,9439,4697,1681)');
+        $command = Yii::app()->db2->createCommand()->select("*")->from("subject");
 
         if($this->subject_limit){
             $command->limit($this->subject_limit);
@@ -361,7 +361,6 @@ EOH;
             $command->offset($this->subject_offset);
         }
 
-
         $subjects = $command->queryAll();
         $total = count($subjects);
         $this->log("Importing $total subjects and samples");
@@ -370,15 +369,15 @@ EOH;
 
             $this->verboseLog("Importing subject id: " . $subject['subjectid']);
 
-//            if($this->allowed_subject_ids){
-//                if(in_array($subject['subjectid'], $this->allowed_subject_ids) ){
-//                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is safe to import, continue...");
-//                } else {
-//                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is NOT safe to import, not in the file: " . $this->path_to_allowed_subject_ids . ". Skipping..." . PHP_EOL);
-//
-//                    continue;
-//                }
-//            }
+            if($this->allowed_subject_ids){
+                if(in_array($subject['subjectid'], $this->allowed_subject_ids) ){
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is safe to import, continue...");
+                } else {
+                    $this->verboseLog("Subject id: " . $subject['subjectid'] . " is NOT safe to import, not in the file: " . $this->path_to_allowed_subject_ids . ". Skipping..." . PHP_EOL);
+
+                    continue;
+                }
+            }
 
 
             if (!$subject['forename']) {
