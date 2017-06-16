@@ -954,6 +954,48 @@ EOH;
                     $event = $this->createEvent($this->getSampleEventType(), $genetics_patient->patient, $firm, $sample, $user_id, 'timelogged');
                     $_sample->event_id = $event->id;
 
+                } else {
+                    // this 'else' part implemented because of an earlier import problem, subject were merged together
+                    // make sure the event is attached to the right patient
+
+                    // at this stage the Element exists but maybe attached to the wrong subject
+                    //check if the current subject has an Episode
+
+                    //if no episode, we need to create one
+                    $this->verboseLog("Remap start");
+                    if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null', array($genetics_patient->patient->id, $firm->id))) {
+                        $this->verboseLog("Remap Episode not found");
+                        $event_date = date('Y-m-d');
+                        $obj_date = substr($sample['timelogged'], 0, 10);
+                        if ($obj_date != '0000-00-00' && strtotime($sample['timelogged']) < strtotime($event_date)) {
+                            $event_date = $obj_date;
+                        }
+
+                        $episode = new Episode();
+                        $episode->patient_id = $genetics_patient->patient->id;
+                        $episode->firm_id = $firm->id;
+                        $episode->start_date = $event_date;
+                        $episode->created_user_id = $user_id;
+                        $episode->last_modified_user_id = $user_id;
+
+                        if (!$episode->save(true, null, true)) {
+                            throw new Exception("Unable to save episode: " . print_r($episode->getErrors(), true));
+                        }
+                    } else {
+                        $this->verboseLog("Remap Episode found");
+                    }
+
+                    //now we have an episode, lets make sure the event is attached to it
+                    //do not forget we alreay have an event
+
+                    $event = $_sample->event;
+                    $event->episode_id = $episode->id;
+
+                    if( !$event->save()){
+                        $this->verboseLog("Remap Event NOT saved");
+                        throw new Exception("Unable to save episode: " . print_r($event->getErrors(), true));
+                    }
+
                 }
 
                 $_sample->old_dna_no = $sample['OldDNANo'];
