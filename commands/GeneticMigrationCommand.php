@@ -962,7 +962,7 @@ EOH;
                     //check if the current subject has an Episode
 
                     //if no episode, we need to create one
-                    $this->verboseLog("Remap start");
+                    $this->verboseLog("Remap Episode: start");
                     if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null', array($genetics_patient->patient->id, $firm->id))) {
                         $this->verboseLog("Remap Episode not found");
                         $event_date = date('Y-m-d');
@@ -982,7 +982,7 @@ EOH;
                             throw new Exception("Unable to save episode: " . print_r($episode->getErrors(), true));
                         }
                     } else {
-                        $this->verboseLog("Remap Episode found");
+                        $this->verboseLog("Remap Episode: episode found | id: " . $episode->id);
                     }
 
                     //now we have an episode, lets make sure the event is attached to it
@@ -992,7 +992,7 @@ EOH;
                     $event->episode_id = $episode->id;
 
                     if( !$event->save()){
-                        $this->verboseLog("Remap Event NOT saved");
+                        $this->verboseLog("Remap Event: saved: event id: " . $event->id);
                         throw new Exception("Unable to save episode: " . print_r($event->getErrors(), true));
                     }
 
@@ -1056,7 +1056,7 @@ EOH;
                     }
 
                     // if the storage did not exist before, the DnaExtraction did not exist either, so we do not need to check
-                    //if the storage was already saved in the DB we check if an element belongs to it
+                    // if the storage was already saved in the DB we check if an element belongs to it
                     $dna = null;
                     if($was_storage_exist){
                         //check if the Episode/event/element are already exist for the patient
@@ -1117,6 +1117,7 @@ EOH;
             $this->verboseLog("Map GeneticsPatient Tests");
 
             foreach ($assays as $assay) {
+
                 $test = Element_OphInGeneticresults_Test::model()->findByPk($assay['testid']);
                 if (!$test) {
                     $method_id = $this->unknown_method->id;
@@ -1197,6 +1198,48 @@ EOH;
                         throw new Exception("Unable to save Element_OphInGenetictest_Test: " . print_r($test->getErrors(), true));
                     }
                     $this->verboseLog("Element_OphInGeneticresults_Test saved.");
+                } else {
+
+                    $this->verboseLog("Remap Element_OphInGeneticresults_Test");
+
+                    //$test (Element_OphInGeneticresults_Test) exists, we have to make sure it is belongs to the right patient
+
+                    //first get the event and the episode
+                    $event = $test->event;
+
+                    // check if the current subject has an episode
+                    if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null', array($genetics_patient->patient->id, $firm->id))) {
+
+                        $this->verboseLog("Remap Element_OphInGeneticresults_Test: episode not found for current patient.");
+
+                        $episode = new Episode();
+                        $episode->patient_id = $genetics_patient->patient->id;
+                        $episode->firm_id = $firm->id;
+                        $episode->start_date = $test->event->event_date;
+                        $episode->created_user_id = $user_id;
+                        $episode->last_modified_user_id = $user_id;
+
+                        if (!$episode->save(true, null, true)) {
+                            throw new Exception("Unable to save episode: " . print_r($episode->getErrors(), true));
+                        }
+                        $this->verboseLog("Remap Element_OphInGeneticresults_Test: episode saved | id: " . $episode->id);
+                    } else {
+                        $this->verboseLog("Remap Element_OphInGeneticresults_Test: episode found | id: " . $episode->id);
+
+                        if($event->episode_id != $episode->id){
+                            $this->verboseLog("Remap Element_OphInGeneticresults_Test: moving event to different episode. Episode id from: " . $event->episode_id . " to:" . $episode->id);
+                        }
+                    }
+
+                    //ok, we have the episode now attached to the current(right) patient, lets make sure the event is attached to the right( new? ) episode
+
+                    $event->episode_id = $episode->id;
+
+                    if( !$event->save() ){
+                        $this->verboseLog($event->getErrors());
+                        throw new Exception("Unable to save Element_OphInGenetictest_Test: " . print_r($event->getErrors(), true));
+                    }
+                    $this->verboseLog("Remap Element_OphInGeneticresults_Test: event saved | id: " . $event->id);
                 }
             }
         }
