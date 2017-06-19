@@ -1162,7 +1162,32 @@ EOH;
 
                     $user_id = $this->findUserIDForString($assay['enteredby']);
 
-                    $event = $this->createEvent($this->getGeneticTestEventType(), $genetics_patient->patient, $firm, $assay, $user_id, 'timestamp');
+                    $event = $this->createEvent($this->getGeneticTestEventType(), $genetics_patient->patient, $firm, $assay, $user_id, 'resultdate');
+
+                    //the event created date will be the timestamp from IEDD.assay
+                    $obj_date = substr($assay['timestamp'], 0, 10);
+                    if ($obj_date != '0000-00-00' && strtotime($assay['timestamp']) ) {
+                        $event->created_date = $assay['timestamp'];
+
+                        if( !$event->save() ){
+                            $this->verboseLog( $event->getErrors() );
+                            throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
+                        } else {
+                            $this->verboseLog("Event created_date set to: " . $event->created_date . "; IEDD.assay.timestamp: " . $assay['timestamp'] );
+                        }
+                    }
+
+                    $obj_date = substr($assay['resultdate'], 0, 10);
+                    if ($obj_date != '0000-00-00' && strtotime($assay['resultdate']) ) {
+                        $event->event_date = $assay['resultdate'];
+
+                        if( !$event->save() ){
+                            $this->verboseLog( $event->getErrors() );
+                            throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
+                        } else {
+                            $this->verboseLog("Event event_date set to: " . $event->event_date . "; IEDD.assay.resultdate: " . $assay['resultdate'] );
+                        }
+                    }
 
                     $test = new Element_OphInGeneticresults_Test();
                     $test->id = $assay['testid'];
@@ -1206,6 +1231,32 @@ EOH;
 
                     //first get the event and the episode
                     $event = $test->event;
+
+                    //here let's fix the event data and created date
+                    //the event created date will be the timestamp from IEDD.assay
+                    $obj_date = substr($assay['timestamp'], 0, 10);
+                    if ($obj_date != '0000-00-00' && strtotime($assay['timestamp']) ) {
+                        $event->created_date = $assay['timestamp'];
+
+                        if( !$event->save() ){
+                            $this->verboseLog( $event->getErrors() );
+                            throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
+                        } else {
+                            $this->verboseLog("Event created_date set to: " . $event->created_date . "; IEDD.assay.timestamp: " . $assay['timestamp'] );
+                        }
+                    }
+
+                    $obj_date = substr($assay['resultdate'], 0, 10);
+                    if ($obj_date != '0000-00-00' && strtotime($assay['resultdate']) ) {
+                        $event->event_date = $assay['resultdate'];
+
+                        if( !$event->save() ){
+                            $this->verboseLog( $event->getErrors() );
+                            throw new Exception("Unable to save event: " . print_r($event->getErrors(), true));
+                        } else {
+                            $this->verboseLog("Event event_date set to: " . $event->event_date . "; IEDD.assay.resultdate: " . $assay['resultdate'] );
+                        }
+                    }
 
                     // check if the current subject has an episode
                     if (!$episode = Episode::model()->find('patient_id=? and firm_id=? and end_date is null', array($genetics_patient->patient->id, $firm->id))) {
