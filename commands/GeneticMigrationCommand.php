@@ -1088,7 +1088,11 @@ EOH;
                     }
                     $this->verboseLog("Element_OphInDnaextraction_DnaExtraction saved");
 
-                    $dna_tests = new Element_OphInDnaextraction_DnaTests();
+                    // do not create more than 1 element for this
+                    if( !$dna_tests = Element_OphInDnaextraction_DnaTests::model()->find('event_id=?', array($dna->event_id)) ){
+                        $dna_tests = new Element_OphInDnaextraction_DnaTests();
+                    }
+
                     $dna_tests->event_id = $dna->event_id;
 
                     if (!$dna_tests->save()) {
